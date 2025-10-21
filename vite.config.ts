@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  clearScreen: false,
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
@@ -18,7 +19,6 @@ export default defineConfig(({ mode }) => ({
       'react-dom',
       'next-themes',
       'sonner',
-      '@radix-ui/react-tooltip',
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query'],
+    exclude: ['@radix-ui/react-tooltip'],
     force: mode === 'development',
   },
   build: {
