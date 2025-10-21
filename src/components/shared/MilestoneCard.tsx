@@ -12,23 +12,20 @@ interface MilestoneCardProps {
 
 type MilestoneStatus = "ALCANZADO" | "EN PROCESO" | "LEJOS";
 
-function ProgressBar({ label, pct, current, total }: { label: string; pct: number; current: number; total: number }) {
+function ProgressBar({ label, pct, current, total, tipo }: { label: string; pct: number; current: number; total: number; tipo: 'dias' | 'horas' }) {
   const barColor = pct >= 100 ? "bg-emerald-400" : pct >= 60 ? "bg-amber-400" : "bg-rose-400";
   
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{label}</span>
-        <span className="font-medium">{pct}%</span>
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-xs">
+        <span className="text-zinc-400">{label}</span>
+        <span className="font-semibold text-white">{pct}%</span>
       </div>
-      <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+      <div className="h-2 bg-zinc-800/60 rounded-full overflow-hidden">
         <div 
           className={cn("h-full transition-all duration-500", barColor)}
           style={{ width: `${pct}%` }}
         />
-      </div>
-      <div className="text-[10px] text-muted-foreground">
-        {current} / {total}
       </div>
     </div>
   );
@@ -72,18 +69,20 @@ export function MilestoneCard({
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4 pt-1">
         <ProgressBar
           label={`Días ${currentDays}/${daysRequired}`}
           current={currentDays}
           total={daysRequired}
           pct={daysPct}
+          tipo="dias"
         />
         <ProgressBar
           label={`Horas ${currentHours.toFixed(1)}/${hoursRequired}`}
           current={currentHours}
           total={hoursRequired}
           pct={hoursPct}
+          tipo="horas"
         />
       </div>
 
