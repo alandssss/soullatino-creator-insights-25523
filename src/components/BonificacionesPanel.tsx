@@ -31,6 +31,16 @@ export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPa
 
       const bonificaciones = await creatorAnalytics.getBonificaciones(mesReferencia);
       const bonifCreator = bonificaciones.find(b => b.creator_id === creatorId);
+      
+      // Obtener días reales desde Supabase (si está disponible)
+      if (bonifCreator) {
+        const diasRealesData = await creatorAnalytics.getDiasRealesMes(creatorId);
+        if (diasRealesData) {
+          bonifCreator.dias_live_mes = diasRealesData.dias_reales_hasta_hoy || bonifCreator.dias_live_mes;
+          bonifCreator.horas_live_mes = diasRealesData.horas_totales_mes || bonifCreator.horas_live_mes;
+        }
+      }
+      
       setBonificacion(bonifCreator || null);
     } catch (error) {
       console.error('Error cargando bonificación:', error);

@@ -1,6 +1,4 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ProgressBar } from "./ProgressBar";
 import { cn } from "@/lib/utils";
 
 interface MilestoneCardProps {
@@ -13,6 +11,28 @@ interface MilestoneCardProps {
 }
 
 type MilestoneStatus = "ALCANZADO" | "EN PROCESO" | "LEJOS";
+
+function ProgressBar({ label, pct, current, total }: { label: string; pct: number; current: number; total: number }) {
+  const barColor = pct >= 100 ? "bg-emerald-400" : pct >= 60 ? "bg-amber-400" : "bg-rose-400";
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{label}</span>
+        <span className="font-medium">{pct}%</span>
+      </div>
+      <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+        <div 
+          className={cn("h-full transition-all duration-500", barColor)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="text-[10px] text-muted-foreground">
+        {current} / {total}
+      </div>
+    </div>
+  );
+}
 
 export function MilestoneCard({ 
   label, 
@@ -33,29 +53,23 @@ export function MilestoneCard({
 
   const status = getStatus();
 
-  const statusStyles = {
-    ALCANZADO: "bg-green-500/10 text-green-700 border-green-500/30",
-    "EN PROCESO": "bg-yellow-500/10 text-yellow-700 border-yellow-500/30",
-    LEJOS: "bg-destructive/10 text-destructive border-destructive/30",
-  };
-
-  const cardStyles = {
-    ALCANZADO: "border-green-500/50 bg-green-500/5",
-    "EN PROCESO": "border-yellow-500/50 bg-yellow-500/5",
-    LEJOS: "border-destructive/50 bg-destructive/5",
+  const statusColors = {
+    ALCANZADO: "bg-emerald-400/20 border-emerald-400/40 text-emerald-300",
+    "EN PROCESO": "bg-amber-400/20 border-amber-400/40 text-amber-300",
+    LEJOS: "bg-rose-400/20 border-rose-400/40 text-rose-300",
   };
 
   return (
     <div className={cn(
-      "rounded-2xl border-2 p-4 space-y-3 transition-all",
-      "shadow-[inset_2px_2px_6px_rgba(255,255,255,0.04),_0_0_10px_rgba(0,0,0,0.15)]",
-      cardStyles[status]
+      "rounded-2xl border-2 p-5 space-y-3 transition-all",
+      "shadow-[inset_2px_2px_6px_rgba(255,255,255,0.04),_0_0_10px_rgba(0,0,0,0.7)]",
+      statusColors[status]
     )}>
       <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold text-foreground">{label}</div>
-        <Badge className={cn("text-xs px-2.5 py-1 rounded-full border-2", statusStyles[status])}>
+        <h4 className="text-sm font-medium text-foreground">{label}</h4>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-black/30 text-foreground">
           {status}
-        </Badge>
+        </span>
       </div>
 
       <div className="space-y-3">
@@ -63,23 +77,23 @@ export function MilestoneCard({
           label={`Días ${currentDays}/${daysRequired}`}
           current={currentDays}
           total={daysRequired}
+          pct={daysPct}
         />
         <ProgressBar
           label={`Horas ${currentHours.toFixed(1)}/${hoursRequired}`}
           current={currentHours}
           total={hoursRequired}
-          decimals={1}
+          pct={hoursPct}
         />
       </div>
 
       {onOpenPlan && (
         <Button
           onClick={onOpenPlan}
-          className="w-full mt-2 rounded-xl"
-          variant={status === "ALCANZADO" ? "secondary" : "default"}
+          className="w-full mt-2 rounded-xl bg-gradient-to-br from-lime-300 to-emerald-400 text-zinc-900 font-semibold hover:brightness-110 transition-all"
           size="sm"
         >
-          Abrir Plan del Día
+          Plan sugerido
         </Button>
       )}
     </div>

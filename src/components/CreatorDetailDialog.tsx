@@ -370,58 +370,32 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                 Información del Creador
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-              <div className="p-4 rounded-lg neo-card-sm">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Usuario TikTok</p>
-                <p className="font-semibold text-base">@{creator.tiktok_username || "No especificado"}</p>
-              </div>
-              <div className="p-4 rounded-lg neo-card-sm">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Teléfono</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-base">{creator.telefono || "No especificado"}</p>
-                  {creator.telefono && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="success"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Vista Previa
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm">Mensaje de WhatsApp</h4>
-                            <div className="p-3 neo-card-sm rounded-lg border border-border">
-                              <p className="text-sm whitespace-pre-wrap font-display">
-                                {generateWhatsAppSummary(user?.email?.split('@')[0] || "el equipo")}
-                              </p>
-                            </div>
-                          </div>
-                          <Button 
-                            className="w-full"
-                            variant="success"
-                            onClick={handleOpenWhatsApp}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Enviar por WhatsApp
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-              </div>
-              <div className="p-4 rounded-lg neo-card-sm">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Categoría</p>
-                <p className="font-semibold text-base">{creator.categoria || "No especificada"}</p>
-              </div>
-              <div className="p-4 rounded-lg neo-card-sm">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Manager</p>
-                <p className="font-semibold text-base">{creator.manager || "No asignado"}</p>
-              </div>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoBox 
+                label="Usuario TikTok" 
+                value={`@${creator.tiktok_username || "No especificado"}`}
+              />
+              <InfoBox 
+                label="Teléfono" 
+                value={creator.telefono || "No especificado"}
+                actions={creator.telefono ? [
+                  infoBoxActions.phone(creator.telefono),
+                  infoBoxActions.whatsapp(creator.telefono)
+                ] : []}
+              />
+              <InfoBox 
+                label="Categoría" 
+                value={creator.categoria || "No especificada"}
+              />
+              <InfoBox 
+                label="Manager" 
+                value={creator.manager || "No asignado"}
+                mono
+                actions={creator.manager && creator.manager.includes('@') ? [
+                  infoBoxActions.email(creator.manager),
+                  infoBoxActions.copy(creator.manager)
+                ] : []}
+              />
               <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
                 <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Días en Live</p>
                 <p className="font-bold text-xl text-primary">{creator.dias_live || 0} días</p>

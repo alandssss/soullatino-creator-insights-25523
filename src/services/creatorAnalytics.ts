@@ -146,6 +146,43 @@ export class CreatorAnalyticsService {
   }
 
   /**
+   * Obtiene días reales del mes actual (fallback a cálculo local)
+   */
+  async getDiasRealesMes(creatorId: string): Promise<{ dias_reales_hasta_hoy: number; horas_totales_mes: number } | null> {
+    try {
+      // Calcular desde creator_live_daily usando columnas correctas: 'horas' y 'fecha'
+      const mesActual = new Date();
+      const mesInicio = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, '0')}-01`;
+      const hoy = mesActual.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('creator_live_daily')
+        .select('horas, fecha')
+        .eq('creator_id', creatorId)
+        .gte('fecha', mesInicio)
+        .lte('fecha', hoy);
+      
+      if (error) {
+        console.error('Error cargando live_daily:', error);
+        return null;
+      }
+      
+      if (!data || data.length === 0) return null;
+      
+      const diasReales = data.filter(d => (d.horas || 0) >= 1.0).length;
+      const horasTotales = data.reduce((sum, d) => sum + (d.horas || 0), 0);
+      
+      return {
+        dias_reales_hasta_hoy: diasReales,
+        horas_totales_mes: horasTotales
+      };
+    } catch (err) {
+      console.error('Error en getDiasRealesMes:', err);
+      return null;
+    }
+  }
+
+  /**
    * Calcula probabilidad de alcanzar objetivo basado en progreso actual
    */
   calcularProbabilidad(
