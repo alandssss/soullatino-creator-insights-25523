@@ -52,6 +52,14 @@ export default function AlertasSugerencias() {
   const loadRecommendations = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Debes iniciar sesión para ver las recomendaciones');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('get-recommendations-today');
       
       if (error) throw error;
@@ -59,6 +67,8 @@ export default function AlertasSugerencias() {
       if (data?.success) {
         setRecommendations(data.recommendations || []);
         setSummary(data.summary || null);
+      } else if (data?.error) {
+        throw new Error(data.error);
       }
     } catch (error: any) {
       console.error('Error loading recommendations:', error);
