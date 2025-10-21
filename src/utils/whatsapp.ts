@@ -90,14 +90,8 @@ export const openWhatsApp = async ({
   const url = new URL(`https://wa.me/${phoneWithCode}`);
   url.searchParams.set('text', message);
   
-  // Usar un enlace temporal para evitar bloqueos del navegador
-  const link = document.createElement('a');
-  link.href = url.toString();
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // Usar window.open para evitar bloqueos de CORS/navegador
+  window.open(url.toString(), '_blank', 'noopener,noreferrer');
 };
 
 export function normalizePhoneE164(raw: string, def = "MX"): string | null {
