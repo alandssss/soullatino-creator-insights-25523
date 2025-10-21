@@ -41,8 +41,8 @@ export function ActionCell({ hasPhone, onWhatsApp, onCall, isLoading }: ActionCe
   }
 
   return (
-    <div className="flex gap-2">
-      <TooltipProvider>
+    <TooltipProvider>
+      <div className="flex gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -59,9 +59,7 @@ export function ActionCell({ hasPhone, onWhatsApp, onCall, isLoading }: ActionCe
             <p>Enviar mensaje de WhatsApp</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
 
-      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -79,7 +77,7 @@ export function ActionCell({ hasPhone, onWhatsApp, onCall, isLoading }: ActionCe
             <p>Llamar por teléfono</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
