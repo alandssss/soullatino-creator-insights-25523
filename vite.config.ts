@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   optimizeDeps: {
-    exclude: ['react', 'react-dom'],
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
   build: {
     commonjsOptions: {
