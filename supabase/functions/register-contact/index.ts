@@ -71,12 +71,12 @@ serve(async (req) => {
           .eq('id', logData.id);
 
         console.log('[register-contact] WhatsApp activity registered');
-      } catch (waError) {
+      } catch (waError: any) {
         console.error('[register-contact] WhatsApp error:', waError);
         // Actualizar el log con Failed
         await supabase
           .from('creator_contact_log')
-          .update({ action: 'Failed', notes: waError.message })
+          .update({ action: 'Failed', notes: waError?.message || 'Unknown error' })
           .eq('id', logData.id);
       }
     }
@@ -91,10 +91,10 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[register-contact] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || 'Unknown error' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -67,6 +67,11 @@ export default function AlertasSugerencias() {
       if (data?.success) {
         setRecommendations(data.recommendations || []);
         setSummary(data.summary || null);
+        
+        // Mostrar hint si hay error pero la respuesta fue exitosa
+        if (data.error && data.recommendations?.length === 0) {
+          toast.info(data.hint || 'No hay datos disponibles. Sube un archivo Excel para comenzar.');
+        }
       } else if (data?.error) {
         throw new Error(data.error);
       }

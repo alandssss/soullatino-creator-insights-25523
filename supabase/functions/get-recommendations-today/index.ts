@@ -63,12 +63,27 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[get-recommendations-today] Error:', error);
+    
+    // Devolver respuesta con error pero no fallar completamente
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: true,
+        recommendations: [],
+        summary: {
+          total: 0,
+          riesgo_alto: 0,
+          riesgo_medio: 0,
+          riesgo_bajo: 0,
+          con_deficit_dias: 0,
+          con_deficit_horas: 0
+        },
+        error: error.message,
+        hint: 'La vista materializada puede estar vacía. Sube un archivo Excel para generar datos.'
+      }),
       {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
