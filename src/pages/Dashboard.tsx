@@ -15,6 +15,9 @@ import { WorkTimeTracker } from "@/components/WorkTimeTracker";
 import { MonthlyFeedbackCalendar } from "@/components/MonthlyFeedbackCalendar";
 import { FeedbackImpactChart } from "@/components/FeedbackImpactChart";
 import { PanelPredictivoCreadores } from "@/components/PanelPredictivoCreadores";
+import { StatCard } from "@/components/shared/StatCard";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 type Creator = Tables<"creators">;
 
@@ -86,146 +89,122 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="space-y-4 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Cargando dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/30 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2">
+              <TrendingUp className="h-6 w-6 text-primary-foreground" />
             </div>
-            <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              <span className="hidden sm:inline">Soullatino Analytics</span>
-              <span className="sm:hidden">Soullatino</span>
-            </h1>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Soullatino Analytics
+              </h1>
+              <p className="text-xs text-muted-foreground">Panel de Control</p>
+            </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
+            className="gap-2 rounded-xl min-h-[40px] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
           >
-            <LogOut className="h-4 w-4 sm:mr-2" />
+            <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Salir</span>
           </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Dashboard</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Resumen de métricas de tus creadores</p>
-        </div>
+      <main className="container mx-auto px-6 py-8 space-y-8">
+        <PageHeader
+          title="Dashboard"
+          description="Resumen de métricas y rendimiento de tus creadores"
+          sticky={false}
+        />
 
         {userRole === "admin" && (
-          <>
-            <div className="mb-8">
-              <UserManagement />
-            </div>
-            <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-8">
+            <UserManagement />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdminUploadPanel />
               <AdminActivityPanel />
             </div>
-          </>
+          </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Creadores
-              </CardTitle>
-              <Users className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{totalCreators}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Diamantes
-              </CardTitle>
-              <Zap className="h-4 w-4 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-accent to-accent/80 bg-clip-text text-transparent">
-                {totalDiamonds.toLocaleString()}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Vistas
-              </CardTitle>
-              <Eye className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {(totalViews / 1000000).toFixed(1)}M
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 hover:shadow-glow transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Hito Promedio
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {(avgHito / 1000).toFixed(0)}K
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Creadores"
+            value={totalCreators}
+            icon={Users}
+            variant="primary"
+          />
+          <StatCard
+            title="Total Diamantes"
+            value={totalDiamonds.toLocaleString()}
+            icon={Zap}
+            variant="accent"
+          />
+          <StatCard
+            title="Total Vistas"
+            value={`${(totalViews / 1000000).toFixed(1)}M`}
+            icon={Eye}
+            variant="default"
+          />
+          <StatCard
+            title="Hito Promedio"
+            value={`${(avgHito / 1000).toFixed(0)}K`}
+            icon={TrendingUp}
+            variant="accent"
+            subtitle="Diamantes"
+          />
         </div>
 
-        <div className="mb-6 sm:mb-8">
-          <PanelPredictivoCreadores />
-        </div>
+        <PanelPredictivoCreadores />
 
-        <div className="mb-6 sm:mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <LowActivityPanel />
           <WorkTimeTracker userEmail={user?.email} />
         </div>
 
-        <div className="mb-6 sm:mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MonthlyFeedbackCalendar />
           <FeedbackImpactChart />
         </div>
 
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-foreground">Top Creadores</CardTitle>
+        <Card className="rounded-2xl border-2 border-border/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-semibold">Top Creadores</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {creators.map((creator, index) => (
-                <div
+                <button
                   key={creator.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-background/50 hover:bg-background/80 transition-all border border-border/30 hover:border-primary/30 cursor-pointer"
                   onClick={() => {
                     setSelectedCreator(creator);
                     setDialogOpen(true);
                   }}
+                  className="group w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-primary/30 cursor-pointer text-left"
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm">
                       {index + 1}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground">{creator.nombre}</h3>
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {creator.nombre}
+                        </h3>
                         {creator.telefono && (
                           <a
                             href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
@@ -246,7 +225,7 @@ const Dashboard = () => {
                     <p className="font-bold text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
                     <p className="text-sm text-muted-foreground">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
