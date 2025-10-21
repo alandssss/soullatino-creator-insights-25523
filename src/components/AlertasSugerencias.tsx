@@ -181,15 +181,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
     }
 
     try {
-      await supabase.functions.invoke('register-contact', {
-        body: {
-          creator_id: rec.creator_id,
-          creator_username: rec.creator_username,
-          phone_e164: rec.phone_e164,
-          channel: 'WhatsApp'
-        }
-      });
-
       await openWhatsApp({
         phone: rec.phone_e164,
         message: generarMensajeWhatsApp(rec),
@@ -209,24 +200,10 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
       return;
     }
 
-    try {
-      await supabase.functions.invoke('register-contact', {
-        body: {
-          creator_id: rec.creator_id,
-          creator_username: rec.creator_username,
-          phone_e164: rec.phone_e164,
-          channel: 'Telefono'
-        }
-      });
-
-      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        window.location.href = `tel:${rec.phone_e164}`;
-      } else {
-        toast.success(`Número: ${rec.phone_e164}`);
-      }
-    } catch (error: any) {
-      console.error('Error llamar:', error);
-      toast.error('Error al registrar llamada');
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = `tel:${rec.phone_e164}`;
+    } else {
+      toast.success(`Número: ${rec.phone_e164}`);
     }
   };
 
