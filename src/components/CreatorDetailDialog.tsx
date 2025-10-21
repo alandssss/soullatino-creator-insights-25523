@@ -23,6 +23,7 @@ import { z } from "zod";
 import { BonificacionesPanel } from "./BonificacionesPanel";
 import { interactionService } from "@/services/interactionService";
 import { AsignarMetaDialog } from "./AsignarMetaDialog";
+import { InfoBox, infoBoxActions } from "@/components/shared/InfoBox";
 
 const interactionSchema = z.object({
   tipo_interaccion: z.string().trim().min(1, "Tipo de interacción requerido").max(100, "Máximo 100 caracteres"),

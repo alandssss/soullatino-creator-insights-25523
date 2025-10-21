@@ -6,6 +6,7 @@ import { Award, Calendar, Target, Zap, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { creatorAnalytics } from "@/services/creatorAnalytics";
 import { MetricCard } from "@/components/MetricCard";
+import { MilestoneCard } from "@/components/shared/MilestoneCard";
 
 interface BonificacionesPanelProps {
   creatorId: string;
@@ -202,30 +203,52 @@ export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPa
               </div>
             </div>
 
-            {/* Hitos */}
+            {/* Hitos con progreso */}
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                 Hitos Días/Horas
               </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: 'hito_12_40', label: '12d/40h' },
-                  { key: 'hito_20_60', label: '20d/60h' },
-                  { key: 'hito_22_80', label: '22d/80h' },
-                ].map((hito) => (
-                  <div
-                    key={hito.key}
-                    className={`p-2 rounded-lg text-center border ${
-                      bonificacion[hito.key]
-                        ? 'bg-blue-500/20 border-blue-500/50'
-                        : 'bg-muted/30 border-border'
-                    }`}
-                  >
-                    <p className="text-xs font-medium">
-                      {bonificacion[hito.key] ? '✅' : '⭕'} {hito.label}
-                    </p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MilestoneCard
+                  label="12d/40h"
+                  daysRequired={12}
+                  hoursRequired={40}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    // TODO: Implementar modal "Plan del Día"
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
+                <MilestoneCard
+                  label="20d/60h"
+                  daysRequired={20}
+                  hoursRequired={60}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
+                <MilestoneCard
+                  label="22d/80h"
+                  daysRequired={22}
+                  hoursRequired={80}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
               </div>
             </div>
 
