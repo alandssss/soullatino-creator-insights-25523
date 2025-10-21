@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Upload, Download, PhoneCall, MessageSquare, Search, AlertTriangle, TrendingUp } from "lucide-react";
+import { Upload, Download, Search, AlertTriangle, TrendingDown, Clock, Users } from "lucide-react";
 import { openWhatsApp } from "@/utils/whatsapp";
+import { KpiCard } from "./alertas/KpiCard";
+import { FilterChips, FilterType } from "./alertas/FilterChips";
+import { RiskTable } from "./alertas/RiskTable";
+import { EmptyState } from "./alertas/EmptyState";
+import { UploaderModal } from "./alertas/UploaderModal";
 
 interface Recommendation {
   creator_id: string;
@@ -39,7 +43,9 @@ export default function AlertasSugerencias() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRiesgo, setFilterRiesgo] = useState<'all' | 'alto' | 'medio' | 'bajo'>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [uploaderOpen, setUploaderOpen] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
 
   useEffect(() => {
     loadRecommendations();
@@ -47,7 +53,7 @@ export default function AlertasSugerencias() {
 
   useEffect(() => {
     filterRecommendations();
-  }, [recommendations, searchTerm, filterRiesgo]);
+  }, [recommendations, searchTerm, filterType]);
 
   const loadRecommendations = async () => {
     setLoading(true);
@@ -68,7 +74,6 @@ export default function AlertasSugerencias() {
         setRecommendations(data.recommendations || []);
         setSummary(data.summary || null);
         
-        // Mostrar hint si hay error pero la respuesta fue exitosa
         if (data.error && data.recommendations?.length === 0) {
           toast.info(data.hint || 'No hay datos disponibles. Sube un archivo Excel para comenzar.');
         }
@@ -83,16 +88,15 @@ export default function AlertasSugerencias() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleFileUpload = async (file: File) => {
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       toast.error('Por favor sube un archivo Excel (.xlsx o .xls)');
       return;
     }
 
     setUploading(true);
+    setUploadResult(null);
+    
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -104,15 +108,28 @@ export default function AlertasSugerencias() {
       if (error) throw error;
 
       if (data?.success) {
+        setUploadResult({
+          success: true,
+          recordsProcessed: data.records_processed,
+        });
         toast.success(`✅ ${data.records_processed} registros procesados`);
-        await loadRecommendations();
+        
+        // Recargar recomendaciones después de 2 segundos
+        setTimeout(async () => {
+          await loadRecommendations();
+          setUploaderOpen(false);
+          setUploadResult(null);
+        }, 2000);
       }
     } catch (error: any) {
       console.error('Error uploading file:', error);
+      setUploadResult({
+        success: false,
+        error: error.message,
+      });
       toast.error('Error al procesar archivo: ' + error.message);
     } finally {
       setUploading(false);
-      event.target.value = ''; // Reset input
     }
   };
 
@@ -126,15 +143,17 @@ export default function AlertasSugerencias() {
       );
     }
 
-    // Filtro por riesgo
-    if (filterRiesgo !== 'all') {
-      if (filterRiesgo === 'alto') {
-        filtered = filtered.filter(r => r.prioridad_riesgo >= 40);
-      } else if (filterRiesgo === 'medio') {
-        filtered = filtered.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40);
-      } else if (filterRiesgo === 'bajo') {
-        filtered = filtered.filter(r => r.prioridad_riesgo < 20);
-      }
+    // Filtro por tipo
+    if (filterType === 'alto') {
+      filtered = filtered.filter(r => r.prioridad_riesgo >= 40);
+    } else if (filterType === 'medio') {
+      filtered = filtered.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40);
+    } else if (filterType === 'bajo') {
+      filtered = filtered.filter(r => r.prioridad_riesgo < 20);
+    } else if (filterType === 'deficit_dias') {
+      filtered = filtered.filter(r => r.faltan_dias > 0);
+    } else if (filterType === 'deficit_horas') {
+      filtered = filtered.filter(r => r.faltan_horas > 0);
     }
 
     setFilteredRecs(filtered);
@@ -162,7 +181,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
     }
 
     try {
-      // Registrar contacto
       await supabase.functions.invoke('register-contact', {
         body: {
           creator_id: rec.creator_id,
@@ -172,7 +190,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
         }
       });
 
-      // Abrir WhatsApp
       await openWhatsApp({
         phone: rec.phone_e164,
         message: generarMensajeWhatsApp(rec),
@@ -193,7 +210,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
     }
 
     try {
-      // Registrar contacto
       await supabase.functions.invoke('register-contact', {
         body: {
           creator_id: rec.creator_id,
@@ -203,7 +219,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
         }
       });
 
-      // Abrir tel: en móvil o mostrar número
       if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         window.location.href = `tel:${rec.phone_e164}`;
       } else {
@@ -239,204 +254,145 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
     URL.revokeObjectURL(url);
   };
 
-  const getRiesgoBadge = (prioridad: number) => {
-    if (prioridad >= 40) {
-      return <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Riesgo Alto</Badge>;
-    } else if (prioridad >= 20) {
-      return <Badge variant="default" className="gap-1 bg-yellow-500"><AlertTriangle className="h-3 w-3" /> Riesgo Medio</Badge>;
-    }
-    return <Badge variant="secondary" className="gap-1"><TrendingUp className="h-3 w-3" /> Riesgo Bajo</Badge>;
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setFilterType('all');
   };
 
+  const showEmptyState = !loading && filteredRecs.length === 0;
+  const hasFilters = searchTerm || filterType !== 'all';
+
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold">Alertas y Sugerencias</h2>
-          <p className="text-muted-foreground">Sistema predictivo de bonificaciones</p>
-        </div>
-        
-        <div className="flex gap-2">
-          <label htmlFor="excel-upload">
-            <Button disabled={uploading} asChild>
-              <span className="cursor-pointer">
-                <Upload className="mr-2 h-4 w-4" />
-                {uploading ? 'Procesando...' : 'Subir Excel'}
-              </span>
-            </Button>
-          </label>
-          <input
-            id="excel-upload"
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+    <div className="min-h-screen space-y-8 p-6 lg:p-8">
+      {/* Encabezado sticky */}
+      <div className="sticky top-0 z-10 -mx-6 -mt-6 bg-background/95 px-6 py-6 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:-mt-8 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold leading-none tracking-tight">
+              Alertas y Sugerencias
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Prioriza a quién contactar hoy para no perder bonificaciones
+            </p>
+          </div>
           
-          <Button onClick={exportarCSV} variant="outline" disabled={filteredRecs.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar CSV
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={() => setUploaderOpen(true)}
+              disabled={uploading}
+              size="lg"
+              className="gap-2 rounded-xl min-h-[44px]"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Subir Excel</span>
+            </Button>
+            
+            <Button 
+              onClick={exportarCSV} 
+              variant="outline" 
+              size="lg"
+              disabled={filteredRecs.length === 0}
+              className="gap-2 rounded-xl min-h-[44px]"
+            >
+              <Download className="h-4 w-4" />
+              <span>Exportar CSV</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Resumen */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Total</div>
-            <div className="text-2xl font-bold">{summary.total}</div>
-          </Card>
-          <Card className="p-4 border-red-500/50">
-            <div className="text-sm text-muted-foreground">Riesgo Alto</div>
-            <div className="text-2xl font-bold text-red-500">{summary.riesgo_alto}</div>
-          </Card>
-          <Card className="p-4 border-yellow-500/50">
-            <div className="text-sm text-muted-foreground">Riesgo Medio</div>
-            <div className="text-2xl font-bold text-yellow-500">{summary.riesgo_medio}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Riesgo Bajo</div>
-            <div className="text-2xl font-bold">{summary.riesgo_bajo}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Déficit Días</div>
-            <div className="text-2xl font-bold">{summary.con_deficit_dias}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Déficit Horas</div>
-            <div className="text-2xl font-bold">{summary.con_deficit_horas}</div>
-          </Card>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar creador..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={filterRiesgo === 'all' ? 'default' : 'outline'}
-            onClick={() => setFilterRiesgo('all')}
-          >
-            Todos
-          </Button>
-          <Button
-            variant={filterRiesgo === 'alto' ? 'destructive' : 'outline'}
-            onClick={() => setFilterRiesgo('alto')}
-          >
-            Alto
-          </Button>
-          <Button
-            variant={filterRiesgo === 'medio' ? 'default' : 'outline'}
-            onClick={() => setFilterRiesgo('medio')}
-            className={filterRiesgo === 'medio' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
-          >
-            Medio
-          </Button>
-          <Button
-            variant={filterRiesgo === 'bajo' ? 'secondary' : 'outline'}
-            onClick={() => setFilterRiesgo('bajo')}
-          >
-            Bajo
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabla */}
+      {/* KPIs */}
       {loading ? (
-        <div className="text-center py-12">Cargando...</div>
-      ) : filteredRecs.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">No hay recomendaciones. Sube un archivo Excel para comenzar.</p>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredRecs.map((rec) => (
-            <Card key={rec.creator_id} className="p-6">
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold">{rec.creator_username}</h3>
-                    {getRiesgoBadge(rec.prioridad_riesgo)}
-                    {rec.faltan_dias <= 1 && rec.faltan_dias > 0 && (
-                      <Badge variant="destructive" className="gap-1">
-                        <AlertTriangle className="h-3 w-3" /> Último margen
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Días live:</span>
-                      <span className="ml-2 font-semibold">{rec.dias_actuales}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Horas live:</span>
-                      <span className="ml-2 font-semibold">{rec.horas_actuales.toFixed(1)}h</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Diamantes:</span>
-                      <span className="ml-2 font-semibold">{rec.diamantes_actuales.toFixed(0)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Objetivo:</span>
-                      <span className="ml-2 font-semibold">{rec.proximo_objetivo}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Faltan días:</span>
-                      <span className="ml-2 font-semibold text-orange-500">{rec.faltan_dias}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Faltan horas:</span>
-                      <span className="ml-2 font-semibold text-orange-500">{rec.faltan_horas.toFixed(1)}h</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Horas/día sugeridas:</span>
-                      <span className="ml-2 font-semibold text-blue-500">{rec.horas_min_dia_sugeridas.toFixed(1)}h</span>
-                    </div>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground">
-                    Quedan <strong>{rec.dias_restantes} días</strong> del mes
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => handleWhatsApp(rec)}
-                    disabled={!rec.phone_e164}
-                    className="gap-2"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    WhatsApp
-                  </Button>
-                  <Button
-                    onClick={() => handleLlamar(rec)}
-                    disabled={!rec.phone_e164}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <PhoneCall className="h-4 w-4" />
-                    Llamar
-                  </Button>
-                </div>
-              </div>
-            </Card>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
           ))}
         </div>
+      ) : summary ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            title="Total Creadores"
+            value={summary.total}
+            icon={Users}
+            variant="default"
+          />
+          <KpiCard
+            title="Riesgo Alto"
+            value={summary.riesgo_alto}
+            icon={AlertTriangle}
+            variant="danger"
+          />
+          <KpiCard
+            title="Déficit Días"
+            value={summary.con_deficit_dias}
+            icon={Clock}
+            variant="warning"
+          />
+          <KpiCard
+            title="Déficit Horas"
+            value={summary.con_deficit_horas}
+            icon={TrendingDown}
+            variant="warning"
+          />
+        </div>
+      ) : null}
+
+      {/* Filtros */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <FilterChips
+            activeFilter={filterType}
+            onFilterChange={setFilterType}
+            counts={{
+              alto: summary?.riesgo_alto || 0,
+              medio: summary?.riesgo_medio || 0,
+              bajo: summary?.riesgo_bajo || 0,
+              deficit_dias: summary?.con_deficit_dias || 0,
+              deficit_horas: summary?.con_deficit_horas || 0,
+            }}
+          />
+        </div>
+        
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar creador por nombre..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-12 rounded-xl pl-11 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Tabla/Lista */}
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-2xl" />
+          ))}
+        </div>
+      ) : showEmptyState ? (
+        <EmptyState
+          variant={recommendations.length === 0 ? 'no-data' : 'no-results'}
+          onAction={() => setUploaderOpen(true)}
+          onClearFilters={handleClearFilters}
+        />
+      ) : (
+        <RiskTable
+          recommendations={filteredRecs}
+          onWhatsApp={handleWhatsApp}
+          onCall={handleLlamar}
+        />
       )}
+
+      {/* Modal de uploader */}
+      <UploaderModal
+        open={uploaderOpen}
+        onOpenChange={setUploaderOpen}
+        onFileSelect={handleFileUpload}
+        isUploading={uploading}
+        uploadResult={uploadResult}
+      />
     </div>
   );
 }
