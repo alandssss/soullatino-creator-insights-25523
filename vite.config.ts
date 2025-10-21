@@ -14,8 +14,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
     dedupe: [
-      'react', 
+      'react',
       'react-dom',
+      'next-themes',
+      'sonner',
       '@radix-ui/react-tooltip',
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
@@ -23,8 +25,7 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    force: true,
+    exclude: ['react', 'react-dom'],
   },
   build: {
     commonjsOptions: {

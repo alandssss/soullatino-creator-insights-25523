@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { useEffect, useState } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
@@ -25,8 +28,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/*" element={<AppLayout />} />
           </Routes>
-          <Toaster />
-          <Sonner />
+          {mounted && <Toaster />}
+          {mounted && <Sonner />}
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
