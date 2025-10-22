@@ -1,6 +1,6 @@
-const CACHE_NAME = 'soullatino-v4';
+const CACHE_NAME = 'soullatino-v5';
 const RUNTIME_CACHE = 'soullatino-runtime';
-const STATIC_CACHE = 'soullatino-static-v4';
+const STATIC_CACHE = 'soullatino-static-v5';
 
 const urlsToCache = [
   '/',
@@ -46,6 +46,18 @@ self.addEventListener('fetch', (event) => {
 
   // NO cachear métodos que no sean GET
   if (!isGET) {
+    return;
+  }
+
+  // ============= EXCLUSIONES: Admin y archivos sensibles =============
+  const adminPaths = ['/admin', '/creators', '/dashboard', '/panel', '/alertas', '/supervision'];
+  const isAdmin = adminPaths.some(p => url.pathname.startsWith(p));
+  const blockExt = ['.xlsx', '.xls', '.csv', '.json'];
+  const isBlockedFile = blockExt.some(ext => url.pathname.endsWith(ext));
+
+  if (isAdmin || isBlockedFile) {
+    // Siempre red, NUNCA cache para evitar datos viejos en admin
+    event.respondWith(fetch(request));
     return;
   }
 
@@ -111,25 +123,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for navigation
+  // Network-first for navigation to avoid stale HTML
   if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (response && response.ok) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              try {
-                cache.put(request, responseClone);
-              } catch (_) {
-                // Ignora errores de cache
-              }
-            });
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(request, clone)).catch(() => {});
           }
           return response;
-        }).catch(() => caches.match('/index.html'));
-        return cached || fetchPromise;
-      })
+        })
+        .catch(() => caches.match(request) || caches.match('/index.html'))
     );
     return;
   }

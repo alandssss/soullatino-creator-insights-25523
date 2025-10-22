@@ -53,6 +53,41 @@ export const AdminUploadPanel = () => {
     });
   };
 
+  const normalizeHeader = (s: string): string => {
+    return s
+      .normalize('NFKC')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e')
+      .replace(/í/g, 'i')
+      .replace(/ó/g, 'o')
+      .replace(/ú/g, 'u')
+      .replace(/ñ/g, 'n');
+  };
+
+  const mapColumnAliases = (headers: string[]): string[] => {
+    const alias: Record<string, string> = {
+      'nombre': 'Nombre',
+      'name': 'Nombre',
+      'creador': 'Nombre',
+      "creator's username": 'Nombre',
+      'usuario': 'Username',
+      'username': 'Username',
+      'handle': 'Username',
+      '@': 'Username',
+      'telefono': 'Teléfono',
+      'tel': 'Teléfono',
+      'phone': 'Teléfono',
+    };
+
+    return headers.map(h => {
+      const normalized = normalizeHeader(h);
+      return alias[normalized] || h.trim();
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast({
@@ -69,6 +104,23 @@ export const AdminUploadPanel = () => {
       
       console.log("Datos del Excel - Primeras 2 filas:", excelData.slice(0, 2));
       console.log("Columnas disponibles:", excelData.length > 0 ? Object.keys(excelData[0]) : []);
+      
+      // Normalizar headers del primer objeto para validación
+      if (excelData.length > 0) {
+        const originalHeaders = Object.keys(excelData[0]);
+        const mappedHeaders = mapColumnAliases(originalHeaders);
+        console.log("Headers mapeados:", mappedHeaders);
+        
+        if (!mappedHeaders.includes('Nombre') && !originalHeaders.includes("Creator's username")) {
+          toast({
+            title: "❌ Formato inválido",
+            description: "Falta la columna 'Nombre' o \"Creator's username\". Revisa tu archivo.",
+            variant: "destructive",
+          });
+          setUploading(false);
+          return;
+        }
+      }
       
       // Mapear los datos del Excel a la estructura de la base de datos
       // Ser más flexible con los nombres de columnas - buscar cualquier variación
@@ -154,8 +206,8 @@ export const AdminUploadPanel = () => {
 
       if (creatorsData.length === 0) {
         toast({
-          title: "Error",
-          description: "No se encontraron datos válidos en el archivo. Asegúrate de que haya una columna 'Nombre'.",
+          title: "❌ Sin datos válidos",
+          description: "No se encontraron creadores con nombre válido. Verifica que la columna 'Nombre' o \"Creator's username\" tenga datos.",
           variant: "destructive",
         });
         setUploading(false);
