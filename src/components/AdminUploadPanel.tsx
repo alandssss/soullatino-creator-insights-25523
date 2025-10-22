@@ -147,18 +147,44 @@ export const AdminUploadPanel = () => {
 
       toast({
         title: "✅ Archivo procesado exitosamente",
-        description: `${payload.records_processed || 0} filas procesadas. ${count || 0} registros disponibles para hoy.`,
+        description: `${payload.records_processed || 0} filas procesadas. ${count || 0} registros disponibles para hoy. Recalculando bonificaciones...`,
         duration: 5000,
       });
+
+      // Recalcular bonificaciones del mes actual
+      try {
+        const mesRef = new Date().toISOString().slice(0, 7) + '-01';
+        const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
+          body: { mes_referencia: mesRef }
+        });
+
+        if (bonifError) {
+          console.error('Error recalculando bonificaciones:', bonifError);
+          toast({
+            title: "⚠️ Advertencia",
+            description: "Datos cargados pero error al recalcular bonificaciones",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Bonificaciones recalculadas:', bonifData);
+          toast({
+            title: "✅ Todo listo",
+            description: `${bonifData?.total_creadores || 0} bonificaciones actualizadas`,
+            duration: 3000,
+          });
+        }
+      } catch (error) {
+        console.error('Error en recálculo de bonificaciones:', error);
+      }
 
       setFile(null);
       const fileInput = document.getElementById("file-upload") as HTMLInputElement;
       if (fileInput) fileInput.value = "";
 
-      // La función ya refresca la vista materializada; recargamos para ver cambios
+      // Recargar para ver cambios
       setTimeout(() => {
         window.location.reload();
-      }, 1500);
+      }, 2000);
     } catch (error: any) {
       console.error("Error uploading file:", error);
       toast({

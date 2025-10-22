@@ -34,55 +34,159 @@ serve(async (req) => {
 
     // Calcular fecha del mes actual
     const fechaReporte = new Date();
-    const inicioMes = new Date(fechaReporte.getFullYear(), fechaReporte.getMonth(), 1);
-    const mesReferencia = inicioMes.toISOString().split('T')[0];
+    const year = fechaReporte.getFullYear();
+    const month = fechaReporte.getMonth();
+    const mesReferencia = new Date(year, month, 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(year, month + 1, 0);
+    const diasRestantes = Math.max(0, Math.ceil((ultimoDia.getTime() - fechaReporte.getTime()) / (1000 * 60 * 60 * 24)));
 
     console.log(`Calculando bonificaciones para creator ${creatorId}, mes ${mesReferencia}`);
 
-    // Ejecutar función SQL para calcular bonificaciones del mes
-    const { error: calcError } = await supabaseClient.rpc('calcular_bonificaciones_mes', {
-      mes_referencia: mesReferencia
-    });
-
-    if (calcError) {
-      console.error('Error en calcular_bonificaciones_mes:', calcError);
-      return new Response(
-        JSON.stringify({ error: "Error al calcular bonificaciones" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Obtener el resultado calculado
-    const { data: bonificacion, error: fetchError } = await supabaseClient
-      .from('creator_bonificaciones')
-      .select('*')
-      .eq('creator_id', creatorId)
-      .eq('mes_referencia', mesReferencia)
+    // Obtener creador
+    const { data: creator, error: creatorError } = await supabaseClient
+      .from('creators')
+      .select('id, nombre, dias_en_agencia')
+      .eq('id', creatorId)
       .single();
 
-    if (fetchError || !bonificacion) {
-      console.error('Error obteniendo bonificación:', fetchError);
+    if (creatorError || !creator) {
+      console.error('Error obteniendo creador:', creatorError);
       return new Response(
-        JSON.stringify({ error: "No se encontraron datos para este creador" }),
+        JSON.stringify({ error: "Creador no encontrado" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Obtener nombre del creador para los mensajes
-    const { data: creator } = await supabaseClient
-      .from('creators')
-      .select('nombre')
-      .eq('id', creatorId)
-      .single();
+    // Obtener datos de creator_live_daily del mes
+    const primerDia = new Date(year, month, 1);
+    const { data: liveData, error: liveError } = await supabaseClient
+      .from('creator_live_daily')
+      .select('fecha, horas, diamantes')
+      .eq('creator_id', creatorId)
+      .gte('fecha', primerDia.toISOString().split('T')[0])
+      .lte('fecha', ultimoDia.toISOString().split('T')[0]);
 
+    if (liveError) {
+      console.error('Error obteniendo datos live:', liveError);
+      return new Response(
+        JSON.stringify({ error: "Error obteniendo datos live" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Generar mensaje para creador
-    const mensajeCreador = generarMensajeCreador(bonificacion, creator?.nombre || 'Creador');
+    // Calcular métricas
+    const dias_live_mes = liveData?.filter(d => (d.horas || 0) > 0).length || 0;
+    const horas_live_mes = liveData?.reduce((sum, d) => sum + (d.horas || 0), 0) || 0;
+    const diam_live_mes = liveData?.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
+
+    // Calcular hitos
+    const hito_12d_40h = dias_live_mes >= 12 && horas_live_mes >= 40;
+    const hito_20d_60h = dias_live_mes >= 20 && horas_live_mes >= 60;
+    const hito_22d_80h = dias_live_mes >= 22 && horas_live_mes >= 80;
+
+    // Calcular graduaciones
+    const grad_50k = diam_live_mes >= 50000;
+    const grad_100k = diam_live_mes >= 100000;
+    const grad_300k = diam_live_mes >= 300000;
+    const grad_500k = diam_live_mes >= 500000;
+    const grad_1m = diam_live_mes >= 1000000;
+
+    // Días extra y bono
+    const dias_extra_22 = Math.max(0, dias_live_mes - 22);
+    const bono_extra_usd = dias_extra_22 * 3;
+
+    // Determinar próximo objetivo
+    let proximo_objetivo_tipo = 'graduacion';
+    let proximo_objetivo_valor = '50000';
+    let faltante = 0;
+
+    if (!grad_50k) {
+      proximo_objetivo_valor = '50000';
+      faltante = 50000 - diam_live_mes;
+    } else if (!grad_100k) {
+      proximo_objetivo_valor = '100000';
+      faltante = 100000 - diam_live_mes;
+    } else if (!grad_300k) {
+      proximo_objetivo_valor = '300000';
+      faltante = 300000 - diam_live_mes;
+    } else if (!grad_500k) {
+      proximo_objetivo_valor = '500000';
+      faltante = 500000 - diam_live_mes;
+    } else if (!grad_1m) {
+      proximo_objetivo_valor = '1000000';
+      faltante = 1000000 - diam_live_mes;
+    } else {
+      proximo_objetivo_tipo = 'mantenimiento';
+      proximo_objetivo_valor = 'Mantener nivel';
+      faltante = 0;
+    }
+
+    // Calcular requerimientos diarios
+    const req_diam_por_dia = diasRestantes > 0 ? Math.ceil(faltante / diasRestantes) : 0;
     
-    // Generar mensaje para manager
-    const mensajeManager = generarMensajeManager(bonificacion, creator?.nombre || 'Creador');
+    // Horas requeridas
+    let horas_faltantes = 0;
+    if (!hito_22d_80h) {
+      horas_faltantes = Math.max(0, 80 - horas_live_mes);
+    } else if (!hito_20d_60h) {
+      horas_faltantes = Math.max(0, 60 - horas_live_mes);
+    } else if (!hito_12d_40h) {
+      horas_faltantes = Math.max(0, 40 - horas_live_mes);
+    }
+    
+    const req_horas_por_dia = diasRestantes > 0 ? horas_faltantes / diasRestantes : 0;
 
-    console.log(`Bonificaciones calculadas exitosamente para ${creator?.nombre}`);
+    // Prioridad 300k
+    const es_prioridad_300k = (creator.dias_en_agencia || 0) < 90 && diam_live_mes < 300000;
+
+    // Cerca de objetivo
+    const cerca_de_objetivo = faltante > 0 && faltante < (parseInt(proximo_objetivo_valor) * 0.15);
+
+    const bonificacion = {
+      creator_id: creatorId,
+      mes_referencia: mesReferencia,
+      dias_live_mes,
+      horas_live_mes,
+      diam_live_mes,
+      dias_restantes: diasRestantes,
+      hito_12d_40h,
+      hito_20d_60h,
+      hito_22d_80h,
+      grad_50k,
+      grad_100k,
+      grad_300k,
+      grad_500k,
+      grad_1m,
+      dias_extra_22,
+      bono_extra_usd,
+      req_diam_por_dia,
+      req_horas_por_dia,
+      proximo_objetivo_tipo,
+      proximo_objetivo_valor,
+      es_prioridad_300k,
+      cerca_de_objetivo
+    };
+
+    // Upsert
+    const { error: upsertError } = await supabaseClient
+      .from('creator_bonificaciones')
+      .upsert([bonificacion], {
+        onConflict: 'creator_id,mes_referencia'
+      });
+
+    if (upsertError) {
+      console.error('Error en upsert:', upsertError);
+      return new Response(
+        JSON.stringify({ error: "Error al guardar bonificación" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generar mensajes
+    const mensajeCreador = generarMensajeCreador(bonificacion, creator.nombre);
+    const mensajeManager = generarMensajeManager(bonificacion, creator.nombre);
+
+    console.log(`✅ Bonificaciones calculadas para ${creator.nombre}`);
 
     return new Response(
       JSON.stringify({

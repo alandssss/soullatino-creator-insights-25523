@@ -210,10 +210,18 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
     let recommendation = '';
 
     // Try Gemini AI service with API key if available
+    let manager_note = '';
+    let prediccion = {
+      faltan_diamantes: needed_diamonds,
+      faltan_horas: needed_hours,
+      probabilidad_de_logro: 0,
+      recomendacion_accion: ''
+    };
+
     if (geminiApiKey) {
       try {
-        console.log('Llamando a Gemini API...');
-        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        console.log('Llamando a Gemini API con gemini-2.5-flash...');
+        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -225,7 +233,6 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
               }]
             }],
             generationConfig: {
-              temperature: 0.7,
               maxOutputTokens: 500,
               topP: 0.95,
               topK: 40
@@ -237,51 +244,56 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
           const aiData = await aiResponse.json();
           recommendation = aiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
           console.log('Recomendación generada por Gemini:', recommendation);
+          
+          // Generar nota para manager
+          manager_note = `${creator.nombre} - ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()} 💎. Ritmo: ${(diamonds_so_far / (valid_days_so_far || 1)).toFixed(0)} diam/día. ${cercaDeHito ? '¡CERCA DE HITO!' : superoGraduacion ? '¡GRADUÓ!' : diasSinTransmitir > 3 ? '⚠️ INACTIVO' : 'En track'}`;
+          
+          // Calcular probabilidad de logro
+          const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
+          const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
+          prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
+          prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
         } else {
           const errorText = await aiResponse.text();
-          console.error('Error en Gemini API:', errorText);
+          console.error('Error en Gemini API (intentando fallback a flash-latest):', errorText);
+          
+          // Fallback to gemini-1.5-flash-latest
+          const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+              generationConfig: { maxOutputTokens: 500, topP: 0.95, topK: 40 }
+            })
+          });
+          
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            recommendation = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            console.log('Recomendación generada por Gemini (fallback):', recommendation);
+          }
         }
       } catch (error) {
         console.error('Error llamando a Gemini:', error);
       }
     } else {
-      console.log('GEMINI_API_KEY no configurada, usando fallback');
+      console.log('GEMINI_API_KEY no configurada');
     }
 
-    // Fallback si no hay IA o falló (siguiendo reglas del usuario)
+    // Fallback técnico si IA falló completamente
     if (!recommendation) {
-      const diasSinTransmitir = currentDay - valid_days_so_far;
-      const cercaDeHito = valid_days_so_far >= target_valid_days * 0.85;
-      
-      // REGLA 6: Sin datos por varios días
-      if (diamonds_so_far === 0 && hours_so_far === 0 && currentDay > 5) {
-        recommendation = `${creator.nombre}, sabemos que a veces las cosas se complican 💙. El equipo SoulLatino está aquí para apoyarte. ¿Podemos ayudarte a planear tus próximos lives? Necesitamos verte brillar ✨`;
-      }
-      // REGLA 2: >3 días sin transmitir
-      else if (diasSinTransmitir > 3) {
-        recommendation = `⚠️ ${creator.nombre}, llevas varios días sin transmitir. Para mantener tu bonificación, necesitas ${required_diamonds_per_day.toLocaleString()} diamantes/día y ${hoy_horas_sugeridas}h/día. ¿Confirmamos tu live de hoy y ${pko_sugeridos_hoy} PKO de 5 min? 💪`;
-      }
-      // REGLA 5: Superó graduación
-      else if (needed_diamonds <= 0) {
-        recommendation = `🎉 ¡FELICIDADES ${creator.nombre.toUpperCase()}! Alcanzaste tu graduación de ${target_diamonds.toLocaleString()} diamantes 💎✨ Sigue así, tu próxima meta es aún más grande. ¡Eres imparable! 🔥`;
-      }
-      // REGLA 3: ≥22 días (bono)
-      else if (valid_days_so_far >= 22) {
-        const diasExtra = valid_days_so_far - 22;
-        recommendation = `🎉 ${creator.nombre}, ¡FELICIDADES por tu constancia! Llevas ${valid_days_so_far} días → Generas $${diasExtra * 3} USD extra 💵 Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO. ¡Sigue así! 🔥`;
-      }
-      // REGLA 1: Cerca de hito
-      else if (cercaDeHito) {
-        recommendation = `🔥 ${creator.nombre}, ¡ESTÁS MUY CERCA! Solo te faltan ${needed_valid_days} día(s) y ${needed_hours.toFixed(1)}h para tu hito 🎯 ¿Confirmamos ${hoy_horas_sugeridas}h hoy y ${pko_sugeridos_hoy} PKO? ¡No te detengas! 💪✨`;
-      }
-      // REGLA 4: Nuevo enfoque 300K
-      else if (diamonds_so_far < 300000) {
-        recommendation = `🔵 ${creator.nombre}, tu prioridad es 300K diamantes 💎 Llevas ${diamonds_so_far.toLocaleString()} → Faltan ${needed_diamonds.toLocaleString()} (${required_diamonds_per_day.toLocaleString()}/día). Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO. ¡Vamos! 🚀`;
-      }
-      // Estándar
-      else {
-        recommendation = `🔥 ${creator.nombre}, buen avance. Llevas ${valid_days_so_far}d y ${hours_so_far.toFixed(1)}h. Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO de 5 min. Faltan ${needed_diamonds.toLocaleString()} diamantes. ¡Tú puedes! 💪`;
-      }
+      console.error('⚠️ Gemini API no disponible - usando fallback técnico');
+      recommendation = `ERROR DE IA: No se pudo generar recomendación personalizada. Contactar soporte técnico.`;
+      manager_note = `Sistema de IA no disponible para ${creator.nombre}. Revisar configuración GEMINI_API_KEY.`;
+    }
+    
+    // Calcular predicción si no se hizo antes
+    if (prediccion.probabilidad_de_logro === 0) {
+      const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
+      const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
+      prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
+      prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
+      manager_note = `${creator.nombre} - ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()} 💎`;
     }
 
     // 4. Guardar la recomendación en la base de datos
@@ -304,6 +316,8 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
     return new Response(
       JSON.stringify({ 
         recommendation,
+        manager_note,
+        prediccion,
         milestone: tipo,
         milestoneDescription: `${dias_factibles ? 'Factible' : 'Difícil'} - ${semaforo_horas}`,
         metrics: {
