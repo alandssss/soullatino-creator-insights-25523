@@ -153,61 +153,59 @@ serve(async (req) => {
       pko_sugeridos_hoy = 20; // Bajo en diamantes
     }
 
-    // 10. Generar retroalimentación con formato de 4 líneas
-    const systemPrompt = `Eres un asesor de TikTok LIVE que genera retroalimentaciones cortas y accionables.
+    // 10. Generar retroalimentación según reglas del usuario
+    const systemPrompt = `Eres un asesor empático del equipo SoulLatino que genera retroalimentación personalizada para creadores de TikTok LIVE.
 
-REGLAS ESTRICTAS:
-1. Diamantes = graduaciones (50K, 100K, 300K, 500K, 1M)
-2. Horas y días = hitos (Hito 1: 12d+40h, Hito 3: 20d+60h, Hito 4: 22d+80h)
-3. SIEMPRE incluir PKO (nunca 0)
-4. Máximo 4 líneas
-5. Sin tecnicismos, sin porcentajes visibles, sin markdown
-6. Lenguaje simple y directo
+REGLAS OBLIGATORIAS (prioriza en este orden):
 
-FORMATO OBLIGATORIO (4 líneas):
+1. Si está a <15% de alcanzar un hito → Mensaje motivacional con llamado a la acción urgente
+2. Si lleva >3 días sin transmitir → Alerta de riesgo de baja, sugiere meta mínima diaria
+3. Si cumple ≥22 días → Menciona que genera $3 USD/día extra por consistencia
+4. Si es nuevo (<90 días) y no llegó a 300K → Enfoca todo en alcanzar esa meta
+5. Si superó graduación (50K, 100K, 300K, etc.) → Felicita con emojis 🎉 y muestra próxima meta
+6. Si datos de diamantes/horas = 0 por varios días → Recordatorio empático, NO regaño
+7. Usa lenguaje humano, cálido, que denote acompañamiento
 
-LÍNEA 1 - Estado actual en palabras simples:
-Ejemplo: "Apenas llevas X días y Y horas, pero todavía alcanzas el hito."
+GRADUACIONES: 50K, 100K, 300K, 500K, 1M diamantes
+HITOS: Tipo B (12d+40h), Tipo A (20d+60h), Tipo S (22d+80h)
 
-LÍNEA 2 - Qué debe hacer hoy:
-Ejemplo: "Hoy transmite Z horas y marca este día como válido."
+FORMATO SALIDA (2-3 líneas máximo):
+- Línea 1: Contexto emocional o logro
+- Línea 2: Acción específica para HOY
+- Línea 3 (opcional): Meta y probabilidad de logro
 
-LÍNEA 3 - Diamantes:
-Ejemplo: "Te faltan N diamantes para tu graduación, todavía es alcanzable."
+TONO: Motivacional, humano, directo, positivo. Usa emojis con moderación.
+NUNCA uses markdown, NUNCA digas "0 PKO".`;
 
-LÍNEA 4 - PKO obligatorio:
-Ejemplo: "Incluye al menos 5 PKO de 5 minutos hoy para avanzar en diamantes."
-
-EJEMPLO COMPLETO:
-"Llevas poco avance pero aún estás a tiempo. Hoy transmite 3 horas y asegúrate de contar este día como válido. Te faltan pocos diamantes para tu meta. Haz mínimo 10 PKO de 5 minutos hoy para no atrasarte."
-
-NUNCA uses markdown, nunca digas "0 PKO", siempre da un número de PKO.`;
+    // Calcular contexto para reglas
+    const diasSinTransmitir = currentDay - valid_days_so_far;
+    const porcentajeHito = (valid_days_so_far / target_valid_days) * 100;
+    const cercaDeHito = porcentajeHito >= 85;
+    const superoGraduacion = diamonds_so_far >= target_diamonds;
+    const esNuevo = true; // Asumir nuevo si no hay dato de dias_en_agencia
 
     const userPrompt = `CREADOR: ${creator.nombre}
-HOY: día ${currentDay} del mes ${currentMonth}
+HOY: día ${currentDay} del mes ${currentMonth}, quedan ${remaining_calendar_days} días
 
-PROGRESO:
-- Días válidos: ${valid_days_so_far}/${target_valid_days}
-- Horas: ${hours_so_far.toFixed(1)}/${target_hours}
+SITUACIÓN ACTUAL:
+- Días en vivo: ${valid_days_so_far}/${target_valid_days} (${porcentajeHito.toFixed(0)}%)
+- Horas acumuladas: ${hours_so_far.toFixed(1)}/${target_hours}h
 - Diamantes: ${diamonds_so_far.toLocaleString()}/${target_diamonds.toLocaleString()}
+- Días sin transmitir consecutivos: ${diasSinTransmitir}
 
-RESTANTE:
-- Días calendario: ${remaining_calendar_days}
-- Días válidos necesarios: ${needed_valid_days}
-- Horas necesarias: ${needed_hours.toFixed(1)}
-- Diamantes necesarios: ${needed_diamonds.toLocaleString()}
+ANÁLISIS:
+- ¿Cerca de hito? ${cercaDeHito ? 'SÍ (<15% restante)' : 'No'}
+- ¿Superó graduación? ${superoGraduacion ? 'SÍ' : 'No'}
+- ¿Es nuevo? ${esNuevo && diamonds_so_far < 300000 ? 'SÍ (enfoque en 300K)' : 'No'}
+- ¿Sin actividad? ${diamonds_so_far === 0 && hours_so_far === 0 ? 'SÍ (varios días)' : 'No'}
+- Días ≥22: ${valid_days_so_far >= 22 ? 'SÍ (bono $' + ((valid_days_so_far - 22) * 3) + ')' : 'No'}
 
-FACTIBILIDAD:
-- Días: ${dias_factibles_texto}
-- Horas por día: ${required_hours_per_day.toFixed(1)} (${semaforo_horas})
-- Diamantes por día: ${required_diamonds_per_day.toLocaleString()}
+NECESITA HOY:
+- Horas: ${hoy_horas_sugeridas}h
+- PKO: ${pko_sugeridos_hoy} (5 min c/u)
+- Diamantes para estar en track: ${required_diamonds_per_day.toLocaleString()}
 
-SUGERENCIAS HOY:
-- Horas: ${hoy_horas_sugeridas}
-- Días válidos: ${hoy_dias_validos_sugeridos}
-- PKO: ${pko_sugeridos_hoy}
-
-Genera la retro en 4 oraciones exactas según el formato.`;
+Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más relevante.`;
 
     let recommendation = '';
 
@@ -250,21 +248,40 @@ Genera la retro en 4 oraciones exactas según el formato.`;
       console.log('GEMINI_API_KEY no configurada, usando fallback');
     }
 
-    // Fallback si no hay IA o falló
+    // Fallback si no hay IA o falló (siguiendo reglas del usuario)
     if (!recommendation) {
-      const estado = valid_days_so_far < target_valid_days * 0.5 
-        ? 'Llevas poco avance pero aún estás a tiempo'
-        : dias_factibles 
-          ? 'Vas bien encaminado y todavía alcanzas tu hito'
-          : 'El tiempo se agota pero aún puedes ajustar tu meta';
+      const diasSinTransmitir = currentDay - valid_days_so_far;
+      const cercaDeHito = valid_days_so_far >= target_valid_days * 0.85;
       
-      const diamantes_texto = needed_diamonds > target_diamonds * 0.7
-        ? 'te faltan muchos diamantes para tu graduación'
-        : needed_diamonds > 0
-          ? 'te faltan pocos diamantes para tu meta'
-          : 'ya alcanzaste tu graduación de diamantes';
-      
-      recommendation = `${estado}. Hoy transmite ${hoy_horas_sugeridas} horas y asegúrate de contar este día como válido. ${diamantes_texto.charAt(0).toUpperCase() + diamantes_texto.slice(1)}. Haz mínimo ${pko_sugeridos_hoy} PKO de 5 minutos hoy para ${needed_diamonds > 0 ? 'no atrasarte' : 'mantener el ritmo'}.`;
+      // REGLA 6: Sin datos por varios días
+      if (diamonds_so_far === 0 && hours_so_far === 0 && currentDay > 5) {
+        recommendation = `${creator.nombre}, sabemos que a veces las cosas se complican 💙. El equipo SoulLatino está aquí para apoyarte. ¿Podemos ayudarte a planear tus próximos lives? Necesitamos verte brillar ✨`;
+      }
+      // REGLA 2: >3 días sin transmitir
+      else if (diasSinTransmitir > 3) {
+        recommendation = `⚠️ ${creator.nombre}, llevas varios días sin transmitir. Para mantener tu bonificación, necesitas ${required_diamonds_per_day.toLocaleString()} diamantes/día y ${hoy_horas_sugeridas}h/día. ¿Confirmamos tu live de hoy y ${pko_sugeridos_hoy} PKO de 5 min? 💪`;
+      }
+      // REGLA 5: Superó graduación
+      else if (needed_diamonds <= 0) {
+        recommendation = `🎉 ¡FELICIDADES ${creator.nombre.toUpperCase()}! Alcanzaste tu graduación de ${target_diamonds.toLocaleString()} diamantes 💎✨ Sigue así, tu próxima meta es aún más grande. ¡Eres imparable! 🔥`;
+      }
+      // REGLA 3: ≥22 días (bono)
+      else if (valid_days_so_far >= 22) {
+        const diasExtra = valid_days_so_far - 22;
+        recommendation = `🎉 ${creator.nombre}, ¡FELICIDADES por tu constancia! Llevas ${valid_days_so_far} días → Generas $${diasExtra * 3} USD extra 💵 Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO. ¡Sigue así! 🔥`;
+      }
+      // REGLA 1: Cerca de hito
+      else if (cercaDeHito) {
+        recommendation = `🔥 ${creator.nombre}, ¡ESTÁS MUY CERCA! Solo te faltan ${needed_valid_days} día(s) y ${needed_hours.toFixed(1)}h para tu hito 🎯 ¿Confirmamos ${hoy_horas_sugeridas}h hoy y ${pko_sugeridos_hoy} PKO? ¡No te detengas! 💪✨`;
+      }
+      // REGLA 4: Nuevo enfoque 300K
+      else if (diamonds_so_far < 300000) {
+        recommendation = `🔵 ${creator.nombre}, tu prioridad es 300K diamantes 💎 Llevas ${diamonds_so_far.toLocaleString()} → Faltan ${needed_diamonds.toLocaleString()} (${required_diamonds_per_day.toLocaleString()}/día). Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO. ¡Vamos! 🚀`;
+      }
+      // Estándar
+      else {
+        recommendation = `🔥 ${creator.nombre}, buen avance. Llevas ${valid_days_so_far}d y ${hours_so_far.toFixed(1)}h. Hoy: ${hoy_horas_sugeridas}h y ${pko_sugeridos_hoy} PKO de 5 min. Faltan ${needed_diamonds.toLocaleString()} diamantes. ¡Tú puedes! 💪`;
+      }
     }
 
     // 4. Guardar la recomendación en la base de datos

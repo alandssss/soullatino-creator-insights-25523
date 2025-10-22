@@ -90,18 +90,54 @@ function msgCreador(params: {
   diasRestantes: number;
   prioridad300k: boolean;
   bonoExtraUSD: number; diasExtra: number;
+  diasTranscurridos: number;
+  diamActual: number;
 }) {
   const n = params.nombre ?? "creador";
-  const hitoLine = `🎯 Hito activo: ${params.hito.d} días / ${params.hito.h} horas.\nLlevas ${params.dias_live_mes}d y ${params.horas_live_mes.toFixed(1)}h; faltan ${params.faltan_dias}d y ${params.faltan_horas.toFixed(1)}h.`;
-  const gradLine = params.gradTarget
-    ? (params.faltanDiam! <= 0
-        ? `💎 Meta de ${params.gradTarget.toLocaleString()} diamantes ✔️`
-        : `💎 Para ${params.gradTarget.toLocaleString()} faltan ${params.faltanDiam!.toLocaleString()} (≈ ${params.reqDiamDia ?? "—"}/día, quedan ${params.diasRestantes}).`)
-    : `💎 Ya superaste 1M este mes.`;
-  const priLine = params.prioridad300k ? `\n🔵 Prioridad por ser nuevo: apuntemos a 300K este mes.` : ``;
-  const bonoLine = params.diasExtra > 0 ? `\n💵 Bono constancia: ${params.diasExtra} días >22 ⇒ +$${params.bonoExtraUSD}.` : ``;
+  
+  // REGLA 2: Alerta si >3 días sin transmitir
+  const diasSinTransmitir = params.diasTranscurridos - params.dias_live_mes;
+  if (diasSinTransmitir > 3 && params.dias_live_mes < 5) {
+    return `⚠️ ${n}, llevas varios días sin transmitir. Para mantener tu bonificación, necesitas transmitir ${params.reqDiamDia?.toFixed(0) ?? 5000} diamantes/día y ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h/día. ¿Confirmamos tu live de hoy y 5 PKO de 5 min? 💪`;
+  }
 
-  return `🔥 ${n}, buen avance: sigamos con el hito.\n${hitoLine}\n${gradLine}${priLine}${bonoLine}\n\n✅ Hoy: 2h en vivo + marcar día válido, 10 PKO × 5 min, checklist de luz/audio/normas. ¡Tú puedes! 💪`;
+  // REGLA 6: Datos en cero por varios días (recordatorio empático)
+  if (params.diamActual === 0 && params.horas_live_mes === 0 && params.diasTranscurridos > 5) {
+    return `${n}, sabemos que a veces las cosas se complican 💙. El equipo SoulLatino está aquí para apoyarte. ¿Podemos ayudarte a planear tus próximos lives? Necesitamos verte brillar ✨`;
+  }
+
+  // REGLA 5: Superó una graduación (felicitación)
+  if (params.faltanDiam !== null && params.faltanDiam <= 0 && params.gradTarget) {
+    return `🎉🎊 ¡FELICIDADES ${n.toUpperCase()}! 🎊🎉\n¡Alcanzaste tu graduación de ${params.gradTarget.toLocaleString()} diamantes! 💎✨\nSigue así, tu próxima meta es aún más grande. ¡Eres imparable! 🔥🚀`;
+  }
+
+  // REGLA 4: Nuevo (<90 días) y no ha llegado a 300K
+  if (params.prioridad300k) {
+    const porcentaje = params.gradTarget ? ((params.diamActual / params.gradTarget) * 100).toFixed(0) : 0;
+    return `🔵 ${n}, como eres nuevo en la agencia, tu prioridad es alcanzar 300K diamantes este mes 💎\nLlevas ${params.diamActual.toLocaleString()} (${porcentaje}%). Faltan ${params.faltanDiam?.toLocaleString()} → ${params.reqDiamDia?.toFixed(0)}/día en ${params.diasRestantes} días.\n¿Confirmamos ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h hoy y 10 PKO de 5 min? ¡Vamos por esos 300K! 🚀`;
+  }
+
+  // REGLA 1: Cerca de un hito (<15%)
+  const progresoHitoDias = (params.dias_live_mes / params.hito.d) * 100;
+  const progresoHitoHoras = (params.horas_live_mes / params.hito.h) * 100;
+  const cercaDeHito = (params.faltan_dias <= Math.ceil(params.hito.d * 0.15)) || (params.faltan_horas <= params.hito.h * 0.15);
+  
+  if (cercaDeHito && params.faltan_dias > 0) {
+    return `🔥 ${n}, ¡ESTÁS MUY CERCA! 🔥\nSolo te faltan ${params.faltan_dias} día(s) y ${params.faltan_horas.toFixed(1)}h para tu hito de ${params.hito.d}d/${params.hito.h}h 🎯\n¿Confirmamos ${Math.ceil(params.faltan_horas / Math.max(1, params.diasRestantes))}h hoy y 10 PKO? ¡No te detengas ahora! 💪✨`;
+  }
+
+  // REGLA 3: Ya cumplió ≥22 días (bono constancia)
+  if (params.diasExtra > 0) {
+    return `🎉 ${n}, ¡FELICIDADES por tu constancia! 🎉\nLlevas ${params.dias_live_mes} días en vivo → Generas $${params.bonoExtraUSD} USD extra por consistencia 💵\nSigue así: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h/día y 10 PKO. ¡Cada día cuenta! 🔥`;
+  }
+
+  // Mensaje estándar motivacional
+  const hitoLine = `🎯 Hito ${params.hito.d}d/${params.hito.h}h: llevas ${params.dias_live_mes}d y ${params.horas_live_mes.toFixed(1)}h`;
+  const gradLine = params.gradTarget && params.faltanDiam && params.faltanDiam > 0
+    ? `💎 Para ${params.gradTarget.toLocaleString()}: faltan ${params.faltanDiam.toLocaleString()} (${params.reqDiamDia?.toFixed(0)}/día)`
+    : `💎 ¡Superaste 1M este mes!`;
+
+  return `🔥 ${n}, excelente avance\n${hitoLine}\n${gradLine}\n\n✅ Hoy: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h en vivo + 10 PKO × 5 min. ¡Tú puedes! 💪`;
 }
 
 function msgManager(params: {
@@ -219,6 +255,8 @@ serve(async (req) => {
       diasRestantes,
       prioridad300k: Boolean(esNuevo && gradTargetRaw === 300_000),
       bonoExtraUSD, diasExtra,
+      diasTranscurridos,
+      diamActual: agg.diam_live_mes,
     });
 
     const para_manager = msgManager({
