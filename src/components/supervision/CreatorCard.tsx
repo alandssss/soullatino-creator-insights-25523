@@ -15,7 +15,7 @@ interface SupervisionLog {
   en_vivo: boolean;
   en_batalla: boolean;
   buena_iluminacion: boolean;
-  cumple_normas: boolean;
+  cumple_normas?: boolean;
   audio_claro: boolean;
   set_profesional: boolean;
   score: number;

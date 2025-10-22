@@ -42,7 +42,7 @@ const FeedbackHistory = () => {
       <WorkTimeTracker userEmail={user?.email} />
       
       {/* Hitos de la Agencia - Panel funcional con filtros */}
-      <MilestonePanel creators={[]} />
+      <MilestonePanel />
       
       <Card className="glass-card border-border/50">
         <CardHeader>

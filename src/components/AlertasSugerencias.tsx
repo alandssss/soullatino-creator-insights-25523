@@ -98,14 +98,66 @@ export default function AlertasSugerencias() {
     setUploadResult(null);
     
     try {
+      console.log('[UPLOAD] Nombre:', file.name, 'Bytes:', file.size);
+      
+      // Leer y validar el archivo antes de enviarlo
+      const XLSX = await import('xlsx');
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheet = wb.SheetNames[0];
+      
+      if (!sheet) {
+        throw new Error('El archivo no contiene hojas de cálculo');
+      }
+      
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { defval: '' });
+      console.log('[UPLOAD] Filas detectadas:', rows.length);
+      
+      if (!rows.length) {
+        toast.error('No se detectaron filas. Revisa que la hoja tenga encabezados en la fila 1.');
+        return;
+      }
+      
+      // Validar encabezados
+      const headers = Object.keys((rows[0] as any) || {});
+      console.log('[UPLOAD] Headers detectados:', headers);
+      
+      const requiredColumns = ['Nombre', 'Usuario', 'Username', 'name', 'creator'];
+      const hasRequiredColumn = requiredColumns.some(col => 
+        headers.some(h => h.toLowerCase().includes(col.toLowerCase()))
+      );
+      
+      if (!hasRequiredColumn) {
+        toast.error(`Falta una columna identificadora de creadores. Encabezados: ${headers.join(', ')}`);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('[UPLOAD] Enviando al backend...');
       const { data, error } = await supabase.functions.invoke('upload-excel-recommendations', {
         body: formData,
       });
 
-      if (error) throw error;
+      console.log('[UPLOAD] Respuesta del backend:', { data, error });
+
+      if (error) {
+        console.error('[UPLOAD] Error del backend:', error);
+        
+        // Mensajes específicos para errores comunes
+        if (error.message?.includes('413') || error.message?.includes('too large')) {
+          throw new Error('El archivo es demasiado grande. Máximo 15MB.');
+        }
+        if (error.message?.includes('429')) {
+          throw new Error('Demasiadas peticiones. Espera unos segundos e intenta de nuevo.');
+        }
+        if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+          throw new Error('No autorizado. Inicia sesión nuevamente.');
+        }
+        
+        throw error;
+      }
 
       if (data?.success) {
         setUploadResult({
@@ -120,14 +172,16 @@ export default function AlertasSugerencias() {
           setUploaderOpen(false);
           setUploadResult(null);
         }, 2000);
+      } else {
+        throw new Error(data?.error || 'Respuesta inesperada del servidor');
       }
     } catch (error: any) {
-      console.error('Error uploading file:', error);
+      console.error('[UPLOAD] Error:', error);
       setUploadResult({
         success: false,
-        error: error.message,
+        error: error.message || 'Error desconocido',
       });
-      toast.error('Error al procesar archivo: ' + error.message);
+      toast.error('Error al procesar archivo: ' + (error.message || 'Error desconocido'));
     } finally {
       setUploading(false);
     }

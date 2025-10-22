@@ -132,7 +132,7 @@ const FeedbackPending = () => {
       <WorkTimeTracker userEmail={user?.email} />
       
       {/* Hitos de la Agencia - Panel funcional con filtros */}
-      <MilestonePanel creators={creators} />
+      <MilestonePanel />
       
       <LowActivityPanel />
       

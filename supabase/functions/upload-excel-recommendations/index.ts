@@ -194,7 +194,11 @@ serve(async (req) => {
         summary
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, must-revalidate'
+        },
       }
     );
 
@@ -204,7 +208,11 @@ serve(async (req) => {
       JSON.stringify({ error: error?.message || 'Unknown error' }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, must-revalidate'
+        },
       }
     );
   }

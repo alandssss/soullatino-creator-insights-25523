@@ -97,9 +97,9 @@ export class InteractionService {
 
     return data
       ? {
-          advice: data.descripcion,
-          milestone: data.tipo || "",
-          title: data.titulo,
+          advice: (data as any).descripcion || "",
+          milestone: (data as any).tipo || "",
+          title: (data as any).titulo || "",
         }
       : null;
   }

@@ -27,25 +27,22 @@ interface Creator {
   nombre: string;
   telefono?: string;
   dias_en_agencia?: number;
-  diam_live_mes?: number;
 }
 
 interface SupervisionLog {
   id: string;
   creator_id: string;
-  observer_name?: string | null;
   fecha_evento: string;
   en_vivo: boolean;
   en_batalla: boolean;
   buena_iluminacion: boolean;
-  cumple_normas: boolean;
+  cumple_normas?: boolean;
   audio_claro: boolean;
   set_profesional: boolean;
   score: number;
   riesgo: string;
-  reporte?: string | null;
-  severidad?: string | null;
-  accion_sugerida?: string | null;
+  notas?: string | null;
+  created_at?: string;
 }
 
 export default function SupervisionLive() {
@@ -95,7 +92,7 @@ export default function SupervisionLive() {
       // Cargar creadores
       const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
-        .select('id, nombre, telefono, dias_en_agencia, diam_live_mes')
+        .select('id, nombre, telefono, dias_en_agencia')
         .order('nombre');
 
       if (creatorsError) throw creatorsError;
@@ -110,7 +107,8 @@ export default function SupervisionLive() {
         .order('fecha_evento', { ascending: false });
 
       if (logsError) throw logsError;
-      setLogs((logsData || []) as SupervisionLog[]);
+      // Asegurar que cumple_normas tenga un valor por defecto
+      setLogs((logsData || []).map((log: any) => ({ ...log, cumple_normas: log.cumple_normas ?? true })));
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -171,17 +169,15 @@ export default function SupervisionLive() {
       return {
         'Creador': creator?.nombre || log.creator_id,
         'Fecha/Hora': new Date(log.fecha_evento).toLocaleString(),
-        'Supervisor': log.observer_name || '',
         'En Vivo': log.en_vivo ? 'Sí' : 'No',
         'En Batalla': log.en_batalla ? 'Sí' : 'No',
         'Buena Iluminación': log.buena_iluminacion ? 'Sí' : 'No',
-        'Cumple Normas': log.cumple_normas ? 'Sí' : 'No',
+        'Cumple Normas': log.cumple_normas !== false ? 'Sí' : 'No',
         'Audio Claro': log.audio_claro ? 'Sí' : 'No',
         'Set Profesional': log.set_profesional ? 'Sí' : 'No',
         'Score': log.score,
         'Riesgo': log.riesgo,
-        'Reporte': log.reporte || '',
-        'Severidad': log.severidad || '',
+        'Notas': log.notas || '',
       };
     });
 
