@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 import AppLayout from "./layouts/AppLayout";
 import Login from "./pages/Login";
@@ -26,16 +25,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         {mounted && (
-          <TooltipProvider delayDuration={200}>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/*" element={<AppLayout />} />
-              </Routes>
-              {mounted && <Toaster />}
-              {mounted && <Sonner />}
-            </BrowserRouter>
-          </TooltipProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={<AppLayout />} />
+            </Routes>
+            {mounted && <Toaster />}
+            {mounted && <Sonner />}
+          </BrowserRouter>
         )}
       </ThemeProvider>
     </QueryClientProvider>
