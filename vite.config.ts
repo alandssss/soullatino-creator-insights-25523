@@ -11,10 +11,10 @@ export default defineConfig(({ mode }) => ({
   clearScreen: false,
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@radix-ui/react-tooltip": path.resolve(__dirname, "./src/shims/radix-tooltip-stub.tsx"),
-    },
+    alias: [
+      { find: /^@radix-ui\/react-tooltip(?:\/.*)?$/, replacement: path.resolve(__dirname, "./src/shims/radix-tooltip-stub.tsx") },
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+    ],
     dedupe: [
       'react',
       'react-dom',
@@ -23,12 +23,14 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tooltip',
     ],
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query'],
     exclude: ['@radix-ui/react-tooltip'],
-    force: mode === 'development',
+    force: true,
+    cacheDir: 'node_modules/.vite-radixfix',
   },
   build: {
     commonjsOptions: {

@@ -1,6 +1,6 @@
-const CACHE_NAME = 'soullatino-v3';
+const CACHE_NAME = 'soullatino-v4';
 const RUNTIME_CACHE = 'soullatino-runtime';
-const STATIC_CACHE = 'soullatino-static-v3';
+const STATIC_CACHE = 'soullatino-static-v4';
 
 const urlsToCache = [
   '/',
