@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@radix-ui/react-tooltip": path.resolve(__dirname, "./src/shims/radix-tooltip-stub.tsx"),
     },
     dedupe: [
       'react',
@@ -22,11 +23,11 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-tooltip',
     ],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query', '@radix-ui/react-tooltip'],
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query'],
+    exclude: ['@radix-ui/react-tooltip'],
     force: mode === 'development',
   },
   build: {
