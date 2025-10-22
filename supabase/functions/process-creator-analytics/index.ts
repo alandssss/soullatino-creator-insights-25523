@@ -214,7 +214,8 @@ Genera la retro en 4 oraciones exactas según el formato.`;
     // Try Gemini AI service with API key if available
     if (geminiApiKey) {
       try {
-        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
+        console.log('Llamando a Gemini API...');
+        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -227,7 +228,9 @@ Genera la retro en 4 oraciones exactas según el formato.`;
             }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 500
+              maxOutputTokens: 500,
+              topP: 0.95,
+              topK: 40
             }
           })
         });
@@ -235,12 +238,16 @@ Genera la retro en 4 oraciones exactas según el formato.`;
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();
           recommendation = aiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+          console.log('Recomendación generada por Gemini:', recommendation);
         } else {
-          console.error('Error en Gemini API:', await aiResponse.text());
+          const errorText = await aiResponse.text();
+          console.error('Error en Gemini API:', errorText);
         }
       } catch (error) {
         console.error('Error llamando a Gemini:', error);
       }
+    } else {
+      console.log('GEMINI_API_KEY no configurada, usando fallback');
     }
 
     // Fallback si no hay IA o falló
