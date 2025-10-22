@@ -62,6 +62,11 @@ export default function AlertasSugerencias() {
         return;
       }
 
+      // Asegurar que el usuario tenga rol antes de cargar datos
+      await supabase.functions.invoke('ensure-user-role', {
+        body: { role: 'viewer' }
+      });
+
       const { data, error } = await supabase.functions.invoke('get-recommendations-today');
       
       console.log('[RECS] data:', data, 'error:', error);

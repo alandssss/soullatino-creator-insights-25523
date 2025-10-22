@@ -138,9 +138,17 @@ export const AdminUploadPanel = () => {
         throw new Error(payload?.error || 'Error al subir el archivo');
       }
 
+      // Verificar cuántas filas se insertaron hoy
+      const today = new Date().toISOString().split('T')[0];
+      const { count } = await supabase
+        .from('creator_daily_stats')
+        .select('*', { count: 'exact', head: true })
+        .eq('fecha', today);
+
       toast({
-        title: "✅ Carga completa",
-        description: `Filas procesadas: ${payload.records_processed}`,
+        title: "✅ Archivo procesado exitosamente",
+        description: `${payload.records_processed || 0} filas procesadas. ${count || 0} registros disponibles para hoy.`,
+        duration: 5000,
       });
 
       setFile(null);
@@ -148,7 +156,9 @@ export const AdminUploadPanel = () => {
       if (fileInput) fileInput.value = "";
 
       // La función ya refresca la vista materializada; recargamos para ver cambios
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
       console.error("Error uploading file:", error);
       toast({

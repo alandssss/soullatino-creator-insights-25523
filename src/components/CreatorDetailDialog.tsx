@@ -85,6 +85,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     if (open && creator) {
       fetchInteractions();
       loadLatestRecommendation();
+      loadDailyStats();
       
       // Suscribirse a cambios en tiempo real de interacciones
       const channel = supabase
@@ -112,6 +113,30 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       setMilestone("");
     }
   }, [open, creator]);
+
+  const [dailyStats, setDailyStats] = useState<any>(null);
+
+  const loadDailyStats = async () => {
+    if (!creator) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('creator_daily_stats')
+        .select('*')
+        .eq('creator_id', creator.id)
+        .eq('fecha', today)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error cargando stats diarias:', error);
+      } else {
+        setDailyStats(data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const fetchInteractions = async () => {
     if (!creator) return;
@@ -396,18 +421,39 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   infoBoxActions.copy(creator.manager)
                 ] : []}
               />
-              <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
-                <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Días en Live</p>
-                <p className="font-bold text-xl text-primary">{creator.dias_live || 0} días</p>
-              </div>
-              <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
-                <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Horas en Live</p>
-                <p className="font-bold text-xl text-primary">{creator.horas_live || 0} horas</p>
-              </div>
-              <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20">
-                <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium">Diamantes</p>
-                <p className="font-bold text-2xl text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
-              </div>
+              
+              {/* Stats del día de hoy desde Excel */}
+              {dailyStats ? (
+                <>
+                  <div className="p-4 rounded-lg bg-green-500/10 backdrop-blur-sm border border-green-500/20">
+                    <p className="text-xs uppercase tracking-wider text-green-600 mb-1 font-medium">Días Live Hoy</p>
+                    <p className="font-bold text-xl text-green-600">{dailyStats.dias_validos_live || 0}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-blue-500/10 backdrop-blur-sm border border-blue-500/20">
+                    <p className="text-xs uppercase tracking-wider text-blue-600 mb-1 font-medium">Horas Hoy</p>
+                    <p className="font-bold text-xl text-blue-600">{dailyStats.duracion_live_horas?.toFixed(1) || 0}h</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20">
+                    <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium">Diamantes Hoy</p>
+                    <p className="font-bold text-2xl text-accent">{(dailyStats.diamantes || 0).toLocaleString()} 💎</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
+                    <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Días en Live</p>
+                    <p className="font-bold text-xl text-primary">{creator.dias_live || 0} días</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
+                    <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Horas en Live</p>
+                    <p className="font-bold text-xl text-primary">{creator.horas_live || 0} horas</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20">
+                    <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium">Diamantes</p>
+                    <p className="font-bold text-2xl text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
+                  </div>
+                </>
+              )}
               <div className="p-4 rounded-lg neo-card-sm">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Engagement</p>
                 <p className="font-bold text-xl">{(creator.engagement_rate || 0).toFixed(1)}%</p>

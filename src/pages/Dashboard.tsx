@@ -33,7 +33,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkUser();
-    fetchCreators();
   }, []);
 
   const checkUser = async () => {
@@ -43,6 +42,11 @@ const Dashboard = () => {
     } else {
       setUser(user);
       
+      // Asegurar que el usuario tenga rol
+      await supabase.functions.invoke('ensure-user-role', {
+        body: { role: 'viewer' }
+      });
+      
       // Check user role
       const { data: roleData } = await supabase
         .from("user_roles")
@@ -51,28 +55,59 @@ const Dashboard = () => {
         .single();
       
       setUserRole(roleData?.role || null);
+      
+      // Cargar stats reales del día
+      await fetchDailyStats();
     }
     setLoading(false);
   };
 
-  const fetchCreators = async () => {
-    const { data, error } = await supabase
-      .from("creators")
-      .select("*")
-      .order("diamantes", { ascending: false });
+  const fetchDailyStats = async () => {
+    try {
+      // Obtener stats del día de hoy desde creator_daily_stats
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('creator_daily_stats')
+        .select(`
+          *,
+          creators!inner(*)
+        `)
+        .eq('fecha', today)
+        .order('diamantes', { ascending: false });
 
-    if (error) {
-      if (error.code === 'PGRST301') {
-        navigate("/login");
-        return;
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Convertir stats diarias a formato de creators
+        const creatorsFromStats = data.map((stat: any) => {
+          const creator = stat.creators;
+          return {
+            ...creator,
+            diamantes: stat.diamantes || 0,
+            horas_live: stat.duracion_live_horas || 0,
+            dias_live: stat.dias_validos_live || 0,
+          };
+        });
+        
+        setCreators(creatorsFromStats);
+      } else {
+        // Fallback a tabla creators si no hay datos del día
+        const { data: creatorsData } = await supabase
+          .from("creators")
+          .select("*")
+          .order("diamantes", { ascending: false });
+        
+        setCreators(creatorsData || []);
       }
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los creadores",
-        variant: "destructive",
-      });
-    } else {
-      setCreators(data || []);
+    } catch (error) {
+      console.error('Error loading daily stats:', error);
+      // Fallback silencioso a tabla creators
+      const { data: creatorsData } = await supabase
+        .from("creators")
+        .select("*")
+        .order("diamantes", { ascending: false });
+      
+      setCreators(creatorsData || []);
     }
   };
 
