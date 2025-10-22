@@ -29,12 +29,12 @@ export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPa
       const mesActual = new Date();
       const mesReferencia = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const bonificaciones = await creatorAnalytics.getBonificaciones(mesReferencia);
-      const bonifCreator = bonificaciones.find(b => b.creator_id === creatorId);
+      const bonificaciones: any[] = await creatorAnalytics.getBonificaciones(mesReferencia);
+      const bonifCreator: any = bonificaciones.find((b: any) => b.creator_id === creatorId);
       
       // Obtener días reales desde Supabase (si está disponible)
       if (bonifCreator) {
-        const diasRealesData = await creatorAnalytics.getDiasRealesMes(creatorId);
+        const diasRealesData: any = await creatorAnalytics.getDiasRealesMes(creatorId);
         if (diasRealesData) {
           bonifCreator.dias_live_mes = diasRealesData.dias_reales_hasta_hoy || bonifCreator.dias_live_mes;
           bonifCreator.horas_live_mes = diasRealesData.horas_totales_mes || bonifCreator.horas_live_mes;

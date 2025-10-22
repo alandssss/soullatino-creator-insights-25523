@@ -271,66 +271,72 @@ export const AdminUploadPanel = () => {
       for (const creatorData of creatorsData) {
         try {
           // 1. UPSERT en tabla creators usando creator_id como clave única
+          const creatorPayload: any = {
+            creator_id: creatorData.creator_id,
+            nombre: creatorData.nombre,
+            telefono: creatorData.telefono,
+            grupo: creatorData.grupo,
+            agente: creatorData.agente,
+            fecha_incorporacion: creatorData.fecha_incorporacion,
+            dias_desde_incorporacion: creatorData.dias_desde_incorporacion,
+            estado_graduacion: creatorData.estado_graduacion,
+            base_diamantes_antes_union: creatorData.base_diamantes_antes_union,
+          };
+
           const { data: upsertedCreator, error: upsertError } = await supabase
             .from("creators")
-            .upsert({
-              creator_id: creatorData.creator_id,
-              nombre: creatorData.nombre,
-              telefono: creatorData.telefono,
-              grupo: creatorData.grupo,
-              agente: creatorData.agente,
-              fecha_incorporacion: creatorData.fecha_incorporacion,
-              dias_desde_incorporacion: creatorData.dias_desde_incorporacion,
-              estado_graduacion: creatorData.estado_graduacion,
-              base_diamantes_antes_union: creatorData.base_diamantes_antes_union,
-            }, { onConflict: 'creator_id' })
+            .upsert(creatorPayload, { onConflict: 'creator_id' })
             .select()
             .single();
 
           if (upsertError) throw upsertError;
 
           // 2. INSERT/UPDATE estadísticas diarias
+          const dailyPayload: any = {
+            creator_id: upsertedCreator!.id,
+            fecha: fechaHoy,
+            diamantes: creatorData.diamantes,
+            duracion_live_horas: creatorData.duracion_live_horas,
+            dias_validos_live: creatorData.dias_validos_live,
+            nuevos_seguidores: creatorData.nuevos_seguidores,
+            emisiones_live: creatorData.emisiones_live,
+            partidas: creatorData.partidas,
+            diamantes_partidas: creatorData.diamantes_partidas,
+            ingresos_suscripciones: creatorData.ingresos_suscripciones,
+            suscripciones_compradas: creatorData.suscripciones_compradas,
+            suscriptores: creatorData.suscriptores,
+            diamantes_modo_varios: creatorData.diamantes_modo_varios,
+            diamantes_varios_anfitrion: creatorData.diamantes_varios_anfitrion,
+            diamantes_varios_invitado: creatorData.diamantes_varios_invitado,
+          };
+
           const { error: dailyError } = await supabase
             .from("creator_daily_stats")
-            .upsert({
-              creator_id: upsertedCreator.id,
-              fecha: fechaHoy,
-              diamantes: creatorData.diamantes,
-              duracion_live_horas: creatorData.duracion_live_horas,
-              dias_validos_live: creatorData.dias_validos_live,
-              nuevos_seguidores: creatorData.nuevos_seguidores,
-              emisiones_live: creatorData.emisiones_live,
-              partidas: creatorData.partidas,
-              diamantes_partidas: creatorData.diamantes_partidas,
-              ingresos_suscripciones: creatorData.ingresos_suscripciones,
-              suscripciones_compradas: creatorData.suscripciones_compradas,
-              suscriptores: creatorData.suscriptores,
-              diamantes_modo_varios: creatorData.diamantes_modo_varios,
-              diamantes_varios_anfitrion: creatorData.diamantes_varios_anfitrion,
-              diamantes_varios_invitado: creatorData.diamantes_varios_invitado,
-            }, { onConflict: 'creator_id,fecha' });
+            .upsert(dailyPayload, { onConflict: 'creator_id,fecha' });
 
           if (dailyError && !dailyError.message?.includes('duplicate key')) {
             console.warn("Error guardando estadísticas diarias:", dailyError);
           }
 
           // 3. INSERT/UPDATE estadísticas mensuales
+          const monthlyPayload: any = {
+            creator_id: upsertedCreator!.id,
+            mes_referencia: mesReferencia,
+            diamantes_mes: creatorData.diamantes_mes,
+            duracion_live_horas_mes: creatorData.duracion_live_horas_mes,
+            dias_validos_live_mes: creatorData.dias_validos_live_mes,
+            nuevos_seguidores_mes: creatorData.nuevos_seguidores_mes,
+            emisiones_live_mes: creatorData.emisiones_live_mes,
+            porcentaje_diamantes: creatorData.porcentaje_diamantes,
+            porcentaje_duracion_live: creatorData.porcentaje_duracion_live,
+            porcentaje_dias_validos: creatorData.porcentaje_dias_validos,
+            porcentaje_seguidores: creatorData.porcentaje_seguidores,
+            porcentaje_emisiones: creatorData.porcentaje_emisiones,
+          };
+
           const { error: monthlyError } = await supabase
             .from("creator_monthly_stats")
-            .upsert({
-              creator_id: upsertedCreator.id,
-              mes_referencia: mesReferencia,
-              diamantes_mes: creatorData.diamantes_mes,
-              duracion_live_horas_mes: creatorData.duracion_live_horas_mes,
-              dias_validos_live_mes: creatorData.dias_validos_live_mes,
-              nuevos_seguidores_mes: creatorData.nuevos_seguidores_mes,
-              emisiones_live_mes: creatorData.emisiones_live_mes,
-              porcentaje_diamantes: creatorData.porcentaje_diamantes,
-              porcentaje_duracion_live: creatorData.porcentaje_duracion_live,
-              porcentaje_dias_validos: creatorData.porcentaje_dias_validos,
-              porcentaje_seguidores: creatorData.porcentaje_seguidores,
-              porcentaje_emisiones: creatorData.porcentaje_emisiones,
-            }, { onConflict: 'creator_id,mes_referencia' });
+            .upsert(monthlyPayload, { onConflict: 'creator_id,mes_referencia' });
 
           if (monthlyError && !monthlyError.message?.includes('duplicate key')) {
             console.warn("Error guardando estadísticas mensuales:", monthlyError);
@@ -395,9 +401,10 @@ export const AdminUploadPanel = () => {
         }
 
         try {
+          const updatePayload: any = { telefono };
           const { error } = await supabase
             .from('creators')
-            .update({ telefono })
+            .update(updatePayload)
             .eq('tiktok_username', username);
 
           if (error) throw error;

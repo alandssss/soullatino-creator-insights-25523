@@ -26,7 +26,7 @@ import { AsignarMetaDialog } from "./AsignarMetaDialog";
 import { InfoBox, infoBoxActions } from "@/components/shared/InfoBox";
 
 const interactionSchema = z.object({
-  tipo_interaccion: z.string().trim().min(1, "Tipo de interacción requerido").max(100, "Máximo 100 caracteres"),
+  tipo: z.string().trim().min(1, "Tipo de interacción requerido").max(100, "Máximo 100 caracteres"),
   notas: z.string().trim().min(1, "Notas requeridas").max(2000, "Máximo 2000 caracteres"),
   admin_nombre: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
 });
@@ -43,7 +43,7 @@ interface CreatorDetailDialogProps {
 export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDetailDialogProps) => {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [newInteraction, setNewInteraction] = useState({
-    tipo_interaccion: "",
+    tipo: "",
     notas: "",
     admin_nombre: "",
   });
@@ -185,7 +185,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       const validated = interactionSchema.parse(newInteraction);
 
       await interactionService.recordInteraction(creator.id, {
-        tipo_interaccion: validated.tipo_interaccion,
+        tipo: validated.tipo,
         notas: validated.notas,
         admin_nombre: validated.admin_nombre,
       });
@@ -195,7 +195,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
         description: "Interacción guardada correctamente",
       });
       
-      setNewInteraction({ tipo_interaccion: "", notas: "", admin_nombre: "" });
+      setNewInteraction({ tipo: "", notas: "", admin_nombre: "" });
       fetchInteractions();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -684,9 +684,9 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                         <div className="space-y-2">
                           <Label>Tipo de Interacción</Label>
                           <Input
-                            value={newInteraction.tipo_interaccion}
+                            value={newInteraction.tipo}
                             onChange={(e) =>
-                              setNewInteraction({ ...newInteraction, tipo_interaccion: e.target.value })
+                              setNewInteraction({ ...newInteraction, tipo: e.target.value })
                             }
                             placeholder="Ej: Llamada, Email, Reunión"
                           />
@@ -728,9 +728,9 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                             className="p-4 rounded-lg neo-card-sm hover:neo-card-pressed transition-all cursor-pointer"
                           >
                             <div className="flex justify-between items-start mb-2">
-                              <span className="font-semibold text-base">{interaction.tipo_interaccion}</span>
+                              <span className="font-semibold text-base">{interaction.tipo}</span>
                               <span className="text-xs font-medium text-muted-foreground neo-card-sm px-2 py-1 rounded-full">
-                                {new Date(interaction.fecha).toLocaleDateString()}
+                                {new Date(interaction.created_at).toLocaleDateString()}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground mb-2 leading-relaxed">

@@ -6,7 +6,7 @@ type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
 
 export interface InteractionDetails {
-  tipo_interaccion: string;
+  tipo: string;
   notas: string;
   admin_nombre?: string;
 }
@@ -115,7 +115,7 @@ export class InteractionService {
       .from("creator_interactions")
       .insert({
         creator_id: creatorId,
-        tipo_interaccion: details.tipo_interaccion,
+        tipo: details.tipo,
         notas: details.notas,
         admin_nombre: details.admin_nombre || "Admin",
       })
@@ -137,7 +137,7 @@ export class InteractionService {
       .from("creator_interactions")
       .select("*")
       .eq("creator_id", creatorId)
-      .order("fecha", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       throw new Error(`Error cargando interacciones: ${error.message}`);

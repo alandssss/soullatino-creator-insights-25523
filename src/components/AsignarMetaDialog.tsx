@@ -65,20 +65,18 @@ export const AsignarMetaDialog = ({
 
       // Obtener usuario actual
       const { data: { user } } = await supabase.auth.getUser();
-      
       // Insertar meta
+      const metaPayload: any = {
+        creator_id: creatorId,
+        meta_diamantes: validatedData.metrica_tipo === 'diamantes' ? validatedData.valor_objetivo : 0,
+        meta_dias: validatedData.metrica_tipo === 'dias_live' ? validatedData.valor_objetivo : null,
+        meta_horas: validatedData.metrica_tipo === 'horas_live' ? validatedData.valor_objetivo : null,
+        mes_referencia: validatedData.fecha_finalizacion.toISOString().split('T')[0].slice(0, 7) + '-01',
+      };
+
       const { error } = await supabase
         .from('creator_metas')
-        .insert({
-          creator_id: creatorId,
-          metrica_tipo: validatedData.metrica_tipo,
-          valor_objetivo: validatedData.valor_objetivo,
-          fecha_finalizacion: validatedData.fecha_finalizacion.toISOString().split('T')[0],
-          descripcion: validatedData.descripcion,
-          notas: validatedData.notas,
-          created_by_user_id: user?.id,
-          created_by_email: user?.email,
-        });
+        .insert(metaPayload);
 
       if (error) throw error;
 
