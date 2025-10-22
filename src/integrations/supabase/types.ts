@@ -14,16 +14,217 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      creator_daily_stats: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          diamantes: number | null
+          diamantes_modo_varios: number | null
+          diamantes_partidas: number | null
+          diamantes_varios_anfitrion: number | null
+          diamantes_varios_invitado: number | null
+          dias_validos_live: number | null
+          duracion_live_horas: number | null
+          emisiones_live: number | null
+          fecha: string
+          id: string
+          ingresos_suscripciones: number | null
+          nuevos_seguidores: number | null
+          partidas: number | null
+          suscripciones_compradas: number | null
+          suscriptores: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          diamantes?: number | null
+          diamantes_modo_varios?: number | null
+          diamantes_partidas?: number | null
+          diamantes_varios_anfitrion?: number | null
+          diamantes_varios_invitado?: number | null
+          dias_validos_live?: number | null
+          duracion_live_horas?: number | null
+          emisiones_live?: number | null
+          fecha: string
+          id?: string
+          ingresos_suscripciones?: number | null
+          nuevos_seguidores?: number | null
+          partidas?: number | null
+          suscripciones_compradas?: number | null
+          suscriptores?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          diamantes?: number | null
+          diamantes_modo_varios?: number | null
+          diamantes_partidas?: number | null
+          diamantes_varios_anfitrion?: number | null
+          diamantes_varios_invitado?: number | null
+          dias_validos_live?: number | null
+          duracion_live_horas?: number | null
+          emisiones_live?: number | null
+          fecha?: string
+          id?: string
+          ingresos_suscripciones?: number | null
+          nuevos_seguidores?: number | null
+          partidas?: number | null
+          suscripciones_compradas?: number | null
+          suscriptores?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_monthly_stats: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          diamantes_mes: number | null
+          dias_validos_live_mes: number | null
+          duracion_live_horas_mes: number | null
+          emisiones_live_mes: number | null
+          id: string
+          mes_referencia: string
+          nuevos_seguidores_mes: number | null
+          porcentaje_diamantes: number | null
+          porcentaje_dias_validos: number | null
+          porcentaje_duracion_live: number | null
+          porcentaje_emisiones: number | null
+          porcentaje_seguidores: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          diamantes_mes?: number | null
+          dias_validos_live_mes?: number | null
+          duracion_live_horas_mes?: number | null
+          emisiones_live_mes?: number | null
+          id?: string
+          mes_referencia: string
+          nuevos_seguidores_mes?: number | null
+          porcentaje_diamantes?: number | null
+          porcentaje_dias_validos?: number | null
+          porcentaje_duracion_live?: number | null
+          porcentaje_emisiones?: number | null
+          porcentaje_seguidores?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          diamantes_mes?: number | null
+          dias_validos_live_mes?: number | null
+          duracion_live_horas_mes?: number | null
+          emisiones_live_mes?: number | null
+          id?: string
+          mes_referencia?: string
+          nuevos_seguidores_mes?: number | null
+          porcentaje_diamantes?: number | null
+          porcentaje_dias_validos?: number | null
+          porcentaje_duracion_live?: number | null
+          porcentaje_emisiones?: number | null
+          porcentaje_seguidores?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_monthly_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creators: {
+        Row: {
+          agente: string | null
+          base_diamantes_antes_union: number | null
+          created_at: string | null
+          creator_id: string
+          dias_desde_incorporacion: number | null
+          estado_graduacion: string | null
+          fecha_incorporacion: string | null
+          grupo: string | null
+          id: string
+          nombre: string
+          telefono: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agente?: string | null
+          base_diamantes_antes_union?: number | null
+          created_at?: string | null
+          creator_id: string
+          dias_desde_incorporacion?: number | null
+          estado_graduacion?: string | null
+          fecha_incorporacion?: string | null
+          grupo?: string | null
+          id?: string
+          nombre: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agente?: string | null
+          base_diamantes_antes_union?: number | null
+          created_at?: string | null
+          creator_id?: string
+          dias_desde_incorporacion?: number | null
+          estado_graduacion?: string | null
+          fecha_incorporacion?: string | null
+          grupo?: string | null
+          id?: string
+          nombre?: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +351,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "viewer"],
+    },
   },
 } as const
