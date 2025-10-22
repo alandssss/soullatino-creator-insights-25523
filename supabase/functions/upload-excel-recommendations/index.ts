@@ -82,12 +82,12 @@ serve(async (req) => {
       return isNaN(num) ? 0 : num;
     }
 
-    // Mapeo de columnas (ES/EN)
+    // Mapeo de columnas (ES/EN) - Incluye formatos de TikTok
     const columnMappings = {
-      id: ['Creator ID', 'User ID', 'ID', 'CreatorID', 'id'],
-      username: ['Username', 'Creator Name', 'Nombre', 'nombre', 'creator_name'],
-      days: ['Days', 'Días', 'Dias', 'Days live', 'dias_live', 'days_live'],
-      hours: ['Hours', 'Horas', 'Live Hours', 'Live duration', 'horas_live', 'live_hours'],
+      id: ['Creator ID', 'User ID', 'ID', 'CreatorID', 'id', 'ID del creador'],
+      username: ['Username', 'Creator Name', 'Nombre', 'nombre', 'creator_name', 'Nombre de usuario del creador'],
+      days: ['Days', 'Días', 'Dias', 'Days live', 'dias_live', 'days_live', 'Días válidos de emisiones LIVE'],
+      hours: ['Hours', 'Horas', 'Live Hours', 'Live duration', 'horas_live', 'live_hours', 'Duración de LIVE', 'Duración de emisiones LIVE (en horas) durante el último mes'],
       diamonds: ['Diamonds', 'Diamantes', 'diamantes', 'diamonds'],
     };
 
