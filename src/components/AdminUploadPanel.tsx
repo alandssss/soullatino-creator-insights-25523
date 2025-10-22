@@ -119,251 +119,41 @@ export const AdminUploadPanel = () => {
 
     setUploading(true);
     try {
-      const excelData = await processExcelFile(file) as any[];
-      
-      console.log("Datos del Excel - Primeras 2 filas:", excelData.slice(0, 2));
-      console.log("Columnas disponibles:", excelData.length > 0 ? Object.keys(excelData[0]) : []);
-      
-      // Normalizar headers del primer objeto para validación
-      if (excelData.length > 0) {
-        const originalHeaders = Object.keys(excelData[0]);
-        const mappedHeaders = mapColumnAliases(originalHeaders);
-        console.log("Headers mapeados:", mappedHeaders);
-        
-        if (!mappedHeaders.includes('Nombre') && !originalHeaders.includes("Creator's username")) {
-          toast({
-            title: "❌ Formato inválido",
-            description: "Falta la columna 'Nombre' o \"Creator's username\". Revisa tu archivo.",
-            variant: "destructive",
-          });
-          setUploading(false);
-          return;
-        }
-      }
-      
-      // Mapear los datos del Excel a la estructura de la base de datos
-      // Ser más flexible con los nombres de columnas - buscar cualquier variación
-      const creatorsData = excelData.map((row: any) => {
-        // Función para parsear duración en formato "40h 3m 43s" a horas decimales
-        const parseDuration = (duration: string): number => {
-          if (!duration) return 0;
-          const hourMatch = duration.match(/(\d+)h/);
-          const minMatch = duration.match(/(\d+)m/);
-          const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
-          const minutes = minMatch ? parseInt(minMatch[1]) : 0;
-          return hours + (minutes / 60);
-        };
+      // Enviar el archivo directamente a la función del backend
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const formData = new FormData();
+      formData.append('file', file);
 
-        // Función para parsear porcentajes (ej: "42.88%" -> 42.88)
-        const parsePercentage = (percent: string): number => {
-          if (!percent) return 0;
-          const match = percent.toString().match(/-?\d+\.?\d*/);
-          return match ? parseFloat(match[0]) : 0;
-        };
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-excel-recommendations`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
 
-        // Mapear usando nombres normalizados y originales
-        const tiktokUsername = row["Nombre de usuario del creador"] || row["Creator's username"] || row["Nombre"] || "";
-        const creatorId = row["ID del creador"] || row["Creator's user ID"] || "";
-        const telefono = row["Teléfono"] || row["Phone"] || null;
-        
-        // ============================================
-        // COLUMNAS CRÍTICAS
-        // ============================================
-        const diamantes = row["Diamantes"] || row["Diamonds"] || 0;
-        const horasLive = parseDuration(row["Duración de LIVE"] || row["LIVE duration"] || "");
-        const diasLive = row["Días válidos de emisiones LIVE"] || row["Valid go LIVE days"] || 0;
-        const batallasPKO = row["Partidas"] || row["PKO battles"] || row["PKO Battles"] || row["Batallas PKO"] || 0;
-        
-        // OTRAS COLUMNAS IMPORTANTES
-        const diasDesdeInicio = row["Días desde la incorporación"] || row["Days since joining"] || 0;
-        const fechaIncorporacion = row["Hora de incorporación"] || row["Joining time"] || null;
-        
-        // DATOS DEL MES PASADO
-        const diamantesLastMonth = row["Diamantes en el último mes"] || row["Diamonds last month"] || 0;
-        const horasLiveLastMonth = parseDuration(row["Duración de emisiones LIVE (en horas) durante el último mes"] || row["LIVE duration (hours) last month"] || "");
-        const diasLiveLastMonth = row["Días válidos de emisiones LIVE del mes pasado"] || row["Valid go LIVE days last month"] || 0;
-        const followersLastMonth = row["Nuevos seguidores en el último mes"] || row["New followers last month"] || 0;
-        const emisionesLastMonth = row["Emisiones LIVE en el último mes"] || row["LIVE sessions last month"] || 0;
-        
-        // PORCENTAJES DE LOGRO
-        const porcentajeDiamantes = parsePercentage(row["Diamantes - Porcentaje logrado"] || row["Diamonds - Achievement %"] || "0");
-        const porcentajeDuracion = parsePercentage(row["Duración de LIVE - Porcentaje logrado"] || row["LIVE duration - Achievement %"] || "0");
-        const porcentajeDias = parsePercentage(row["Días válidos de emisiones LIVE - Porcentaje logrado"] || row["Valid go LIVE days - Achievement %"] || "0");
-        const porcentajeSeguidores = parsePercentage(row["Nuevos seguidores - Porcentaje logrado"] || row["New followers - Achievement %"] || "0");
-        const porcentajeEmisiones = parsePercentage(row["Emisiones LIVE - Porcentaje logrado"] || row["LIVE sessions - Achievement %"] || "0");
-        
-        // DATOS ADICIONALES
-        const ingresosSuscripciones = row["Ingresos por suscripciones"] || row["Subscription earnings"] || 0;
-        const suscripcionesCompradas = row["Suscripciones compradas"] || row["Subscriptions purchased"] || 0;
-        const suscriptores = row["Suscriptores"] || row["Subscribers"] || 0;
-        const diamantesPartidas = row["Diamantes de partidas"] || row["PKO battle diamonds"] || 0;
-        const diamantesModoVarios = row["Diamantes del modo de varios invitados"] || row["Multi-guest mode diamonds"] || 0;
-        const diamantesAnfitrion = row["Diamantes de varios invitados (como anfitrión)"] || row["Multi-guest diamonds (as host)"] || 0;
-        const diamantesInvitado = row["Diamantes del modo de varios invitados (como invitado)"] || row["Multi-guest mode diamonds (as guest)"] || 0;
-        const baseDiamantes = row["Base de Diamantes antes de unirse"] || row["Diamond base before joining"] || 0;
-        
-        const followers = row["Nuevos seguidores"] || row["New followers"] || 0;
-        const emisiones = row["Emisiones LIVE"] || row["LIVE sessions"] || 0;
-        const manager = row["Agente"] || row["Creator Network manager"] || null;
-        const graduacion = row["Estado de graduación"] || row["Graduation status"] || null;
-        
-        const grupo = row["Grupo"] || row["Group"] || null;
-        
-        return {
-          creator_id: creatorId,
-          nombre: tiktokUsername,
-          telefono: telefono,
-          grupo: grupo,
-          agente: manager,
-          fecha_incorporacion: fechaIncorporacion,
-          dias_desde_incorporacion: diasDesdeInicio,
-          estado_graduacion: graduacion,
-          base_diamantes_antes_union: baseDiamantes,
-          // Métricas actuales
-          diamantes: diamantes,
-          duracion_live_horas: horasLive,
-          dias_validos_live: diasLive,
-          nuevos_seguidores: followers,
-          emisiones_live: emisiones,
-          partidas: batallasPKO,
-          diamantes_partidas: diamantesPartidas,
-          ingresos_suscripciones: ingresosSuscripciones,
-          suscripciones_compradas: suscripcionesCompradas,
-          suscriptores: suscriptores,
-          diamantes_modo_varios: diamantesModoVarios,
-          diamantes_varios_anfitrion: diamantesAnfitrion,
-          diamantes_varios_invitado: diamantesInvitado,
-          // Métricas del mes pasado
-          diamantes_mes: diamantesLastMonth,
-          duracion_live_horas_mes: horasLiveLastMonth,
-          dias_validos_live_mes: diasLiveLastMonth,
-          nuevos_seguidores_mes: followersLastMonth,
-          emisiones_live_mes: emisionesLastMonth,
-          // Porcentajes de logro
-          porcentaje_diamantes: porcentajeDiamantes,
-          porcentaje_duracion_live: porcentajeDuracion,
-          porcentaje_dias_validos: porcentajeDias,
-          porcentaje_seguidores: porcentajeSeguidores,
-          porcentaje_emisiones: porcentajeEmisiones,
-        };
-      }).filter(creator => creator.nombre && creator.nombre.toString().trim().length > 0);
-
-      console.log("Datos mapeados - Primeros 2:", creatorsData.slice(0, 2));
-      console.log("Total de filas con nombre válido:", creatorsData.length);
-
-      if (creatorsData.length === 0) {
-        toast({
-          title: "❌ Sin datos válidos",
-          description: "No se encontraron creadores con nombre válido. Verifica que la columna 'Nombre' o \"Creator's username\" tenga datos.",
-          variant: "destructive",
-        });
-        setUploading(false);
-        return;
-      }
-
-      // Estrategia: UPSERT en creators + INSERT diario en creator_daily_stats
-      let successCount = 0;
-      let errorCount = 0;
-
-      const fechaHoy = new Date().toISOString().split('T')[0];
-      const mesReferencia = new Date().toISOString().slice(0, 7) + '-01';
-
-      for (const creatorData of creatorsData) {
-        try {
-          // 1. UPSERT en tabla creators usando creator_id como clave única
-          const creatorPayload: any = {
-            creator_id: creatorData.creator_id,
-            nombre: creatorData.nombre,
-            telefono: creatorData.telefono,
-            grupo: creatorData.grupo,
-            agente: creatorData.agente,
-            fecha_incorporacion: creatorData.fecha_incorporacion,
-            dias_desde_incorporacion: creatorData.dias_desde_incorporacion,
-            estado_graduacion: creatorData.estado_graduacion,
-            base_diamantes_antes_union: creatorData.base_diamantes_antes_union,
-          };
-
-          const { data: upsertedCreator, error: upsertError } = await supabase
-            .from("creators")
-            .upsert(creatorPayload, { onConflict: 'creator_id' })
-            .select()
-            .single();
-
-          if (upsertError) throw upsertError;
-
-          // 2. INSERT/UPDATE estadísticas diarias
-          const dailyPayload: any = {
-            creator_id: upsertedCreator!.id,
-            fecha: fechaHoy,
-            diamantes: creatorData.diamantes,
-            duracion_live_horas: creatorData.duracion_live_horas,
-            dias_validos_live: creatorData.dias_validos_live,
-            nuevos_seguidores: creatorData.nuevos_seguidores,
-            emisiones_live: creatorData.emisiones_live,
-            partidas: creatorData.partidas,
-            diamantes_partidas: creatorData.diamantes_partidas,
-            ingresos_suscripciones: creatorData.ingresos_suscripciones,
-            suscripciones_compradas: creatorData.suscripciones_compradas,
-            suscriptores: creatorData.suscriptores,
-            diamantes_modo_varios: creatorData.diamantes_modo_varios,
-            diamantes_varios_anfitrion: creatorData.diamantes_varios_anfitrion,
-            diamantes_varios_invitado: creatorData.diamantes_varios_invitado,
-          };
-
-          const { error: dailyError } = await supabase
-            .from("creator_daily_stats")
-            .upsert(dailyPayload, { onConflict: 'creator_id,fecha' });
-
-          if (dailyError && !dailyError.message?.includes('duplicate key')) {
-            console.warn("Error guardando estadísticas diarias:", dailyError);
-          }
-
-          // 3. INSERT/UPDATE estadísticas mensuales
-          const monthlyPayload: any = {
-            creator_id: upsertedCreator!.id,
-            mes_referencia: mesReferencia,
-            diamantes_mes: creatorData.diamantes_mes,
-            duracion_live_horas_mes: creatorData.duracion_live_horas_mes,
-            dias_validos_live_mes: creatorData.dias_validos_live_mes,
-            nuevos_seguidores_mes: creatorData.nuevos_seguidores_mes,
-            emisiones_live_mes: creatorData.emisiones_live_mes,
-            porcentaje_diamantes: creatorData.porcentaje_diamantes,
-            porcentaje_duracion_live: creatorData.porcentaje_duracion_live,
-            porcentaje_dias_validos: creatorData.porcentaje_dias_validos,
-            porcentaje_seguidores: creatorData.porcentaje_seguidores,
-            porcentaje_emisiones: creatorData.porcentaje_emisiones,
-          };
-
-          const { error: monthlyError } = await supabase
-            .from("creator_monthly_stats")
-            .upsert(monthlyPayload, { onConflict: 'creator_id,mes_referencia' });
-
-          if (monthlyError && !monthlyError.message?.includes('duplicate key')) {
-            console.warn("Error guardando estadísticas mensuales:", monthlyError);
-          }
-
-          successCount++;
-        } catch (err) {
-          console.error("Error con creador:", creatorData.nombre, err);
-          errorCount++;
-        }
+      const payload = await resp.json();
+      if (!resp.ok) {
+        throw new Error(payload?.error || 'Error al subir el archivo');
       }
 
       toast({
-        title: "✅ Carga Completa",
-        description: `${successCount} creadores guardados con todos sus datos incluyendo teléfonos. ${errorCount > 0 ? `Errores: ${errorCount}` : ''}`,
+        title: "✅ Carga completa",
+        description: `Filas procesadas: ${payload.records_processed}`,
       });
 
       setFile(null);
       const fileInput = document.getElementById("file-upload") as HTMLInputElement;
       if (fileInput) fileInput.value = "";
 
+      // La función ya refresca la vista materializada; recargamos para ver cambios
       window.location.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
       toast({
         title: "Error",
-        description: "No se pudo procesar el archivo. Revisa la consola para más detalles.",
+        description: error?.message || "No se pudo procesar el archivo.",
         variant: "destructive",
       });
     } finally {

@@ -124,7 +124,7 @@ serve(async (req) => {
     // Fecha de referencia (hoy en America/Chihuahua)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
 
-    // Mapear y normalizar datos
+    // Mapear y normalizar datos (sin asignar IDs aún)
     const mapped = (rawData as any[]).map((row) => {
       const out: any = {};
       for (const key of Object.keys(row)) {
@@ -133,18 +133,24 @@ serve(async (req) => {
       }
       
       const username = String(out.creator_username ?? out.Nombre ?? '').trim();
-      if (!username) return null;
+      if (!username) return null as any;
 
       return {
-        creator_id: crypto.randomUUID(),
         creator_username: username,
         phone_e164: String(out.phone_e164 ?? '').trim() || null,
         dias_actuales: parseNumber(out.dias_actuales),
         horas_actuales: parseHours(out.horas_actuales),
         diamantes_actuales: parseNumber(out.diamantes_actuales),
         fecha: today,
-      };
-    }).filter(Boolean);
+      } as const;
+    }).filter(Boolean) as Array<{
+      creator_username: string;
+      phone_e164: string | null;
+      dias_actuales: number;
+      horas_actuales: number;
+      diamantes_actuales: number;
+      fecha: string;
+    }>;
 
     if (!mapped.length) {
       return new Response(
@@ -158,21 +164,108 @@ serve(async (req) => {
 
     console.log(`[upload-excel-recommendations] Mapped ${mapped.length} valid rows`);
 
-    // Upsert a creator_daily_stats
-    const { error: upsertError } = await supabase
-      .from('creator_daily_stats')
-      .upsert(mapped, {
-        onConflict: 'creator_id,fecha'
-      });
+    // Resolver creator_id reales desde tabla creators (por username o teléfono)
+    const usernames = Array.from(new Set(mapped.map(r => r.creator_username.replace(/^@/, '').toLowerCase())));
+    const phones = Array.from(new Set(mapped.map(r => r.phone_e164).filter((p): p is string => !!p)));
 
-    if (upsertError) {
-      console.error('[upload-excel-recommendations] Upsert error:', upsertError);
+    const { data: creatorsByUser, error: creatorsByUserError } = await supabase
+      .from('creators')
+      .select('id, tiktok_username, telefono');
+
+    if (creatorsByUserError) {
+      console.error('[upload-excel-recommendations] Error fetching creators:', creatorsByUserError);
       return new Response(
-        JSON.stringify({ error: upsertError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
-        }
+        JSON.stringify({ error: creatorsByUserError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const byUsername = new Map<string, string>();
+    const byPhone = new Map<string, string>();
+    (creatorsByUser || []).forEach(c => {
+      if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
+      if (c.telefono) byPhone.set(String(c.telefono), c.id);
+    });
+
+    // Detectar faltantes y crear creadores mínimos
+    const missing: Array<{ username: string; phone: string | null; }>= [];
+    for (const r of mapped) {
+      const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
+      const foundId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
+      if (!foundId) missing.push({ username: keyU, phone: r.phone_e164 });
+    }
+
+    if (missing.length) {
+      const toCreate = missing.map(m => ({
+        nombre: m.username,
+        tiktok_username: m.username,
+        telefono: m.phone,
+        creator_id: m.username // campo requerido (texto)
+      }));
+
+      const { data: created, error: createErr } = await supabase
+        .from('creators')
+        .insert(toCreate)
+        .select('id, tiktok_username, telefono');
+
+      if (createErr) {
+        console.error('[upload-excel-recommendations] Error creating creators:', createErr);
+        return new Response(
+          JSON.stringify({ error: createErr.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      (created || []).forEach(c => {
+        if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
+        if (c.telefono) byPhone.set(String(c.telefono), c.id);
+      });
+    }
+
+    // Construir filas finales para daily_stats
+    const dailyRows = mapped.map(r => {
+      const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
+      const creatorId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
+      if (!creatorId) return null;
+      return {
+        creator_id: creatorId,
+        fecha: today,
+        diamantes: r.diamantes_actuales,
+        duracion_live_horas: r.horas_actuales,
+        dias_validos_live: r.dias_actuales,
+        creator_username: r.creator_username,
+        phone_e164: r.phone_e164
+      };
+    }).filter(Boolean) as any[];
+
+    if (!dailyRows.length) {
+      return new Response(
+        JSON.stringify({ error: 'No se pudieron resolver creadores para las filas cargadas' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Reemplazar datos del día para evitar duplicados
+    const creatorIds = Array.from(new Set(dailyRows.map(r => r.creator_id)));
+    const { error: delErr } = await supabase
+      .from('creator_daily_stats')
+      .delete()
+      .eq('fecha', today)
+      .in('creator_id', creatorIds);
+
+    if (delErr) {
+      console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
+    }
+
+    const { error: insertErr } = await supabase
+      .from('creator_daily_stats')
+      .insert(dailyRows);
+
+    if (insertErr) {
+      console.error('[upload-excel-recommendations] Insert error:', insertErr);
+      return new Response(
+        JSON.stringify({ error: insertErr.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
