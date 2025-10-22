@@ -68,17 +68,19 @@ export default function AlertasSugerencias() {
 
       const { data, error } = await supabase.functions.invoke('get-recommendations-today');
       
+      console.log('[RECS] data:', data, 'error:', error);
+      
       if (error) throw error;
       
-      if (data?.success) {
-        setRecommendations(data.recommendations || []);
-        setSummary(data.summary || null);
-        
-        if (data.error && data.recommendations?.length === 0) {
-          toast.info(data.hint || 'No hay datos disponibles. Sube un archivo Excel para comenzar.');
-        }
-      } else if (data?.error) {
-        throw new Error(data.error);
+      if (!data?.success) {
+        throw new Error(data?.error || 'Sin datos de hoy');
+      }
+      
+      setRecommendations(data.recommendations || []);
+      setSummary(data.summary || null);
+      
+      if (data.error && data.recommendations?.length === 0) {
+        toast.info(data.hint || 'No hay datos disponibles. Sube un archivo Excel para comenzar.');
       }
     } catch (error: any) {
       console.error('Error loading recommendations:', error);
@@ -132,32 +134,47 @@ export default function AlertasSugerencias() {
         return;
       }
 
+      // Obtener sesión para auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No autorizado (sesión null)');
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
       console.log('[UPLOAD] Enviando al backend...');
-      const { data, error } = await supabase.functions.invoke('upload-excel-recommendations', {
+      
+      // Usar fetch directo para que FormData funcione correctamente
+      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-excel-recommendations`;
+      
+      const res = await fetch(fnUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-store',
+        },
         body: formData,
       });
 
-      console.log('[UPLOAD] Respuesta del backend:', { data, error });
+      const raw = await res.text();
+      console.log('[UPLOAD] status:', res.status, 'raw:', raw);
 
-      if (error) {
-        console.error('[UPLOAD] Error del backend:', error);
-        
+      if (!res.ok) {
         // Mensajes específicos para errores comunes
-        if (error.message?.includes('413') || error.message?.includes('too large')) {
+        if (res.status === 413) {
           throw new Error('El archivo es demasiado grande. Máximo 15MB.');
         }
-        if (error.message?.includes('429')) {
+        if (res.status === 429) {
           throw new Error('Demasiadas peticiones. Espera unos segundos e intenta de nuevo.');
         }
-        if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+        if (res.status === 401) {
           throw new Error('No autorizado. Inicia sesión nuevamente.');
         }
-        
-        throw error;
+        throw new Error(`HTTP ${res.status}: ${raw.slice(0, 200)}`);
       }
+
+      const data = JSON.parse(raw);
 
       if (data?.success) {
         setUploadResult({
@@ -177,11 +194,12 @@ export default function AlertasSugerencias() {
       }
     } catch (error: any) {
       console.error('[UPLOAD] Error:', error);
+      const errorMsg = error.message || 'Error desconocido';
       setUploadResult({
         success: false,
-        error: error.message || 'Error desconocido',
+        error: errorMsg,
       });
-      toast.error('Error al procesar archivo: ' + (error.message || 'Error desconocido'));
+      toast.error('Error al procesar archivo: ' + errorMsg);
     } finally {
       setUploading(false);
     }
