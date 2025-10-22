@@ -45,10 +45,10 @@ serve(async (req) => {
 
     console.log(`Procesando ${creators?.length || 0} creadores`);
 
-    // Obtener datos de creator_live_daily para el mes
+    // Obtener datos de creator_daily_stats para el mes (datos del Excel)
     const { data: liveData, error: liveError } = await supabase
-      .from('creator_live_daily')
-      .select('creator_id, fecha, horas, diamantes')
+      .from('creator_daily_stats')
+      .select('creator_id, fecha, dias_validos_live, duracion_live_horas, diamantes')
       .gte('fecha', primerDia.toISOString().split('T')[0])
       .lte('fecha', ultimoDia.toISOString().split('T')[0]);
 
@@ -59,12 +59,12 @@ serve(async (req) => {
 
     console.log(`Datos live obtenidos: ${liveData?.length || 0} registros`);
 
-    // Agrupar por creator_id y calcular métricas
+    // Agrupar por creator_id y calcular métricas desde creator_daily_stats
     const bonificacionesPorCreador = creators?.map(creator => {
       const creatorLiveData = liveData?.filter(d => d.creator_id === creator.id) || [];
       
-      const dias_live_mes = creatorLiveData.filter(d => (d.horas || 0) > 0).length;
-      const horas_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.horas || 0), 0);
+      const dias_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.dias_validos_live || 0), 0);
+      const horas_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0);
       const diam_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.diamantes || 0), 0);
 
       // Calcular hitos

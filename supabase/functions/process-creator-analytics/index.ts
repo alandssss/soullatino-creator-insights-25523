@@ -83,10 +83,10 @@ serve(async (req) => {
     // Use service role client for admin operations (after authorization check)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Obtener información del creador con métricas del mes actual
+    // 1. Obtener información del creador
     const { data: creator, error: creatorError } = await supabase
       .from('creators')
-      .select('nombre, diamantes, horas_live, dias_live, hito_diamantes')
+      .select('nombre, hito_diamantes')
       .eq('id', creatorId)
       .single();
 
@@ -105,15 +105,30 @@ serve(async (req) => {
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const remaining_calendar_days = Math.max(0, lastDayOfMonth - currentDay + 1);
 
+    // 2. Obtener métricas del mes actual desde creator_daily_stats
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const { data: dailyStats, error: statsError } = await supabase
+      .from('creator_daily_stats')
+      .select('dias_validos_live, duracion_live_horas, diamantes')
+      .eq('creator_id', creatorId)
+      .gte('fecha', firstDayOfMonth)
+      .lte('fecha', today.toISOString().split('T')[0]);
+
+    if (statsError) {
+      console.error('Error obteniendo stats diarias:', statsError);
+    }
+
+    // Agregar métricas del mes
+    const valid_days_so_far = dailyStats?.reduce((sum, d) => sum + (d.dias_validos_live || 0), 0) || 0;
+    const hours_so_far = dailyStats?.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0) || 0;
+    const diamonds_so_far = dailyStats?.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
+
+    console.log(`Métricas del mes para ${creator.nombre}:`, { valid_days_so_far, hours_so_far, diamonds_so_far });
+
     // 3. Obtener hitos (por ahora valores por defecto, se pueden parametrizar)
     const target_valid_days = 20;
     const target_hours = 70;
     const target_diamonds = creator.hito_diamantes || 100000;
-
-    // 4. Progreso actual
-    const valid_days_so_far = creator.dias_live || 0;
-    const hours_so_far = creator.horas_live || 0;
-    const diamonds_so_far = creator.diamantes || 0;
 
     // 5. Calcular necesidades
     const needed_valid_days = Math.max(0, target_valid_days - valid_days_so_far);
