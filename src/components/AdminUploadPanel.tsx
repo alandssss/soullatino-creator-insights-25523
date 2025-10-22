@@ -349,6 +349,18 @@ export const AdminUploadPanel = () => {
         }
       }
 
+      // Refrescar vista materializada de recomendaciones
+      try {
+        const { error: refreshError } = await supabase.rpc('refresh_recommendations_today');
+        if (refreshError) {
+          console.warn('No se pudo refrescar recomendaciones:', refreshError);
+        } else {
+          console.log('✅ Vista de recomendaciones refrescada exitosamente');
+        }
+      } catch (refreshErr) {
+        console.warn('Error al refrescar recomendaciones:', refreshErr);
+      }
+
       toast({
         title: "✅ Carga Completa",
         description: `${successCount} creadores guardados con todos sus datos incluyendo teléfonos. ${errorCount > 0 ? `Errores: ${errorCount}` : ''}`,
@@ -469,6 +481,18 @@ export const AdminUploadPanel = () => {
           title: "🎯 Bonificaciones calculadas",
           description: "Panel predictivo actualizado con los nuevos datos",
         });
+      }
+
+      // Refrescar vista materializada de recomendaciones
+      try {
+        const { error: refreshError } = await supabase.rpc('refresh_recommendations_today');
+        if (refreshError) {
+          console.warn('No se pudo refrescar recomendaciones:', refreshError);
+        } else {
+          console.log('✅ Vista de recomendaciones refrescada exitosamente');
+        }
+      } catch (refreshErr) {
+        console.warn('Error al refrescar recomendaciones:', refreshErr);
       }
     } catch (error: any) {
       console.error('Error creando datos demo:', error);
