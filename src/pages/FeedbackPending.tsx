@@ -69,16 +69,16 @@ const FeedbackPending = () => {
 
     // Obtener el último feedback de cada creador
     const { data: interactions } = await supabase
-      .from("creator_interactions")
-      .select("creator_id, fecha")
-      .eq("tipo_interaccion", "feedback")
-      .order("fecha", { ascending: false });
+      .from("creator_interactions" as any)
+      .select("creator_id, created_at")
+      .eq("tipo", "feedback")
+      .order("created_at", { ascending: false });
 
     // Crear un mapa con la última fecha de feedback por creador
     const lastFeedbackMap = new Map<string, string>();
-    interactions?.forEach((interaction) => {
+    interactions?.forEach((interaction: any) => {
       if (!lastFeedbackMap.has(interaction.creator_id)) {
-        lastFeedbackMap.set(interaction.creator_id, interaction.fecha);
+        lastFeedbackMap.set(interaction.creator_id, interaction.created_at);
       }
     });
 

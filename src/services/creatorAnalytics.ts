@@ -8,9 +8,9 @@ export class CreatorAnalyticsService {
   /**
    * Obtiene bonificaciones del mes especificado con datos enriquecidos de creadores
    */
-  async getBonificaciones(mesReferencia: string) {
+  async getBonificaciones(mesReferencia: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('creator_bonificaciones')
+      .from('creator_bonificaciones' as any)
       .select(`
         *,
         creators!inner(nombre, telefono)
@@ -26,11 +26,11 @@ export class CreatorAnalyticsService {
     console.log('Bonificaciones cargadas:', data?.length, 'registros');
     
     // Enriquecer datos con información del creador
-    const enrichedData = data?.map(bonif => ({
+    const enrichedData = (data || []).map((bonif: any) => ({
       ...bonif,
       nombre: bonif.creators?.nombre || 'Sin nombre',
       telefono: bonif.creators?.telefono || null
-    })) || [];
+    }));
     
     console.log('Datos enriquecidos con teléfonos:', enrichedData.filter(b => b.telefono).length);
     
@@ -74,9 +74,9 @@ export class CreatorAnalyticsService {
   /**
    * Obtiene estadísticas de live diario para un creador en un rango de fechas
    */
-  async getLiveStats(creatorId: string, fechaInicio: string, fechaFin: string) {
+  async getLiveStats(creatorId: string, fechaInicio: string, fechaFin: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('creator_live_daily')
+      .from('creator_live_daily' as any)
       .select('*')
       .eq('creator_id', creatorId)
       .gte('fecha', fechaInicio)
@@ -87,35 +87,35 @@ export class CreatorAnalyticsService {
       throw new Error(`Error cargando estadísticas de live: ${error.message}`);
     }
     
-    return data;
+    return data || [];
   }
 
   /**
    * Obtiene interacciones de un creador
    */
-  async getInteractions(creatorId: string) {
+  async getInteractions(creatorId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('creator_interactions')
+      .from('creator_interactions' as any)
       .select('*')
       .eq('creator_id', creatorId)
-      .order('fecha', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (error) {
       throw new Error(`Error cargando interacciones: ${error.message}`);
     }
     
-    return data;
+    return data || [];
   }
 
   /**
    * Agrega una nueva interacción para un creador
    */
-  async addInteraction(creatorId: string, tipo: string, notas: string, adminNombre?: string) {
+  async addInteraction(creatorId: string, tipo: string, notas: string, adminNombre?: string): Promise<void> {
     const { error } = await supabase
-      .from('creator_interactions')
+      .from('creator_interactions' as any)
       .insert({
         creator_id: creatorId,
-        tipo_interaccion: tipo,
+        tipo: tipo,
         notas: notas,
         admin_nombre: adminNombre || 'Admin'
       });
@@ -128,9 +128,9 @@ export class CreatorAnalyticsService {
   /**
    * Obtiene la recomendación más reciente activa para un creador
    */
-  async getLatestRecommendation(creatorId: string) {
+  async getLatestRecommendation(creatorId: string): Promise<any> {
     const { data, error } = await supabase
-      .from('creator_recommendations')
+      .from('creator_recommendations' as any)
       .select('descripcion, tipo, titulo')
       .eq('creator_id', creatorId)
       .eq('activa', true)
@@ -156,7 +156,7 @@ export class CreatorAnalyticsService {
       const hoy = mesActual.toISOString().split('T')[0];
       
       const { data, error } = await supabase
-        .from('creator_live_daily')
+        .from('creator_live_daily' as any)
         .select('horas, fecha')
         .eq('creator_id', creatorId)
         .gte('fecha', mesInicio)
@@ -169,8 +169,8 @@ export class CreatorAnalyticsService {
       
       if (!data || data.length === 0) return null;
       
-      const diasReales = data.filter(d => (d.horas || 0) >= 1.0).length;
-      const horasTotales = data.reduce((sum, d) => sum + (d.horas || 0), 0);
+      const diasReales = data.filter((d: any) => (d.horas || 0) >= 1.0).length;
+      const horasTotales = data.reduce((sum: number, d: any) => sum + (d.horas || 0), 0);
       
       return {
         dias_reales_hasta_hoy: diasReales,

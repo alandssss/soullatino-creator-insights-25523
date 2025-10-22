@@ -83,7 +83,7 @@ export class InteractionService {
    */
   static async getLatestRecommendation(creatorId: string) {
     const { data, error } = await supabase
-      .from("creator_recommendations")
+      .from("creator_recommendations" as any)
       .select("descripcion, tipo, titulo")
       .eq("creator_id", creatorId)
       .eq("activa", true)

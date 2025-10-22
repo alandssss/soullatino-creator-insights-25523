@@ -2,9 +2,11 @@
 export const useWorkTimeTracker = (userEmail?: string) => {
   return {
     isActive: false,
+    isLoading: false,
     todaySeconds: 0,
     todayFormatted: "0:00:00",
     todayGoalHours: 0,
+    dailyGoalHours: 0,
     todayProgress: 0,
     formatTime: "0:00:00",
     progress: 0,
