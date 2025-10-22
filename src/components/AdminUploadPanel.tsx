@@ -163,6 +163,8 @@ export const AdminUploadPanel = () => {
 
         // Mapear usando nombres normalizados y originales
         const tiktokUsername = row["Nombre de usuario del creador"] || row["Creator's username"] || row["Nombre"] || "";
+        const creatorId = row["ID del creador"] || row["Creator's user ID"] || "";
+        const telefono = row["Teléfono"] || row["Phone"] || null;
         
         // ============================================
         // COLUMNAS CRÍTICAS
@@ -174,52 +176,75 @@ export const AdminUploadPanel = () => {
         
         // OTRAS COLUMNAS IMPORTANTES
         const diasDesdeInicio = row["Días desde la incorporación"] || row["Days since joining"] || 0;
+        const fechaIncorporacion = row["Hora de incorporación"] || row["Joining time"] || null;
         
         // DATOS DEL MES PASADO
         const diamantesLastMonth = row["Diamantes en el último mes"] || row["Diamonds last month"] || 0;
         const horasLiveLastMonth = parseDuration(row["Duración de emisiones LIVE (en horas) durante el último mes"] || row["LIVE duration (hours) last month"] || "");
         const diasLiveLastMonth = row["Días válidos de emisiones LIVE del mes pasado"] || row["Valid go LIVE days last month"] || 0;
         const followersLastMonth = row["Nuevos seguidores en el último mes"] || row["New followers last month"] || 0;
+        const emisionesLastMonth = row["Emisiones LIVE en el último mes"] || row["LIVE sessions last month"] || 0;
         
-        // PORCENTAJES DE CRECIMIENTO/DECRECIMIENTO
-        const diamondsVsLastMonth = parsePercentage(row["Diamantes - Frente al último mes"] || row["Diamonds - Vs. last month"] || "0");
-        const liveDurationVsLastMonth = parsePercentage(row["Duración de LIVE - Frente al último mes"] || row["LIVE duration - Vs. last month"] || "0");
-        const validDaysVsLastMonth = parsePercentage(row["Días válidos de emisiones LIVE - Frente al último mes"] || row["Valid go LIVE days - Vs. last month"] || "0");
-        const followersVsLastMonth = parsePercentage(row["Nuevos seguidores - Frente al último mes"] || row["New followers - Vs. last month"] || "0");
+        // PORCENTAJES DE LOGRO
+        const porcentajeDiamantes = parsePercentage(row["Diamantes - Porcentaje logrado"] || row["Diamonds - Achievement %"] || "0");
+        const porcentajeDuracion = parsePercentage(row["Duración de LIVE - Porcentaje logrado"] || row["LIVE duration - Achievement %"] || "0");
+        const porcentajeDias = parsePercentage(row["Días válidos de emisiones LIVE - Porcentaje logrado"] || row["Valid go LIVE days - Achievement %"] || "0");
+        const porcentajeSeguidores = parsePercentage(row["Nuevos seguidores - Porcentaje logrado"] || row["New followers - Achievement %"] || "0");
+        const porcentajeEmisiones = parsePercentage(row["Emisiones LIVE - Porcentaje logrado"] || row["LIVE sessions - Achievement %"] || "0");
+        
+        // DATOS ADICIONALES
+        const ingresosSuscripciones = row["Ingresos por suscripciones"] || row["Subscription earnings"] || 0;
+        const suscripcionesCompradas = row["Suscripciones compradas"] || row["Subscriptions purchased"] || 0;
+        const suscriptores = row["Suscriptores"] || row["Subscribers"] || 0;
+        const diamantesPartidas = row["Diamantes de partidas"] || row["PKO battle diamonds"] || 0;
+        const diamantesModoVarios = row["Diamantes del modo de varios invitados"] || row["Multi-guest mode diamonds"] || 0;
+        const diamantesAnfitrion = row["Diamantes de varios invitados (como anfitrión)"] || row["Multi-guest diamonds (as host)"] || 0;
+        const diamantesInvitado = row["Diamantes del modo de varios invitados (como invitado)"] || row["Multi-guest mode diamonds (as guest)"] || 0;
+        const baseDiamantes = row["Base de Diamantes antes de unirse"] || row["Diamond base before joining"] || 0;
         
         const followers = row["Nuevos seguidores"] || row["New followers"] || 0;
+        const emisiones = row["Emisiones LIVE"] || row["LIVE sessions"] || 0;
         const manager = row["Agente"] || row["Creator Network manager"] || null;
         const graduacion = row["Estado de graduación"] || row["Graduation status"] || null;
         
         const grupo = row["Grupo"] || row["Group"] || null;
         
         return {
+          creator_id: creatorId,
           nombre: tiktokUsername,
-          tiktok_username: tiktokUsername,
-          categoria: (grupo && grupo !== "Not in a group" && grupo !== "Sin grupo") ? grupo : null,
-          manager: manager,
-          status: "activo",
-          graduacion: graduacion,
-          // COLUMNAS CRÍTICAS H, I, J, AB
-          diamantes: diamantes,                    // H
-          horas_live: horasLive,                   // I
-          dias_live: diasLive,                     // J
-          engagement_rate: batallasPKO,            // AB - Batallas PKO (motor de monetización)
-          // OTRAS MÉTRICAS
-          followers: followers,
-          views: 0,
-          dias_desde_inicio: diasDesdeInicio,
-          last_month_diamantes: diamantesLastMonth,
-          last_month_views: 0,
-          last_month_engagement: 0,
-          horasLiveLastMonth: horasLiveLastMonth,
-          diasLiveLastMonth: diasLiveLastMonth,
-          followersLastMonth: followersLastMonth,
-          // Porcentajes de cambio
-          diamondsVsLastMonth: diamondsVsLastMonth,
-          liveDurationVsLastMonth: liveDurationVsLastMonth,
-          validDaysVsLastMonth: validDaysVsLastMonth,
-          followersVsLastMonth: followersVsLastMonth,
+          telefono: telefono,
+          grupo: grupo,
+          agente: manager,
+          fecha_incorporacion: fechaIncorporacion,
+          dias_desde_incorporacion: diasDesdeInicio,
+          estado_graduacion: graduacion,
+          base_diamantes_antes_union: baseDiamantes,
+          // Métricas actuales
+          diamantes: diamantes,
+          duracion_live_horas: horasLive,
+          dias_validos_live: diasLive,
+          nuevos_seguidores: followers,
+          emisiones_live: emisiones,
+          partidas: batallasPKO,
+          diamantes_partidas: diamantesPartidas,
+          ingresos_suscripciones: ingresosSuscripciones,
+          suscripciones_compradas: suscripcionesCompradas,
+          suscriptores: suscriptores,
+          diamantes_modo_varios: diamantesModoVarios,
+          diamantes_varios_anfitrion: diamantesAnfitrion,
+          diamantes_varios_invitado: diamantesInvitado,
+          // Métricas del mes pasado
+          diamantes_mes: diamantesLastMonth,
+          duracion_live_horas_mes: horasLiveLastMonth,
+          dias_validos_live_mes: diasLiveLastMonth,
+          nuevos_seguidores_mes: followersLastMonth,
+          emisiones_live_mes: emisionesLastMonth,
+          // Porcentajes de logro
+          porcentaje_diamantes: porcentajeDiamantes,
+          porcentaje_duracion_live: porcentajeDuracion,
+          porcentaje_dias_validos: porcentajeDias,
+          porcentaje_seguidores: porcentajeSeguidores,
+          porcentaje_emisiones: porcentajeEmisiones,
         };
       }).filter(creator => creator.nombre && creator.nombre.toString().trim().length > 0);
 
@@ -240,65 +265,75 @@ export const AdminUploadPanel = () => {
       let successCount = 0;
       let errorCount = 0;
 
+      const fechaHoy = new Date().toISOString().split('T')[0];
+      const mesReferencia = new Date().toISOString().slice(0, 7) + '-01';
+
       for (const creatorData of creatorsData) {
         try {
-          // 1. UPSERT en tabla creators usando tiktok_username como clave única
-          // IMPORTANTE: NO actualizar telefono, email, instagram (son datos de registro permanentes)
+          // 1. UPSERT en tabla creators usando creator_id como clave única
           const { data: upsertedCreator, error: upsertError } = await supabase
             .from("creators")
             .upsert({
-              tiktok_username: creatorData.tiktok_username,
+              creator_id: creatorData.creator_id,
               nombre: creatorData.nombre,
-              // NO incluir: telefono, email, instagram (se preservan los valores existentes)
-              categoria: creatorData.categoria,
-              manager: creatorData.manager,
-              status: creatorData.status,
-              graduacion: creatorData.graduacion,
-              diamantes: creatorData.diamantes,
-              followers: creatorData.followers,
-              views: creatorData.views,
-              engagement_rate: creatorData.engagement_rate,
-              dias_live: creatorData.dias_live,
-              horas_live: creatorData.horas_live,
-              dias_desde_inicio: creatorData.dias_desde_inicio,
-            }, { onConflict: 'tiktok_username' })
+              telefono: creatorData.telefono,
+              grupo: creatorData.grupo,
+              agente: creatorData.agente,
+              fecha_incorporacion: creatorData.fecha_incorporacion,
+              dias_desde_incorporacion: creatorData.dias_desde_incorporacion,
+              estado_graduacion: creatorData.estado_graduacion,
+              base_diamantes_antes_union: creatorData.base_diamantes_antes_union,
+            }, { onConflict: 'creator_id' })
             .select()
             .single();
 
           if (upsertError) throw upsertError;
 
-          // 2. INSERT snapshot diario en creator_daily_stats
-          const { error: snapshotError } = await supabase
+          // 2. INSERT/UPDATE estadísticas diarias
+          const { error: dailyError } = await supabase
             .from("creator_daily_stats")
-            .insert({
-              creator_id: upsertedCreator.id,
-              snapshot_date: new Date().toISOString().split('T')[0],
-              days_since_joining: creatorData.dias_desde_inicio || 0,
-              live_duration_l30d: creatorData.horasLiveLastMonth || 0,
-              diamonds_l30d: creatorData.last_month_diamantes || 0,
-              diamond_baseline: 0,
-              ingreso_estimado: creatorData.last_month_diamantes ? (creatorData.last_month_diamantes * 0.005) : 0,
-              followers: creatorData.followers || 0,
-              engagement_rate: 0,
-            });
-
-          // Si ya existe un snapshot para hoy, ignorar el error de UNIQUE constraint
-          if (snapshotError && !snapshotError.message?.includes('duplicate key')) {
-            console.warn("Error creando snapshot:", snapshotError);
-          }
-
-          // 3. UPSERT en creator_live_daily (datos diarios para bonificaciones)
-          const { error: liveError } = await supabase
-            .from("creator_live_daily")
             .upsert({
               creator_id: upsertedCreator.id,
-              fecha: new Date().toISOString().split('T')[0], // Fecha de hoy
-              horas: creatorData.horas_live,                 // Columna I del Excel
-              diamantes: creatorData.diamantes,              // Columna H del Excel
+              fecha: fechaHoy,
+              diamantes: creatorData.diamantes,
+              duracion_live_horas: creatorData.duracion_live_horas,
+              dias_validos_live: creatorData.dias_validos_live,
+              nuevos_seguidores: creatorData.nuevos_seguidores,
+              emisiones_live: creatorData.emisiones_live,
+              partidas: creatorData.partidas,
+              diamantes_partidas: creatorData.diamantes_partidas,
+              ingresos_suscripciones: creatorData.ingresos_suscripciones,
+              suscripciones_compradas: creatorData.suscripciones_compradas,
+              suscriptores: creatorData.suscriptores,
+              diamantes_modo_varios: creatorData.diamantes_modo_varios,
+              diamantes_varios_anfitrion: creatorData.diamantes_varios_anfitrion,
+              diamantes_varios_invitado: creatorData.diamantes_varios_invitado,
             }, { onConflict: 'creator_id,fecha' });
 
-          if (liveError && !liveError.message?.includes('duplicate key')) {
-            console.warn("Error guardando datos live:", liveError);
+          if (dailyError && !dailyError.message?.includes('duplicate key')) {
+            console.warn("Error guardando estadísticas diarias:", dailyError);
+          }
+
+          // 3. INSERT/UPDATE estadísticas mensuales
+          const { error: monthlyError } = await supabase
+            .from("creator_monthly_stats")
+            .upsert({
+              creator_id: upsertedCreator.id,
+              mes_referencia: mesReferencia,
+              diamantes_mes: creatorData.diamantes_mes,
+              duracion_live_horas_mes: creatorData.duracion_live_horas_mes,
+              dias_validos_live_mes: creatorData.dias_validos_live_mes,
+              nuevos_seguidores_mes: creatorData.nuevos_seguidores_mes,
+              emisiones_live_mes: creatorData.emisiones_live_mes,
+              porcentaje_diamantes: creatorData.porcentaje_diamantes,
+              porcentaje_duracion_live: creatorData.porcentaje_duracion_live,
+              porcentaje_dias_validos: creatorData.porcentaje_dias_validos,
+              porcentaje_seguidores: creatorData.porcentaje_seguidores,
+              porcentaje_emisiones: creatorData.porcentaje_emisiones,
+            }, { onConflict: 'creator_id,mes_referencia' });
+
+          if (monthlyError && !monthlyError.message?.includes('duplicate key')) {
+            console.warn("Error guardando estadísticas mensuales:", monthlyError);
           }
 
           successCount++;
@@ -308,36 +343,10 @@ export const AdminUploadPanel = () => {
         }
       }
 
-      // Registrar el archivo cargado
-      await supabase
-        .from("uploaded_reports")
-        .insert({
-          filename: file.name,
-          records_count: successCount,
-          processed: true,
-        });
-
-      // Calcular bonificaciones automáticamente después de la carga
-      console.log("Calculando bonificaciones para el mes actual...");
-      const mesActual = new Date().toISOString().slice(0, 7) + '-01'; // '2025-10-01'
-
-      const { error: calcError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
-        body: { mes_referencia: mesActual }
+      toast({
+        title: "✅ Carga Completa",
+        description: `${successCount} creadores guardados con todos sus datos incluyendo teléfonos. ${errorCount > 0 ? `Errores: ${errorCount}` : ''}`,
       });
-
-      if (calcError) {
-        console.error('Error calculando bonificaciones:', calcError);
-        toast({
-          title: "⚠️ Datos guardados, pero...",
-          description: "No se pudieron calcular bonificaciones. Usa el botón Recalcular en el Panel.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "✅ Carga Completa",
-          description: `${successCount} creadores actualizados | Datos diarios guardados | Bonificaciones recalculadas`,
-        });
-      }
 
       setFile(null);
       const fileInput = document.getElementById("file-upload") as HTMLInputElement;
