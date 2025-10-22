@@ -107,7 +107,6 @@ export type Database = {
         Row: {
           created_at: string | null
           creator_id: string | null
-          creator_username: string | null
           diamantes: number | null
           diamantes_modo_varios: number | null
           diamantes_partidas: number | null
@@ -121,14 +120,12 @@ export type Database = {
           ingresos_suscripciones: number | null
           nuevos_seguidores: number | null
           partidas: number | null
-          phone_e164: string | null
           suscripciones_compradas: number | null
           suscriptores: number | null
         }
         Insert: {
           created_at?: string | null
           creator_id?: string | null
-          creator_username?: string | null
           diamantes?: number | null
           diamantes_modo_varios?: number | null
           diamantes_partidas?: number | null
@@ -142,14 +139,12 @@ export type Database = {
           ingresos_suscripciones?: number | null
           nuevos_seguidores?: number | null
           partidas?: number | null
-          phone_e164?: string | null
           suscripciones_compradas?: number | null
           suscriptores?: number | null
         }
         Update: {
           created_at?: string | null
           creator_id?: string | null
-          creator_username?: string | null
           diamantes?: number | null
           diamantes_modo_varios?: number | null
           diamantes_partidas?: number | null
@@ -163,7 +158,6 @@ export type Database = {
           ingresos_suscripciones?: number | null
           nuevos_seguidores?: number | null
           partidas?: number | null
-          phone_e164?: string | null
           suscripciones_compradas?: number | null
           suscriptores?: number | null
         }
@@ -505,7 +499,6 @@ export type Database = {
           buena_iluminacion: boolean | null
           created_at: string | null
           creator_id: string | null
-          cumple_normas: boolean | null
           en_batalla: boolean | null
           en_vivo: boolean | null
           fecha_evento: string | null
@@ -520,7 +513,6 @@ export type Database = {
           buena_iluminacion?: boolean | null
           created_at?: string | null
           creator_id?: string | null
-          cumple_normas?: boolean | null
           en_batalla?: boolean | null
           en_vivo?: boolean | null
           fecha_evento?: string | null
@@ -535,7 +527,6 @@ export type Database = {
           buena_iluminacion?: boolean | null
           created_at?: string | null
           creator_id?: string | null
-          cumple_normas?: boolean | null
           en_batalla?: boolean | null
           en_vivo?: boolean | null
           fecha_evento?: string | null
@@ -619,32 +610,7 @@ export type Database = {
       }
     }
     Views: {
-      recommendations_today: {
-        Row: {
-          creator_id: string | null
-          creator_username: string | null
-          diamantes_actuales: number | null
-          dias_actuales: number | null
-          dias_restantes: number | null
-          faltan_dias: number | null
-          faltan_horas: number | null
-          horas_actuales: number | null
-          horas_min_dia_sugeridas: number | null
-          phone_e164: string | null
-          prioridad_riesgo: number | null
-          proximo_objetivo: string | null
-          recommendation_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "creator_daily_stats_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "creators"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       has_role: {
@@ -653,10 +619,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      refresh_recommendations_today: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
     }
     Enums: {

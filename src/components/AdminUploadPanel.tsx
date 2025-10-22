@@ -274,7 +274,6 @@ export const AdminUploadPanel = () => {
           const creatorPayload: any = {
             creator_id: creatorData.creator_id,
             nombre: creatorData.nombre,
-            tiktok_username: creatorData.nombre,
             telefono: creatorData.telefono,
             grupo: creatorData.grupo,
             agente: creatorData.agente,
@@ -282,51 +281,15 @@ export const AdminUploadPanel = () => {
             dias_desde_incorporacion: creatorData.dias_desde_incorporacion,
             estado_graduacion: creatorData.estado_graduacion,
             base_diamantes_antes_union: creatorData.base_diamantes_antes_union,
-            // Actualizamos métricas visibles en el perfil para que no aparezcan en 0
-            diamantes: creatorData.diamantes,
-            horas_live: creatorData.duracion_live_horas,
-            dias_live: creatorData.dias_validos_live,
           };
 
-          // Intentar UPSERT por creator_id; si la tabla no tiene constraint único, hacer fallback a select/update
-          let upsertedCreator: any = null;
-          const upsertResp = await supabase
+          const { data: upsertedCreator, error: upsertError } = await supabase
             .from("creators")
             .upsert(creatorPayload, { onConflict: 'creator_id' })
             .select()
-            .maybeSingle();
+            .single();
 
-          if (upsertResp.error && upsertResp.error.message?.toLowerCase().includes('no unique')) {
-            // Fallback: buscar por creator_id y actualizar o insertar
-            const existing = await supabase
-              .from("creators")
-              .select("*")
-              .eq("creator_id", creatorPayload.creator_id)
-              .maybeSingle();
-
-            if (existing.data) {
-              const updateRes = await supabase
-                .from("creators")
-                .update(creatorPayload)
-                .eq("id", existing.data.id)
-                .select()
-                .single();
-              if (updateRes.error) throw updateRes.error;
-              upsertedCreator = updateRes.data;
-            } else {
-              const insertRes = await supabase
-                .from("creators")
-                .insert(creatorPayload)
-                .select()
-                .single();
-              if (insertRes.error) throw insertRes.error;
-              upsertedCreator = insertRes.data;
-            }
-          } else if (upsertResp.error) {
-            throw upsertResp.error;
-          } else {
-            upsertedCreator = upsertResp.data;
-          }
+          if (upsertError) throw upsertError;
 
           // 2. INSERT/UPDATE estadísticas diarias
           const dailyPayload: any = {
@@ -347,20 +310,9 @@ export const AdminUploadPanel = () => {
             diamantes_varios_invitado: creatorData.diamantes_varios_invitado,
           };
 
-          let dailyError = null as any;
-          try {
-            const resp = await supabase
-              .from("creator_daily_stats")
-              .upsert(dailyPayload, { onConflict: 'creator_id,fecha' });
-            dailyError = resp.error;
-            if (dailyError && dailyError.message?.toLowerCase().includes('no unique')) {
-              // Fallback: insertar directo
-              const insertResp = await supabase.from("creator_daily_stats").insert(dailyPayload);
-              dailyError = insertResp.error;
-            }
-          } catch (e: any) {
-            dailyError = e;
-          }
+          const { error: dailyError } = await supabase
+            .from("creator_daily_stats")
+            .upsert(dailyPayload, { onConflict: 'creator_id,fecha' });
 
           if (dailyError && !dailyError.message?.includes('duplicate key')) {
             console.warn("Error guardando estadísticas diarias:", dailyError);
@@ -386,25 +338,15 @@ export const AdminUploadPanel = () => {
             .from("creator_monthly_stats")
             .upsert(monthlyPayload, { onConflict: 'creator_id,mes_referencia' });
 
-          
+          if (monthlyError && !monthlyError.message?.includes('duplicate key')) {
+            console.warn("Error guardando estadísticas mensuales:", monthlyError);
+          }
 
           successCount++;
         } catch (err) {
           console.error("Error con creador:", creatorData.nombre, err);
           errorCount++;
         }
-      }
-
-      // Refrescar vista materializada de recomendaciones
-      try {
-        const { error: refreshError } = await supabase.rpc('refresh_recommendations_today');
-        if (refreshError) {
-          console.warn('No se pudo refrescar recomendaciones:', refreshError);
-        } else {
-          console.log('✅ Vista de recomendaciones refrescada exitosamente');
-        }
-      } catch (refreshErr) {
-        console.warn('Error al refrescar recomendaciones:', refreshErr);
       }
 
       toast({
@@ -527,18 +469,6 @@ export const AdminUploadPanel = () => {
           title: "🎯 Bonificaciones calculadas",
           description: "Panel predictivo actualizado con los nuevos datos",
         });
-      }
-
-      // Refrescar vista materializada de recomendaciones
-      try {
-        const { error: refreshError } = await supabase.rpc('refresh_recommendations_today');
-        if (refreshError) {
-          console.warn('No se pudo refrescar recomendaciones:', refreshError);
-        } else {
-          console.log('✅ Vista de recomendaciones refrescada exitosamente');
-        }
-      } catch (refreshErr) {
-        console.warn('Error al refrescar recomendaciones:', refreshErr);
       }
     } catch (error: any) {
       console.error('Error creando datos demo:', error);
