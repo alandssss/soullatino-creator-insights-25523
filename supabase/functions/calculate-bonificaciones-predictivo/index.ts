@@ -59,13 +59,27 @@ serve(async (req) => {
 
     console.log(`Datos live obtenidos: ${liveData?.length || 0} registros`);
 
-    // Agrupar por creator_id y calcular métricas desde creator_daily_stats
+    // Agrupar por creator_id usando Map (creator_daily_stats puede tener múltiples filas por mes si hay cargas parciales)
+    const statsMap = new Map<string, { dias_live_mes: number; horas_live_mes: number; diam_live_mes: number }>();
+    
+    liveData?.forEach(stat => {
+      if (!statsMap.has(stat.creator_id)) {
+        statsMap.set(stat.creator_id, { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 });
+      }
+      const current = statsMap.get(stat.creator_id)!;
+      // dias_validos_live es acumulado en el Excel, usar el máximo
+      current.dias_live_mes = Math.max(current.dias_live_mes, stat.dias_validos_live || 0);
+      // Horas y diamantes: sumar (por si hay múltiples registros)
+      current.horas_live_mes += stat.duracion_live_horas || 0;
+      current.diam_live_mes += stat.diamantes || 0;
+    });
+
+    console.log(`Creadores con datos en statsMap: ${statsMap.size}`);
+
+    // Calcular bonificaciones para cada creador
     const bonificacionesPorCreador = creators?.map(creator => {
-      const creatorLiveData = liveData?.filter(d => d.creator_id === creator.id) || [];
-      
-      const dias_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.dias_validos_live || 0), 0);
-      const horas_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0);
-      const diam_live_mes = creatorLiveData.reduce((sum, d) => sum + (d.diamantes || 0), 0);
+      const stats = statsMap.get(creator.id) || { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 };
+      const { dias_live_mes, horas_live_mes, diam_live_mes } = stats;
 
       // Calcular hitos
       const hito_12d_40h = dias_live_mes >= 12 && horas_live_mes >= 40;

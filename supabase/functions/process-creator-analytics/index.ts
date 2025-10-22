@@ -236,7 +236,7 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
     if (geminiApiKey) {
       try {
         console.log('Llamando a Gemini API con gemini-2.5-flash...');
-        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+        const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -270,10 +270,15 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
           prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
         } else {
           const errorText = await aiResponse.text();
-          console.error('Error en Gemini API (intentando fallback a flash-latest):', errorText);
+          console.error('Error en Gemini API:', {
+            status: aiResponse.status,
+            statusText: aiResponse.statusText,
+            body: errorText
+          });
+          console.log('Intentando fallback a gemini-1.5-flash-001...');
           
-          // Fallback to gemini-1.5-flash-latest
-          const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+          // Fallback to gemini-1.5-flash-001
+          const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-001:generateContent?key=${geminiApiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -289,7 +294,11 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
           }
         }
       } catch (error) {
-        console.error('Error llamando a Gemini:', error);
+        console.error('Excepción al llamar a Gemini:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined
+        });
       }
     } else {
       console.log('GEMINI_API_KEY no configurada');
