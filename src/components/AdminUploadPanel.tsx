@@ -73,6 +73,8 @@ export const AdminUploadPanel = () => {
       'name': 'Nombre',
       'creador': 'Nombre',
       "creator's username": 'Nombre',
+      'nombre de usuario del creador': 'Nombre',
+      'id del creador': 'CreatorID',
       'usuario': 'Username',
       'username': 'Username',
       'handle': 'Username',
@@ -80,6 +82,23 @@ export const AdminUploadPanel = () => {
       'telefono': 'Teléfono',
       'tel': 'Teléfono',
       'phone': 'Teléfono',
+      'grupo': 'Group',
+      'agente': 'Manager',
+      'dias desde la incorporacion': 'DaysJoined',
+      'diamantes': 'Diamonds',
+      'duracion de live': 'LiveDuration',
+      'dias validos de emisiones live': 'ValidLiveDays',
+      'nuevos seguidores': 'NewFollowers',
+      'diamantes en el ultimo mes': 'DiamondsLastMonth',
+      'duracion de emisiones live (en horas) durante el ultimo mes': 'LiveDurationLastMonth',
+      'dias validos de emisiones live del mes pasado': 'ValidLiveDaysLastMonth',
+      'nuevos seguidores en el ultimo mes': 'FollowersLastMonth',
+      'diamantes - frente al ultimo mes': 'DiamondsVsLastMonth',
+      'duracion de live - frente al ultimo mes': 'LiveDurationVsLastMonth',
+      'dias validos de emisiones live - frente al ultimo mes': 'ValidDaysVsLastMonth',
+      'nuevos seguidores - frente al ultimo mes': 'FollowersVsLastMonth',
+      'partidas': 'PKOBattles',
+      'estado de graduacion': 'Graduation',
     };
 
     return headers.map(h => {
@@ -142,39 +161,42 @@ export const AdminUploadPanel = () => {
           return match ? parseFloat(match[0]) : 0;
         };
 
-        const tiktokUsername = row["Creator's username"] || "";
+        // Mapear usando nombres normalizados y originales
+        const tiktokUsername = row["Nombre de usuario del creador"] || row["Creator's username"] || row["Nombre"] || "";
         
         // ============================================
-        // COLUMNAS CRÍTICAS (H, I, J, AB)
+        // COLUMNAS CRÍTICAS
         // ============================================
-        const diamantes = row["Diamonds"] || 0;                         // Columna H
-        const horasLive = parseDuration(row["LIVE duration"] || "");    // Columna I  
-        const diasLive = row["Valid go LIVE days"] || 0;                // Columna J
-        const batallasPKO = row["PKO battles"] || row["PKO Battles"] || row["Batallas PKO"] || 0;  // Columna AB
+        const diamantes = row["Diamantes"] || row["Diamonds"] || 0;
+        const horasLive = parseDuration(row["Duración de LIVE"] || row["LIVE duration"] || "");
+        const diasLive = row["Días válidos de emisiones LIVE"] || row["Valid go LIVE days"] || 0;
+        const batallasPKO = row["Partidas"] || row["PKO battles"] || row["PKO Battles"] || row["Batallas PKO"] || 0;
         
         // OTRAS COLUMNAS IMPORTANTES
-        const diasDesdeInicio = row["Days since joining"] || 0;  // Columna G
+        const diasDesdeInicio = row["Días desde la incorporación"] || row["Days since joining"] || 0;
         
         // DATOS DEL MES PASADO
-        const diamantesLastMonth = row["Diamonds last month"] || 0;
-        const horasLiveLastMonth = parseDuration(row["LIVE duration (hours) last month"] || "");
-        const diasLiveLastMonth = row["Valid go LIVE days last month"] || 0;
-        const followersLastMonth = row["New followers last month"] || 0;
+        const diamantesLastMonth = row["Diamantes en el último mes"] || row["Diamonds last month"] || 0;
+        const horasLiveLastMonth = parseDuration(row["Duración de emisiones LIVE (en horas) durante el último mes"] || row["LIVE duration (hours) last month"] || "");
+        const diasLiveLastMonth = row["Días válidos de emisiones LIVE del mes pasado"] || row["Valid go LIVE days last month"] || 0;
+        const followersLastMonth = row["Nuevos seguidores en el último mes"] || row["New followers last month"] || 0;
         
         // PORCENTAJES DE CRECIMIENTO/DECRECIMIENTO
-        const diamondsVsLastMonth = parsePercentage(row["Diamonds - Vs. last month"] || "0");
-        const liveDurationVsLastMonth = parsePercentage(row["LIVE duration - Vs. last month"] || "0");
-        const validDaysVsLastMonth = parsePercentage(row["Valid go LIVE days - Vs. last month"] || "0");
-        const followersVsLastMonth = parsePercentage(row["New followers - Vs. last month"] || "0");
+        const diamondsVsLastMonth = parsePercentage(row["Diamantes - Frente al último mes"] || row["Diamonds - Vs. last month"] || "0");
+        const liveDurationVsLastMonth = parsePercentage(row["Duración de LIVE - Frente al último mes"] || row["LIVE duration - Vs. last month"] || "0");
+        const validDaysVsLastMonth = parsePercentage(row["Días válidos de emisiones LIVE - Frente al último mes"] || row["Valid go LIVE days - Vs. last month"] || "0");
+        const followersVsLastMonth = parsePercentage(row["Nuevos seguidores - Frente al último mes"] || row["New followers - Vs. last month"] || "0");
         
-        const followers = row["New followers"] || 0;
-        const manager = row["Creator Network manager"] || null;
-        const graduacion = row["Graduation status"] || null;
+        const followers = row["Nuevos seguidores"] || row["New followers"] || 0;
+        const manager = row["Agente"] || row["Creator Network manager"] || null;
+        const graduacion = row["Estado de graduación"] || row["Graduation status"] || null;
+        
+        const grupo = row["Grupo"] || row["Group"] || null;
         
         return {
           nombre: tiktokUsername,
           tiktok_username: tiktokUsername,
-          categoria: row["Group"] !== "Not in a group" ? row["Group"] : null,
+          categoria: (grupo && grupo !== "Not in a group" && grupo !== "Sin grupo") ? grupo : null,
           manager: manager,
           status: "activo",
           graduacion: graduacion,
