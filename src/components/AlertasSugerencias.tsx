@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Upload, Download, Search, AlertTriangle, TrendingDown, Clock, Users } from "lucide-react";
+import { Download, Search, AlertTriangle, TrendingDown, Clock, Users, RefreshCw } from "lucide-react";
 import { openWhatsApp } from "@/utils/whatsapp";
 import { KpiCard } from "./alertas/KpiCard";
 import { FilterChips, FilterType } from "./alertas/FilterChips";
 import { RiskTable } from "./alertas/RiskTable";
 import { EmptyState } from "./alertas/EmptyState";
-import { UploaderModal } from "./alertas/UploaderModal";
 
 interface Recommendation {
   creator_id: string;
@@ -41,11 +40,8 @@ export default function AlertasSugerencias() {
   const [filteredRecs, setFilteredRecs] = useState<Recommendation[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<FilterType>('all');
-  const [uploaderOpen, setUploaderOpen] = useState(false);
-  const [uploadResult, setUploadResult] = useState<any>(null);
 
   useEffect(() => {
     loadRecommendations();
@@ -90,120 +86,6 @@ export default function AlertasSugerencias() {
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast.error('Por favor sube un archivo Excel (.xlsx o .xls)');
-      return;
-    }
-
-    setUploading(true);
-    setUploadResult(null);
-    
-    try {
-      console.log('[UPLOAD] Nombre:', file.name, 'Bytes:', file.size);
-      
-      // Leer y validar el archivo antes de enviarlo
-      const XLSX = await import('xlsx');
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const sheet = wb.SheetNames[0];
-      
-      if (!sheet) {
-        throw new Error('El archivo no contiene hojas de cálculo');
-      }
-      
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { defval: '' });
-      console.log('[UPLOAD] Filas detectadas:', rows.length);
-      
-      if (!rows.length) {
-        toast.error('No se detectaron filas. Revisa que la hoja tenga encabezados en la fila 1.');
-        return;
-      }
-      
-      // Validar encabezados
-      const headers = Object.keys((rows[0] as any) || {});
-      console.log('[UPLOAD] Headers detectados:', headers);
-      
-      const requiredColumns = ['Nombre', 'Usuario', 'Username', 'name', 'creator'];
-      const hasRequiredColumn = requiredColumns.some(col => 
-        headers.some(h => h.toLowerCase().includes(col.toLowerCase()))
-      );
-      
-      if (!hasRequiredColumn) {
-        toast.error(`Falta una columna identificadora de creadores. Encabezados: ${headers.join(', ')}`);
-        return;
-      }
-
-      // Obtener sesión para auth
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No autorizado (sesión null)');
-      }
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      console.log('[UPLOAD] Enviando al backend...');
-      
-      // Usar fetch directo para que FormData funcione correctamente
-      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-excel-recommendations`;
-      
-      const res = await fetch(fnUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-store',
-        },
-        body: formData,
-      });
-
-      const raw = await res.text();
-      console.log('[UPLOAD] status:', res.status, 'raw:', raw);
-
-      if (!res.ok) {
-        // Mensajes específicos para errores comunes
-        if (res.status === 413) {
-          throw new Error('El archivo es demasiado grande. Máximo 15MB.');
-        }
-        if (res.status === 429) {
-          throw new Error('Demasiadas peticiones. Espera unos segundos e intenta de nuevo.');
-        }
-        if (res.status === 401) {
-          throw new Error('No autorizado. Inicia sesión nuevamente.');
-        }
-        throw new Error(`HTTP ${res.status}: ${raw.slice(0, 200)}`);
-      }
-
-      const data = JSON.parse(raw);
-
-      if (data?.success) {
-        setUploadResult({
-          success: true,
-          recordsProcessed: data.records_processed,
-        });
-        toast.success(`✅ ${data.records_processed} registros procesados`);
-        
-        // Recargar recomendaciones después de 2 segundos
-        setTimeout(async () => {
-          await loadRecommendations();
-          setUploaderOpen(false);
-          setUploadResult(null);
-        }, 2000);
-      } else {
-        throw new Error(data?.error || 'Respuesta inesperada del servidor');
-      }
-    } catch (error: any) {
-      console.error('[UPLOAD] Error:', error);
-      const errorMsg = error.message || 'Error desconocido';
-      setUploadResult({
-        success: false,
-        error: errorMsg,
-      });
-      toast.error('Error al procesar archivo: ' + errorMsg);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const filterRecommendations = () => {
     let filtered = [...recommendations];
@@ -327,13 +209,13 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
           
           <div className="flex flex-wrap gap-3">
             <Button 
-              onClick={() => setUploaderOpen(true)}
-              disabled={uploading}
+              onClick={loadRecommendations}
+              disabled={loading}
               size="lg"
               className="gap-2 rounded-xl min-h-[44px]"
             >
-              <Upload className="h-4 w-4" />
-              <span>Subir Excel</span>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Actualizar</span>
             </Button>
             
             <Button 
@@ -423,7 +305,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
       ) : showEmptyState ? (
         <EmptyState
           variant={recommendations.length === 0 ? 'no-data' : 'no-results'}
-          onAction={() => setUploaderOpen(true)}
           onClearFilters={handleClearFilters}
         />
       ) : (
@@ -433,15 +314,6 @@ ${rec.prioridad_riesgo >= 40 ? '⚠️ Si saltas 1 día, podrías perder la boni
           onCall={handleLlamar}
         />
       )}
-
-      {/* Modal de uploader */}
-      <UploaderModal
-        open={uploaderOpen}
-        onOpenChange={setUploaderOpen}
-        onFileSelect={handleFileUpload}
-        isUploading={uploading}
-        uploadResult={uploadResult}
-      />
     </div>
   );
 }

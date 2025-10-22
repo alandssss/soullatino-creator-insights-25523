@@ -4,18 +4,17 @@ import { Upload, Filter, FileSpreadsheet } from "lucide-react";
 
 interface EmptyStateProps {
   variant: 'no-data' | 'no-results' | 'error';
-  onAction?: () => void;
   onClearFilters?: () => void;
 }
 
-export function EmptyState({ variant, onAction, onClearFilters }: EmptyStateProps) {
+export function EmptyState({ variant, onClearFilters }: EmptyStateProps) {
   const configs = {
     'no-data': {
       icon: FileSpreadsheet,
       title: 'No hay datos disponibles',
-      description: 'Sube un archivo Excel con los datos de TikTok para comenzar a ver recomendaciones.',
-      actionLabel: 'Subir Excel',
-      showAction: true,
+      description: 'Sube un archivo Excel desde el panel de administración para ver recomendaciones.',
+      actionLabel: null,
+      showAction: false,
     },
     'no-results': {
       icon: Filter,
@@ -28,8 +27,8 @@ export function EmptyState({ variant, onAction, onClearFilters }: EmptyStateProp
       icon: Upload,
       title: 'Error al cargar datos',
       description: 'Hubo un problema al cargar las recomendaciones. Por favor, intenta de nuevo.',
-      actionLabel: 'Reintentar',
-      showAction: true,
+      actionLabel: null,
+      showAction: false,
     },
   };
 
@@ -50,10 +49,10 @@ export function EmptyState({ variant, onAction, onClearFilters }: EmptyStateProp
           </p>
         </div>
 
-        {config.showAction && (
+        {config.showAction && config.actionLabel && onClearFilters && (
           <div className="flex gap-3">
             <Button 
-              onClick={variant === 'no-results' ? onClearFilters : onAction}
+              onClick={onClearFilters}
               size="lg"
               className="rounded-xl gap-2 min-h-[44px]"
             >
