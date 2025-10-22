@@ -14,29 +14,18 @@ serve(async (req) => {
   try {
     console.log('[get-recommendations-today] Starting...');
     
-    // Get JWT from request headers
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader }
-      }
-    });
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Obtener recomendaciones ordenadas por prioridad
+    // Obtener recomendaciones de la vista materializada
     const { data: recommendations, error } = await supabase
-      .from('creator_riesgos_mes')
+      .from('recommendations_today')
       .select('*')
-      .order('prioridad_riesgo', { ascending: false })
-      .order('faltan_dias', { ascending: false })
-      .order('faltan_horas', { ascending: false });
+      .order('prioridad_riesgo', { ascending: false });
 
     if (error) {
+      console.error('[get-recommendations-today] Error:', error);
       throw error;
     }
 

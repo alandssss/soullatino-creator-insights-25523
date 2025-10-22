@@ -15,6 +15,14 @@ serve(async (req) => {
   try {
     console.log('[upload-excel-recommendations] Starting...');
     
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { 
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -82,116 +90,106 @@ serve(async (req) => {
       return isNaN(num) ? 0 : num;
     }
 
-    // Mapeo de columnas (ES/EN) - Incluye formatos de TikTok
-    const columnMappings = {
-      id: ['Creator ID', 'User ID', 'ID', 'CreatorID', 'id', 'ID del creador'],
-      username: ['Username', 'Creator Name', 'Nombre', 'nombre', 'creator_name', 'Nombre de usuario del creador'],
-      days: ['Days', 'Días', 'Dias', 'Days live', 'dias_live', 'days_live', 'Días válidos de emisiones LIVE'],
-      hours: ['Hours', 'Horas', 'Live Hours', 'Live duration', 'horas_live', 'live_hours', 'Duración de LIVE', 'Duración de emisiones LIVE (en horas) durante el último mes'],
-      diamonds: ['Diamonds', 'Diamantes', 'diamantes', 'diamonds'],
-    };
+    // Función para normalizar nombres de columnas
+    const normalize = (s: string) =>
+      s.normalize('NFKC').trim().toLowerCase()
+       .replace(/\s+/g, ' ')
+       .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+       .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n');
 
-    // Encontrar las columnas correctas
-    const getColumnValue = (row: any, possibleNames: string[]) => {
-      for (const name of possibleNames) {
-        if (row[name] !== undefined) return row[name];
-      }
-      return null;
+    const alias: Record<string, string> = {
+      'nombre': 'creator_username',
+      'name': 'creator_username',
+      'creador': 'creator_username',
+      'usuario': 'creator_username',
+      'username': 'creator_username',
+      'creator name': 'creator_username',
+      'handle': 'creator_username',
+      '@': 'creator_username',
+      'telefono': 'phone_e164',
+      'tel': 'phone_e164',
+      'phone': 'phone_e164',
+      'dias en live': 'dias_actuales',
+      'dias': 'dias_actuales',
+      'days': 'dias_actuales',
+      'days live': 'dias_actuales',
+      'duracion live': 'horas_actuales',
+      'horas': 'horas_actuales',
+      'hours': 'horas_actuales',
+      'live hours': 'horas_actuales',
+      'diamantes': 'diamantes_actuales',
+      'diamonds': 'diamantes_actuales'
     };
 
     // Fecha de referencia (hoy en America/Chihuahua)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
 
-    // Procesar y upsert datos
-    const records = [];
-    let insertedCount = 0;
-    let updatedCount = 0;
-
-    for (const row of rawData) {
-      const creatorId = getColumnValue(row, columnMappings.id);
-      const username = getColumnValue(row, columnMappings.username);
-      const hoursRaw = getColumnValue(row, columnMappings.hours);
-      const diamondsRaw = getColumnValue(row, columnMappings.diamonds);
-
-      if (!creatorId) {
-        console.warn('[upload-excel-recommendations] Skipping row without creator ID:', row);
-        continue;
+    // Mapear y normalizar datos
+    const mapped = (rawData as any[]).map((row) => {
+      const out: any = {};
+      for (const key of Object.keys(row)) {
+        const normalizedKey = alias[normalize(key)] ?? key.trim();
+        out[normalizedKey] = row[key];
       }
+      
+      const username = String(out.creator_username ?? out.Nombre ?? '').trim();
+      if (!username) return null;
 
-      // Buscar creator por ID
-      const { data: creators } = await supabase
-        .from('creators')
-        .select('id, nombre')
-        .eq('id', creatorId)
-        .limit(1);
+      return {
+        creator_id: crypto.randomUUID(),
+        creator_username: username,
+        phone_e164: String(out.phone_e164 ?? '').trim() || null,
+        dias_actuales: parseNumber(out.dias_actuales),
+        horas_actuales: parseHours(out.horas_actuales),
+        diamantes_actuales: parseNumber(out.diamantes_actuales),
+        fecha: today,
+      };
+    }).filter(Boolean);
 
-      if (!creators || creators.length === 0) {
-        console.warn(`[upload-excel-recommendations] Creator not found: ${creatorId}`);
-        continue;
-      }
-
-      const creator = creators[0];
-      const hours = parseHours(hoursRaw);
-      const diamonds = parseNumber(diamondsRaw);
-
-      // Upsert a creator_live_daily
-      const { error: upsertError } = await supabase
-        .from('creator_live_daily')
-        .upsert({
-          creator_id: creator.id,
-          fecha: today,
-          horas: hours,
-          diamantes: diamonds,
-        }, {
-          onConflict: 'creator_id,fecha'
-        });
-
-      if (upsertError) {
-        console.error(`[upload-excel-recommendations] Error upserting ${creator.id}:`, upsertError);
-      } else {
-        insertedCount++;
-        records.push({ creator_id: creator.id, horas: hours, diamantes: diamonds });
-      }
+    if (!mapped.length) {
+      return new Response(
+        JSON.stringify({ error: 'Sin filas válidas después de normalizar' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
+        }
+      );
     }
 
-    console.log(`[upload-excel-recommendations] Upserted ${insertedCount} records`);
+    console.log(`[upload-excel-recommendations] Mapped ${mapped.length} valid rows`);
+
+    // Upsert a creator_daily_stats
+    const { error: upsertError } = await supabase
+      .from('creator_daily_stats')
+      .upsert(mapped, {
+        onConflict: 'creator_id,fecha'
+      });
+
+    if (upsertError) {
+      console.error('[upload-excel-recommendations] Upsert error:', upsertError);
+      return new Response(
+        JSON.stringify({ error: upsertError.message }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
+        }
+      );
+    }
+
+    console.log(`[upload-excel-recommendations] Upserted ${mapped.length} records`);
 
     // Refrescar la vista materializada
     console.log('[upload-excel-recommendations] Refreshing materialized view...');
-    const { error: refreshError } = await supabase.rpc('refresh_creator_riesgos_mes');
+    const { error: refreshError } = await supabase.rpc('refresh_recommendations_today');
 
     if (refreshError) {
       console.error('[upload-excel-recommendations] Error refreshing view:', refreshError);
     }
 
-    // Obtener resumen de riesgos
-    const { data: riesgos, error: riesgosError } = await supabase
-      .from('creator_riesgos_mes')
-      .select('prioridad_riesgo, faltan_dias, faltan_horas');
-
-    let summary = {
-      total: 0,
-      riesgo_alto: 0,
-      riesgo_medio: 0,
-      riesgo_bajo: 0,
-      con_deficit_dias: 0,
-      con_deficit_horas: 0,
-    };
-
-    if (riesgos && !riesgosError) {
-      summary.total = riesgos.length;
-      summary.riesgo_alto = riesgos.filter(r => r.prioridad_riesgo >= 40).length;
-      summary.riesgo_medio = riesgos.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40).length;
-      summary.riesgo_bajo = riesgos.filter(r => r.prioridad_riesgo < 20).length;
-      summary.con_deficit_dias = riesgos.filter(r => r.faltan_dias > 0).length;
-      summary.con_deficit_horas = riesgos.filter(r => r.faltan_horas > 0).length;
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
-        records_processed: insertedCount,
-        summary
+        records_processed: mapped.length
       }),
       {
         headers: { 
