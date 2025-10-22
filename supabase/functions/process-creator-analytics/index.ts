@@ -55,10 +55,10 @@ serve(async (req) => {
 
     console.log('Rol obtenido:', userRole, 'Error:', roleError);
 
-    if (!userRole || (userRole.role !== 'admin' && userRole.role !== 'manager')) {
+    if (!userRole || (userRole.role !== 'admin' && userRole.role !== 'manager' && userRole.role !== 'viewer')) {
       console.error('Usuario sin permisos:', user.id, userRole);
       return new Response(
-        JSON.stringify({ error: 'No autorizado. Se requiere rol de admin o manager.' }),
+        JSON.stringify({ error: 'No autorizado. Se requiere rol de admin, manager o viewer.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
