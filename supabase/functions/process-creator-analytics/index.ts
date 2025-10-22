@@ -118,8 +118,8 @@ serve(async (req) => {
       console.error('Error obteniendo stats diarias:', statsError);
     }
 
-    // Agregar métricas del mes
-    const valid_days_so_far = dailyStats?.reduce((sum, d) => sum + (d.dias_validos_live || 0), 0) || 0;
+    // Agregar métricas del mes (dias_validos_live es acumulado, usar max; horas y diamantes sumar)
+    const valid_days_so_far = dailyStats?.reduce((max, d) => Math.max(max, d.dias_validos_live || 0), 0) || 0;
     const hours_so_far = dailyStats?.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0) || 0;
     const diamonds_so_far = dailyStats?.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
 
@@ -235,17 +235,14 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
 
     if (geminiApiKey) {
       try {
-        console.log('Llamando a Gemini API con gemini-2.5-flash...');
+        console.log('Llamando a Gemini API con gemini-2.5-flash (role=user explícito)...');
         const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
-              parts: [{
-                text: `${systemPrompt}\n\n${userPrompt}`
-              }]
+              role: 'user',
+              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
             }],
             generationConfig: {
               maxOutputTokens: 500,
@@ -257,23 +254,69 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
 
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();
-          recommendation = aiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-          console.log('Recomendación generada por Gemini:', recommendation);
+          const finishReason = aiData.candidates?.[0]?.finishReason;
+          const parts = aiData.candidates?.[0]?.content?.parts || [];
           
-          // Generar nota para manager
-          manager_note = `${creator.nombre} - ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()} 💎. Ritmo: ${(diamonds_so_far / (valid_days_so_far || 1)).toFixed(0)} diam/día. ${cercaDeHito ? '¡CERCA DE HITO!' : superoGraduacion ? '¡GRADUÓ!' : diasSinTransmitir > 3 ? '⚠️ INACTIVO' : 'En track'}`;
-          
-          // Calcular probabilidad de logro
-          const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
-          const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
-          prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
-          prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
+          console.log('Gemini response:', {
+            finishReason,
+            partsCount: parts.length,
+            hasContent: parts.length > 0
+          });
+
+          // Unir todas las parts de forma resiliente
+          recommendation = parts
+            .map((p: any) => p?.text)
+            .filter(Boolean)
+            .join('\n')
+            .trim();
+
+          // Si vacío, loguear detalles de bloqueo/seguridad
+          if (!recommendation) {
+            const promptFeedback = aiData.promptFeedback;
+            const safetyRatings = aiData.candidates?.[0]?.safetyRatings;
+            console.warn('⚠️ Gemini devolvió respuesta vacía:', {
+              finishReason,
+              blockReason: promptFeedback?.blockReason,
+              safetyRatings: safetyRatings?.map((r: any) => ({ category: r.category, probability: r.probability }))
+            });
+
+            // Intento simplificado (solo prompt de usuario, sin system)
+            console.log('Reintentando con prompt simplificado...');
+            const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+                generationConfig: { maxOutputTokens: 300, topP: 0.9, topK: 30 }
+              })
+            });
+
+            if (retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              const retryParts = retryData.candidates?.[0]?.content?.parts || [];
+              recommendation = retryParts.map((p: any) => p?.text).filter(Boolean).join('\n').trim();
+              console.log('Recomendación de retry:', recommendation ? 'OK' : 'vacía');
+            }
+          }
+
+          if (recommendation) {
+            console.log('✅ Recomendación generada por Gemini:', recommendation.substring(0, 80) + '...');
+            
+            // Generar nota para manager
+            manager_note = `${creator.nombre} - ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()} 💎. Ritmo: ${(diamonds_so_far / (valid_days_so_far || 1)).toFixed(0)} diam/día. ${cercaDeHito ? '¡CERCA DE HITO!' : superoGraduacion ? '¡GRADUÓ!' : diasSinTransmitir > 3 ? '⚠️ INACTIVO' : 'En track'}`;
+            
+            // Calcular probabilidad de logro
+            const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
+            const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
+            prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
+            prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
+          }
         } else {
           const errorText = await aiResponse.text();
-          console.error('Error en Gemini API:', {
+          console.error('Error HTTP en Gemini API:', {
             status: aiResponse.status,
             statusText: aiResponse.statusText,
-            body: errorText
+            bodyPreview: errorText.substring(0, 200)
           });
           console.log('Intentando fallback a gemini-1.5-flash-001...');
           
@@ -282,15 +325,16 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+              contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
               generationConfig: { maxOutputTokens: 500, topP: 0.95, topK: 40 }
             })
           });
           
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
-            recommendation = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-            console.log('Recomendación generada por Gemini (fallback):', recommendation);
+            const fallbackParts = fallbackData.candidates?.[0]?.content?.parts || [];
+            recommendation = fallbackParts.map((p: any) => p?.text).filter(Boolean).join('\n').trim();
+            console.log('✅ Recomendación generada por Gemini (fallback 1.5):', recommendation ? 'OK' : 'vacía');
           }
         }
       } catch (error) {
@@ -304,11 +348,20 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
       console.log('GEMINI_API_KEY no configurada');
     }
 
-    // Fallback técnico si IA falló completamente
+    // Fallback humano si IA falló completamente
     if (!recommendation) {
-      console.error('⚠️ Gemini API no disponible - usando fallback técnico');
-      recommendation = `ERROR DE IA: No se pudo generar recomendación personalizada. Contactar soporte técnico.`;
-      manager_note = `Sistema de IA no disponible para ${creator.nombre}. Revisar configuración GEMINI_API_KEY.`;
+      console.warn('⚠️ Gemini no generó contenido → usando plantilla basada en reglas locales');
+      
+      // Generar mensaje breve estilo humano basado en métricas
+      const ritmo = valid_days_so_far > 0 ? (diamonds_so_far / valid_days_so_far).toFixed(0) : '0';
+      const metaDiaria = Math.max(1, Math.ceil(required_hours_per_day));
+      const necesitaDias = needed_valid_days > 0 ? ` Suma 1 día válido.` : '';
+      
+      recommendation = 
+        `Vas ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h y ${diamonds_so_far.toLocaleString()}💎 (ritmo: ${ritmo}/día). ` +
+        `Hoy apunta a ${metaDiaria}h y ${required_diamonds_per_day.toLocaleString()}💎.${necesitaDias} ¡Sí se puede! ✨`;
+      
+      manager_note = `${creator.nombre} sin IA (plantilla local): ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()}💎`;
     }
     
     // Calcular predicción si no se hizo antes
