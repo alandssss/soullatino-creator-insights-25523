@@ -82,6 +82,82 @@ export type Database = {
           },
         ]
       }
+      creator_interactions: {
+        Row: {
+          admin_nombre: string | null
+          created_at: string | null
+          creator_id: string
+          id: string
+          notas: string | null
+          tipo: string
+        }
+        Insert: {
+          admin_nombre?: string | null
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          notas?: string | null
+          tipo: string
+        }
+        Update: {
+          admin_nombre?: string | null
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          notas?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_interactions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_metas: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          id: string
+          mes_referencia: string
+          meta_diamantes: number
+          meta_dias: number | null
+          meta_horas: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          mes_referencia: string
+          meta_diamantes: number
+          meta_dias?: number | null
+          meta_horas?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          mes_referencia?: string
+          meta_diamantes?: number
+          meta_dias?: number | null
+          meta_horas?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_metas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_monthly_stats: {
         Row: {
           created_at: string | null
@@ -148,44 +224,98 @@ export type Database = {
         Row: {
           agente: string | null
           base_diamantes_antes_union: number | null
+          categoria: string | null
           created_at: string | null
           creator_id: string
+          diamantes: number | null
           dias_desde_incorporacion: number | null
+          dias_desde_inicio: number | null
+          dias_live: number | null
+          email: string | null
+          engagement_rate: number | null
           estado_graduacion: string | null
           fecha_incorporacion: string | null
+          followers: number | null
+          graduacion: string | null
           grupo: string | null
+          hito_diamantes: number | null
+          horas_live: number | null
           id: string
+          instagram: string | null
+          last_month_diamantes: number | null
+          last_month_engagement: number | null
+          last_month_views: number | null
+          manager: string | null
           nombre: string
+          status: string | null
           telefono: string | null
+          tiktok_username: string | null
           updated_at: string | null
+          views: number | null
         }
         Insert: {
           agente?: string | null
           base_diamantes_antes_union?: number | null
+          categoria?: string | null
           created_at?: string | null
           creator_id: string
+          diamantes?: number | null
           dias_desde_incorporacion?: number | null
+          dias_desde_inicio?: number | null
+          dias_live?: number | null
+          email?: string | null
+          engagement_rate?: number | null
           estado_graduacion?: string | null
           fecha_incorporacion?: string | null
+          followers?: number | null
+          graduacion?: string | null
           grupo?: string | null
+          hito_diamantes?: number | null
+          horas_live?: number | null
           id?: string
+          instagram?: string | null
+          last_month_diamantes?: number | null
+          last_month_engagement?: number | null
+          last_month_views?: number | null
+          manager?: string | null
           nombre: string
+          status?: string | null
           telefono?: string | null
+          tiktok_username?: string | null
           updated_at?: string | null
+          views?: number | null
         }
         Update: {
           agente?: string | null
           base_diamantes_antes_union?: number | null
+          categoria?: string | null
           created_at?: string | null
           creator_id?: string
+          diamantes?: number | null
           dias_desde_incorporacion?: number | null
+          dias_desde_inicio?: number | null
+          dias_live?: number | null
+          email?: string | null
+          engagement_rate?: number | null
           estado_graduacion?: string | null
           fecha_incorporacion?: string | null
+          followers?: number | null
+          graduacion?: string | null
           grupo?: string | null
+          hito_diamantes?: number | null
+          horas_live?: number | null
           id?: string
+          instagram?: string | null
+          last_month_diamantes?: number | null
+          last_month_engagement?: number | null
+          last_month_views?: number | null
+          manager?: string | null
           nombre?: string
+          status?: string | null
           telefono?: string | null
+          tiktok_username?: string | null
           updated_at?: string | null
+          views?: number | null
         }
         Relationships: []
       }
@@ -209,6 +339,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      whatsapp_activity: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          creator_id: string | null
+          creator_name: string | null
+          id: string
+          message_preview: string | null
+          timestamp: string | null
+          user_email: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          creator_id?: string | null
+          creator_name?: string | null
+          id?: string
+          message_preview?: string | null
+          timestamp?: string | null
+          user_email: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          creator_id?: string | null
+          creator_name?: string | null
+          id?: string
+          message_preview?: string | null
+          timestamp?: string | null
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_activity_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
