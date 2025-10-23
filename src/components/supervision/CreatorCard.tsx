@@ -6,7 +6,7 @@ interface Creator {
   nombre: string;
   telefono?: string;
   dias_en_agencia?: number;
-  diam_live_mes?: number;
+  last_month_diamantes?: number;
 }
 
 interface SupervisionLog {
@@ -89,9 +89,9 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
           <span className="text-muted-foreground">
             Score: <span className="font-semibold text-foreground">{latestLog.score}</span>
           </span>
-          {creator.diam_live_mes && (
+          {creator.last_month_diamantes && (
             <span className="text-muted-foreground">
-              💎 {(creator.diam_live_mes / 1000).toFixed(0)}k
+              💎 {(creator.last_month_diamantes / 1000).toFixed(0)}k
             </span>
           )}
         </div>

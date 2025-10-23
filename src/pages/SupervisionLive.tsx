@@ -27,6 +27,7 @@ interface Creator {
   nombre: string;
   telefono?: string;
   dias_en_agencia?: number;
+  last_month_diamantes?: number;
 }
 
 interface SupervisionLog {
@@ -41,7 +42,7 @@ interface SupervisionLog {
   set_profesional: boolean;
   score: number;
   riesgo: string;
-  notas?: string | null;
+  reporte?: string | null;
   created_at?: string;
 }
 
@@ -92,7 +93,7 @@ export default function SupervisionLive() {
       // Cargar creadores
       const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
-        .select('id, nombre, telefono, dias_en_agencia')
+        .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes')
         .order('nombre');
 
       if (creatorsError) throw creatorsError;
@@ -177,7 +178,7 @@ export default function SupervisionLive() {
         'Set Profesional': log.set_profesional ? 'Sí' : 'No',
         'Score': log.score,
         'Riesgo': log.riesgo,
-        'Notas': log.notas || '',
+        'Reporte': log.reporte || '',
       };
     });
 

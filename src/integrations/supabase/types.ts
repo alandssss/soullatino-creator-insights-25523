@@ -501,6 +501,7 @@ export type Database = {
       }
       supervision_live_logs: {
         Row: {
+          accion_sugerida: string | null
           audio_claro: boolean | null
           buena_iluminacion: boolean | null
           created_at: string | null
@@ -511,11 +512,16 @@ export type Database = {
           fecha_evento: string | null
           id: string
           notas: string | null
+          observer_name: string | null
+          observer_user_id: string | null
+          reporte: string | null
           riesgo: string | null
           score: number | null
           set_profesional: boolean | null
+          severidad: string | null
         }
         Insert: {
+          accion_sugerida?: string | null
           audio_claro?: boolean | null
           buena_iluminacion?: boolean | null
           created_at?: string | null
@@ -526,11 +532,16 @@ export type Database = {
           fecha_evento?: string | null
           id?: string
           notas?: string | null
+          observer_name?: string | null
+          observer_user_id?: string | null
+          reporte?: string | null
           riesgo?: string | null
           score?: number | null
           set_profesional?: boolean | null
+          severidad?: string | null
         }
         Update: {
+          accion_sugerida?: string | null
           audio_claro?: boolean | null
           buena_iluminacion?: boolean | null
           created_at?: string | null
@@ -541,9 +552,13 @@ export type Database = {
           fecha_evento?: string | null
           id?: string
           notas?: string | null
+          observer_name?: string | null
+          observer_user_id?: string | null
+          reporte?: string | null
           riesgo?: string | null
           score?: number | null
           set_profesional?: boolean | null
+          severidad?: string | null
         }
         Relationships: [
           {

@@ -34,7 +34,7 @@ interface Creator {
   nombre: string;
   telefono?: string;
   dias_en_agencia?: number;
-  diam_live_mes?: number;
+  last_month_diamantes?: number;
   tiktok_username?: string;
   horas_live_mes?: number;
   dias_live_mes?: number;
