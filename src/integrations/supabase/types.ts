@@ -499,6 +499,60 @@ export type Database = {
         }
         Relationships: []
       }
+      prospectos_reclutamiento: {
+        Row: {
+          agente_asignado: string | null
+          created_at: string | null
+          diamantes_estimados: number | null
+          email: string | null
+          estado: string
+          fecha_contacto: string | null
+          fecha_ultima_actualizacion: string | null
+          id: string
+          instagram: string | null
+          nombre: string
+          notas: string | null
+          seguidores_estimados: number | null
+          telefono: string | null
+          tiktok_username: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agente_asignado?: string | null
+          created_at?: string | null
+          diamantes_estimados?: number | null
+          email?: string | null
+          estado?: string
+          fecha_contacto?: string | null
+          fecha_ultima_actualizacion?: string | null
+          id?: string
+          instagram?: string | null
+          nombre: string
+          notas?: string | null
+          seguidores_estimados?: number | null
+          telefono?: string | null
+          tiktok_username?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agente_asignado?: string | null
+          created_at?: string | null
+          diamantes_estimados?: number | null
+          email?: string | null
+          estado?: string
+          fecha_contacto?: string | null
+          fecha_ultima_actualizacion?: string | null
+          id?: string
+          instagram?: string | null
+          nombre?: string
+          notas?: string | null
+          seguidores_estimados?: number | null
+          telefono?: string | null
+          tiktok_username?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       supervision_live_logs: {
         Row: {
           accion_sugerida: string | null
