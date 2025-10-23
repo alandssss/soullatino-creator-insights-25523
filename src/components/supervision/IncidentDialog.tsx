@@ -37,7 +37,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
   const [submitting, setSubmitting] = useState(false);
   const [reporte, setReporte] = useState("");
   const [severidad, setSeveridad] = useState<"baja" | "media" | "alta">("baja");
-  const [accionSugerida, setAccionSugerida] = useState("");
+  const [accionSugerida, setAccionSugerida] = useState("ninguna");
 
   const handleSubmit = async () => {
     if (!reporte.trim()) {
@@ -72,7 +72,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
 
       setReporte("");
       setSeveridad("baja");
-      setAccionSugerida("");
+      setAccionSugerida("ninguna");
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -131,7 +131,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
                 <SelectValue placeholder="Selecciona una acción..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin acción específica</SelectItem>
+                <SelectItem value="ninguna">Sin acción específica</SelectItem>
                 <SelectItem value="recordar_normas">Recordar normas</SelectItem>
                 <SelectItem value="pausar_live">Pausar temporalmente</SelectItem>
                 <SelectItem value="llamar_manager">Contactar manager</SelectItem>
