@@ -97,7 +97,35 @@ serve(async (req) => {
        .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
        .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n');
 
+    // Validar que el Excel tenga columnas reconocibles
+    if (rawData.length > 0) {
+      const firstRow = rawData[0] as Record<string, any>;
+      const headers = Object.keys(firstRow).map(normalize);
+      console.log('[DEBUG] Excel columns found:', Object.keys(firstRow));
+      console.log('[DEBUG] Normalized headers:', headers);
+      
+      const hasNameColumn = headers.some(h => 
+        ['nombre', 'creador', 'usuario', 'username', 'creator name', 'name', 'tiktok', 'tiktok username'].includes(h)
+      );
+      
+      if (!hasNameColumn) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Excel debe contener una columna de nombre',
+            hint: 'Columnas aceptadas: Nombre, Usuario, Creator Name, TikTok, etc.',
+            columns_found: Object.keys(firstRow),
+            expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes']
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
     const alias: Record<string, string> = {
+      // Nombres de usuario
       'nombre': 'creator_username',
       'name': 'creator_username',
       'creador': 'creator_username',
@@ -106,34 +134,69 @@ serve(async (req) => {
       'creator name': 'creator_username',
       'handle': 'creator_username',
       '@': 'creator_username',
+      'tiktok': 'creator_username',
+      'tiktok username': 'creator_username',
+      
+      // Teléfonos
       'telefono': 'phone_e164',
       'tel': 'phone_e164',
       'phone': 'phone_e164',
+      'celular': 'phone_e164',
+      
+      // Días
       'dias en live': 'dias_actuales',
       'dias': 'dias_actuales',
       'days': 'dias_actuales',
       'days live': 'dias_actuales',
+      'dias live': 'dias_actuales',
+      
+      // Horas
       'duracion live': 'horas_actuales',
       'horas': 'horas_actuales',
       'hours': 'horas_actuales',
       'live hours': 'horas_actuales',
+      'tiempo': 'horas_actuales',
+      
+      // Diamantes
       'diamantes': 'diamantes_actuales',
-      'diamonds': 'diamantes_actuales'
+      'diamonds': 'diamantes_actuales',
+      'diam': 'diamantes_actuales'
     };
 
     // Fecha de referencia (hoy en America/Chihuahua)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
 
     // Mapear y normalizar datos (sin asignar IDs aún)
-    const mapped = (rawData as any[]).map((row) => {
+    const mapped = (rawData as any[]).map((row, index) => {
       const out: any = {};
       for (const key of Object.keys(row)) {
         const normalizedKey = alias[normalize(key)] ?? key.trim();
         out[normalizedKey] = row[key];
       }
       
-      const username = String(out.creator_username ?? out.Nombre ?? '').trim();
-      if (!username) return null as any;
+      // Log detallado para debugging (solo primera fila)
+      if (index === 0) {
+        console.log('[DEBUG] First row raw columns:', Object.keys(row));
+        console.log('[DEBUG] First row normalized out:', JSON.stringify(out, null, 2));
+      }
+      
+      // Buscar username de forma flexible
+      const username = String(
+        out.creator_username ?? 
+        out.nombre ?? 
+        out.Nombre ?? 
+        out.creador ?? 
+        out.usuario ?? 
+        out.username ?? 
+        ''
+      ).trim();
+      
+      if (!username) {
+        if (index === 0) console.log('[DEBUG] No username found in first row');
+        return null as any;
+      }
+      
+      if (index === 0) console.log('[DEBUG] Username found:', username);
 
       return {
         creator_username: username,
@@ -153,8 +216,15 @@ serve(async (req) => {
     }>;
 
     if (!mapped.length) {
+      const sampleRow = rawData[0] || {};
       return new Response(
-        JSON.stringify({ error: 'Sin filas válidas después de normalizar' }),
+        JSON.stringify({ 
+          error: 'Sin filas válidas después de normalizar',
+          hint: 'Verifica que el Excel tenga columnas: Nombre, Dias, Horas, Diamantes',
+          columns_found: Object.keys(sampleRow),
+          expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes'],
+          debug_info: 'Revisa los logs para ver qué columnas fueron detectadas'
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
