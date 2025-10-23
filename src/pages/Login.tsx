@@ -52,7 +52,7 @@ const Login = () => {
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente.",
         });
-        navigate("/dashboard");
+        navigate("/dashboard/pending");
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
