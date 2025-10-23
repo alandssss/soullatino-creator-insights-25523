@@ -31,6 +31,9 @@ interface Creator {
   diam_live_mes?: number;
   horas_live_mes?: number;
   dias_live_mes?: number;
+  tiktok_username?: string;
+  graduacion?: string;
+  manager?: string;
 }
 
 interface SupervisionLog {
@@ -96,7 +99,7 @@ export default function SupervisionLive() {
       // Cargar creadores
       const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
-        .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes')
+        .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes, tiktok_username, graduacion, manager')
         .order('nombre');
 
       if (creatorsError) throw creatorsError;

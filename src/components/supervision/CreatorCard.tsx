@@ -7,6 +7,12 @@ interface Creator {
   telefono?: string;
   dias_en_agencia?: number;
   last_month_diamantes?: number;
+  diam_live_mes?: number;
+  horas_live_mes?: number;
+  dias_live_mes?: number;
+  tiktok_username?: string;
+  graduacion?: string;
+  manager?: string;
 }
 
 interface SupervisionLog {
@@ -89,11 +95,15 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
           <span className="text-muted-foreground">
             Score: <span className="font-semibold text-foreground">{latestLog.score}</span>
           </span>
-          {creator.last_month_diamantes && (
+          {creator.diam_live_mes ? (
+            <span className="text-muted-foreground">
+              💎 {(creator.diam_live_mes / 1000).toFixed(0)}k mes
+            </span>
+          ) : creator.last_month_diamantes ? (
             <span className="text-muted-foreground">
               💎 {(creator.last_month_diamantes / 1000).toFixed(0)}k
             </span>
-          )}
+          ) : null}
         </div>
       )}
     </div>
