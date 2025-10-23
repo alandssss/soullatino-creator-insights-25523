@@ -31,23 +31,43 @@ serve(async (req) => {
       throw new Error('Usuario no autenticado');
     }
 
+    // Primero verificar si el usuario ya tiene un rol
+    const { data: existingRole, error: checkError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Si ya existe un rol, devolverlo sin cambios
+    if (existingRole) {
+      console.log(`[ensure-user-role] Usuario ${user.id} ya tiene rol '${existingRole.role}'`);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          role: existingRole.role,
+          message: `Rol existente '${existingRole.role}' mantenido`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Si no existe, crear uno nuevo con el rol proporcionado o 'viewer' por defecto
     const { role = 'viewer' } = await req.json().catch(() => ({}));
 
     // Validar el rol
-    const validRoles = ['admin', 'manager', 'viewer'];
+    const validRoles = ['admin', 'manager', 'viewer', 'supervisor'];
     if (!validRoles.includes(role)) {
       throw new Error(`Rol inválido: ${role}`);
     }
 
-    console.log(`[ensure-user-role] Asignando rol '${role}' a user ${user.id}`);
+    console.log(`[ensure-user-role] Creando nuevo rol '${role}' para user ${user.id}`);
 
-    // Upsert del rol usando el cliente admin
+    // Insertar el nuevo rol
     const { data, error } = await supabase
       .from('user_roles')
-      .upsert(
-        { user_id: user.id, role },
-        { onConflict: 'user_id' }
-      )
+      .insert({ user_id: user.id, role })
       .select()
       .single();
 

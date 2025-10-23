@@ -24,14 +24,17 @@ const Reclutamiento = () => {
 
     setUser(user);
 
-    // Verificar rol
-    const { data: roleData } = await supabase
+    // Lectura robusta de rol
+    const { data: rolesData } = await supabase
       .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    const role = roleData?.role;
+      .select("role, created_at")
+      .eq("user_id", user.id);
+    
+    // Priorizar roles: admin > manager > supervisor > viewer
+    const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
+    const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
+    const role = sortedRoles[0]?.role || null;
+    
     setUserRole(role);
 
     // Solo admins y managers pueden acceder

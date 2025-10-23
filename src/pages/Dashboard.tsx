@@ -42,19 +42,18 @@ const Dashboard = () => {
     } else {
       setUser(user);
       
-      // Asegurar que el usuario tenga rol
-      await supabase.functions.invoke('ensure-user-role', {
-        body: { role: 'viewer' }
-      });
-      
-      // Check user role
-      const { data: roleData } = await supabase
+      // Lectura robusta de rol
+      const { data: rolesData } = await supabase
         .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .single();
+        .select("role, created_at")
+        .eq("user_id", user.id);
       
-      setUserRole(roleData?.role || null);
+      // Priorizar roles: admin > manager > supervisor > viewer
+      const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
+      const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
+      const userRoleValue = sortedRoles[0]?.role || null;
+      
+      setUserRole(userRoleValue);
       
       // Cargar stats reales del día
       await fetchDailyStats();

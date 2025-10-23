@@ -31,13 +31,17 @@ const AppLayout = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: roleData } = await supabase
+    // Lectura robusta de rol
+    const { data: rolesData } = await supabase
       .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    setUserRole(roleData?.role || null);
+      .select("role, created_at")
+      .eq("user_id", user.id);
+    
+    // Priorizar roles: admin > manager > supervisor > viewer
+    const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
+    const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
+    
+    setUserRole(sortedRoles[0]?.role || null);
   };
 
   const handleLogout = async () => {
