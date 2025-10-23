@@ -45,14 +45,17 @@ const AppLayout = () => {
   };
 
   const isAdmin = userRole === 'admin';
+  const isManager = userRole === 'manager';
+  const isSupervisor = userRole === 'supervisor';
+  const isViewer = userRole === 'viewer';
 
   const navLinks = [
-    { to: "/dashboard/pending", label: "Dashboard", adminOnly: false },
-    { to: "/alertas", label: "Alertas", adminOnly: false },
-    { to: "/creators", label: "Administración", adminOnly: true },
-    { to: "/supervision", label: "Supervisión", adminOnly: false },
-    { to: "/reclutamiento", label: "Reclutamiento", adminOnly: false },
-  ].filter(link => !link.adminOnly || isAdmin);
+    { to: "/dashboard/pending", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+    { to: "/alertas", label: "Alertas", roles: ['admin', 'manager'] },
+    { to: "/creators", label: "Administración", roles: ['admin'] },
+    { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor'] },
+    { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager'] },
+  ].filter(link => userRole && link.roles.includes(userRole));
 
   return (
     <div className="min-h-screen bg-gradient-dark w-full overflow-x-hidden">

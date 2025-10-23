@@ -9,6 +9,7 @@ import { toast } from "sonner";
 export const UserManagement = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<'admin' | 'manager' | 'supervisor' | 'viewer'>('manager');
   const [loading, setLoading] = useState(false);
 
   const handleCreateUser = async () => {
@@ -24,7 +25,7 @@ export const UserManagement = () => {
           action: 'create',
           email,
           password,
-          role: 'manager'
+          role
         }
       });
 
@@ -96,13 +97,27 @@ export const UserManagement = () => {
             className="w-full"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="role">Rol</Label>
+          <select
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as any)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="viewer">Viewer</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button 
             onClick={handleCreateUser} 
             disabled={loading}
             className="flex-1 w-full sm:w-auto"
           >
-            {loading ? "Creando..." : "Crear Usuario Manager"}
+            {loading ? "Creando..." : `Crear Usuario ${role.charAt(0).toUpperCase() + role.slice(1)}`}
           </Button>
           <Button 
             onClick={handleUpdatePassword} 
