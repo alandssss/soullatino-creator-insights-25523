@@ -136,6 +136,7 @@ serve(async (req) => {
       '@': 'creator_username',
       'tiktok': 'creator_username',
       'tiktok username': 'creator_username',
+      'nombre de usuario del creador': 'creator_username',
       
       // Teléfonos
       'telefono': 'phone_e164',
@@ -149,6 +150,7 @@ serve(async (req) => {
       'days': 'dias_actuales',
       'days live': 'dias_actuales',
       'dias live': 'dias_actuales',
+      'dias validos de emisiones live': 'dias_actuales',
       
       // Horas
       'duracion live': 'horas_actuales',
@@ -156,11 +158,26 @@ serve(async (req) => {
       'hours': 'horas_actuales',
       'live hours': 'horas_actuales',
       'tiempo': 'horas_actuales',
+      'duracion de live': 'horas_actuales',
       
       // Diamantes
       'diamantes': 'diamantes_actuales',
       'diamonds': 'diamantes_actuales',
-      'diam': 'diamantes_actuales'
+      'diam': 'diamantes_actuales',
+      
+      // Estado de graduación
+      'estado de graduacion': 'estado_graduacion',
+      'graduation': 'estado_graduacion',
+      'graduacion': 'estado_graduacion',
+      'estado': 'estado_graduacion',
+      
+      // Manager/Agente
+      'manager': 'manager',
+      'agente': 'manager',
+      
+      // Grupo
+      'grupo': 'grupo',
+      'group': 'grupo'
     };
 
     // Fecha de referencia (hoy en America/Chihuahua)
@@ -204,6 +221,9 @@ serve(async (req) => {
         dias_actuales: parseNumber(out.dias_actuales),
         horas_actuales: parseHours(out.horas_actuales),
         diamantes_actuales: parseNumber(out.diamantes_actuales),
+        estado_graduacion: String(out.estado_graduacion ?? '').trim() || null,
+        manager: String(out.manager ?? '').trim() || null,
+        grupo: String(out.grupo ?? '').trim() || null,
         fecha: today,
       } as const;
     }).filter(Boolean) as Array<{
@@ -212,6 +232,9 @@ serve(async (req) => {
       dias_actuales: number;
       horas_actuales: number;
       diamantes_actuales: number;
+      estado_graduacion: string | null;
+      manager: string | null;
+      grupo: string | null;
       fecha: string;
     }>;
 
@@ -256,6 +279,28 @@ serve(async (req) => {
       if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
       if (c.telefono) byPhone.set(String(c.telefono), c.id);
     });
+
+    // Actualizar campos adicionales de creators (estado_graduacion, manager, grupo)
+    for (const r of mapped) {
+      const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
+      const creatorId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
+      
+      if (creatorId && (r.estado_graduacion || r.manager || r.grupo)) {
+        const updateData: any = {};
+        if (r.estado_graduacion) updateData.estado_graduacion = r.estado_graduacion;
+        if (r.manager) updateData.manager = r.manager;
+        if (r.grupo) updateData.grupo = r.grupo;
+        
+        const { error: updateErr } = await supabase
+          .from('creators')
+          .update(updateData)
+          .eq('id', creatorId);
+        
+        if (updateErr) {
+          console.warn(`[upload-excel-recommendations] Warning updating creator ${r.creator_username}:`, updateErr);
+        }
+      }
+    }
 
     // Detectar faltantes y crear creadores mínimos
     const missing: Array<{ username: string; phone: string | null; }>= [];

@@ -351,8 +351,9 @@ export const AdminUploadPanel = () => {
         </Button>
         <div className="text-xs text-muted-foreground space-y-1">
           <p>• El archivo debe ser Excel (.xlsx o .xls)</p>
-          <p>• Columnas críticas: H (Diamantes), I (Duración LIVE), J (Días en LIVE), AB (Batallas PKO)</p>
+          <p>• Columnas reconocidas: Nombre, Diamantes, Horas, Días en Live, Estado de Graduación, Manager, Grupo</p>
           <p>• Los creadores existentes se actualizarán automáticamente</p>
+          <p>• Se actualizarán los campos: estado_graduacion, manager y grupo si están presentes</p>
         </div>
 
         {/* Panel eliminado - datos demo no necesarios */}
