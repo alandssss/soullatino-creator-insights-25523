@@ -85,8 +85,7 @@ export function CreatorPanel({
     }
   }, [open, creator?.id]);
 
-  if (!creator) return null;
-
+  // All hooks must be called before any conditional returns
   const toggleFlag = useCallback((flag: string) => {
     setSelectedFlags(prev => ({
       ...prev,
@@ -94,16 +93,9 @@ export function CreatorPanel({
     }));
   }, []);
 
-  const getRiesgoColor = (riesgo?: string) => {
-    switch (riesgo) {
-      case 'verde': return 'bg-green-500';
-      case 'amarillo': return 'bg-yellow-500';
-      case 'rojo': return 'bg-red-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
   const quickLog = useCallback(async () => {
+    if (!creator) return;
+    
     if (Object.keys(selectedFlags).length === 0) {
       toast({
         title: "Sin selección",
@@ -155,7 +147,19 @@ export function CreatorPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [creator.id, selectedFlags, notes, toast, onReload]);
+  }, [creator, selectedFlags, notes, toast, onReload]);
+
+  // Early return AFTER all hooks
+  if (!creator) return null;
+
+  const getRiesgoColor = (riesgo?: string) => {
+    switch (riesgo) {
+      case 'verde': return 'bg-green-500';
+      case 'amarillo': return 'bg-yellow-500';
+      case 'rojo': return 'bg-red-500';
+      default: return 'bg-gray-400';
+    }
+  };
 
   const timeSinceLog = latestLog 
     ? Math.floor((Date.now() - new Date(latestLog.fecha_evento).getTime()) / (1000 * 60))
