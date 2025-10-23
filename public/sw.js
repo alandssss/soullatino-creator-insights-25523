@@ -1,6 +1,6 @@
-const CACHE_NAME = 'soullatino-v7';
-const RUNTIME_CACHE = 'soullatino-runtime-v7';
-const STATIC_CACHE = 'soullatino-static-v7';
+const CACHE_NAME = 'soullatino-v8';
+const RUNTIME_CACHE = 'soullatino-runtime-v8';
+const STATIC_CACHE = 'soullatino-static-v8';
 
 const urlsToCache = [
   '/',
@@ -50,21 +50,25 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ============= EXCLUSIONES: Admin y archivos sensibles =============
-  const adminPaths = ['/admin', '/creators', '/dashboard', '/panel', '/alertas', '/supervision', '/login'];
+  const adminPaths = ['/admin', '/creators', '/dashboard', '/panel', '/alertas', '/supervision', '/login', '/reclutamiento', '/debug'];
   const isAdmin = adminPaths.some(p => url.pathname.startsWith(p));
   const blockExt = ['.xlsx', '.xls', '.csv', '.json'];
   const isBlockedFile = blockExt.some(ext => url.pathname.endsWith(ext));
 
   if (isAdmin || isBlockedFile) {
-    // Siempre red, NUNCA cache para evitar datos viejos en admin
+    // Network-first con fallback a index.html para evitar pantalla negra
     event.respondWith(
-      fetch(request).catch(() => {
-        // Si falla la red en rutas admin, mostrar página de error en lugar de cache viejo
-        return new Response('Offline - Recarga la página cuando tengas conexión', {
-          status: 503,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      })
+      fetch(request)
+        .catch(() => {
+          // Si falla la red, devolver index.html para que la app se cargue
+          return caches.match('/index.html').then(cached => {
+            if (cached) return cached;
+            return new Response('Offline - Recarga la página cuando tengas conexión', {
+              status: 503,
+              headers: { 'Content-Type': 'text/plain' }
+            });
+          });
+        })
     );
     return;
   }
@@ -275,6 +279,13 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
       clients.openWindow('/dashboard/pending')
     );
+  }
+});
+
+// Handle skip waiting message from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 

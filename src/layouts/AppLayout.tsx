@@ -9,6 +9,7 @@ import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
 import CreatorsList from "@/pages/CreatorsList";
 import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
+import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
 import logo from "@/assets/logo-optimized.webp";
 import {
@@ -155,6 +156,7 @@ const AppLayout = () => {
             <Route path="/creators" element={<CreatorsList />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
+            <Route path="/debug" element={<DebugTools />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

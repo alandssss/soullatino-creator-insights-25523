@@ -136,14 +136,20 @@ const Login = () => {
               )}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-4 text-center text-sm space-y-2">
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
+              className="text-primary hover:text-primary/80 font-medium transition-colors block w-full"
             >
               {isSignUp ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Regístrate"}
             </button>
+            <a
+              href="/debug"
+              className="text-muted-foreground hover:text-foreground text-xs transition-colors block"
+            >
+              ¿Problemas de carga en Android? → Herramientas de depuración
+            </a>
           </div>
         </CardContent>
       </Card>
