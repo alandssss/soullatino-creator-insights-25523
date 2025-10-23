@@ -169,69 +169,81 @@ serve(async (req) => {
     }
 
     // 10. Generar retroalimentación según reglas del usuario
-    const systemPrompt = `Eres un asesor empático del equipo SoulLatino que genera retroalimentación personalizada para creadores de TikTok LIVE.
+    const systemPrompt = `Eres un manager del equipo SoulLatino que envía mensajes personalizados por WhatsApp a creadores de TikTok LIVE.
 
-REGLAS OBLIGATORIAS (prioriza en este orden):
+FORMATO OBLIGATORIO:
+"Hola [nombre], te saluda [tu nombre] de SoulLatino. Te envío esta recomendación con estadísticas al día de ayer:
 
-1. Si está a <15% de alcanzar un hito → Mensaje motivacional con llamado a la acción urgente
-2. Si lleva >3 días sin transmitir → Alerta de riesgo de baja, sugiere meta mínima diaria
-3. Si cumple ≥22 días → Menciona que genera $3 USD/día extra por consistencia
-4. Si es nuevo (<90 días) y no llegó a 300K → Enfoca todo en alcanzar esa meta
-5. Si superó graduación (50K, 100K, 300K, etc.) → Felicita con emojis 🎉 y muestra próxima meta
-6. Si datos de diamantes/horas = 0 por varios días → Recordatorio empático, NO regaño
-7. Usa lenguaje humano, cálido, que denote acompañamiento
+Llevas [X] días en vivo y [Y] horas acumuladas, con [Z] diamantes generados (es decir, [promedio] por día).
 
-GRADUACIONES: 50K, 100K, 300K, 500K, 1M diamantes
-HITOS: Tipo B (12d+40h), Tipo A (20d+60h), Tipo S (22d+80h)
+[ANÁLISIS CONTEXTUAL según reglas]
 
-FORMATO SALIDA (2-3 líneas máximo):
-- Línea 1: Contexto emocional o logro
-- Línea 2: Acción específica para HOY
-- Línea 3 (opcional): Meta y probabilidad de logro
+Hoy trata de:
+- Hacer live [X] horas
+- Acumular [Y]k diamantes
+[- Completar [Z] PKO de 5 minutos]
 
-TONO: Motivacional, humano, directo, positivo. Usa emojis con moderación.
-NUNCA uses markdown, NUNCA digas "0 PKO".`;
+[MOTIVACIÓN FINAL]"
+
+REGLAS DE ANÁLISIS (prioriza en este orden):
+1. Si está a <15% de alcanzar un hito (20d/70h/100K) → "¡Estás MUY CERCA de alcanzar [hito]! Solo faltan [X] días/horas/diamantes."
+2. Si cumple ≥22 días → "Por tu consistencia de [X] días, estás generando $[Y] USD extra este mes. ¡Sigue así!"
+3. Si superó graduación → "🎉 ¡FELICIDADES! Lograste [50K/100K/300K/etc]. Tu próxima meta es [siguiente graduación]."
+4. Si lleva >3 días sin transmitir → "He notado que llevas [X] días sin transmitir. ¿Todo bien? Recuerda que para mantener el ritmo necesitas [acción]."
+5. Si es nuevo (<90 días) → "Como estás empezando, enfócate en alcanzar los 300K diamantes este mes."
+6. Si probabilidad_logro > 0.7 → "Vas muy bien encaminado para alcanzar tu meta."
+7. Si probabilidad_logro < 0.3 → "Será complicado alcanzar la meta, pero cada live suma. Enfócate en [acción prioritaria]."
+
+TONO: Profesional pero cálido, como un manager que conoce al creador. Sin emojis excesivos.
+NUNCA uses markdown o formato de lista con guiones en el mensaje principal.`;
 
     // Calcular contexto para reglas
     const diasSinTransmitir = currentDay - valid_days_so_far;
-    const porcentajeHito = (valid_days_so_far / target_valid_days) * 100;
-    const cercaDeHito = porcentajeHito >= 85;
+    const porcentajeHito = (valid_days_so_far / target_valid_days + hours_so_far / target_hours) / 2 * 100;
+    const cercaDeHito = porcentajeHito >= 85; // Está a <15% de completar el hito
     const superoGraduacion = diamonds_so_far >= target_diamonds;
     const esNuevo = true; // Asumir nuevo si no hay dato de dias_en_agencia
 
-    const userPrompt = `CREADOR: ${creator.nombre}
-HOY: día ${currentDay} del mes ${currentMonth}, quedan ${remaining_calendar_days} días
-
-SITUACIÓN ACTUAL:
-- Días en vivo: ${valid_days_so_far}/${target_valid_days} (${porcentajeHito.toFixed(0)}%)
-- Horas acumuladas: ${hours_so_far.toFixed(1)}/${target_hours}h
-- Diamantes: ${diamonds_so_far.toLocaleString()}/${target_diamonds.toLocaleString()}
-- Días sin transmitir consecutivos: ${diasSinTransmitir}
-
-ANÁLISIS:
-- ¿Cerca de hito? ${cercaDeHito ? 'SÍ (<15% restante)' : 'No'}
-- ¿Superó graduación? ${superoGraduacion ? 'SÍ' : 'No'}
-- ¿Es nuevo? ${esNuevo && diamonds_so_far < 300000 ? 'SÍ (enfoque en 300K)' : 'No'}
-- ¿Sin actividad? ${diamonds_so_far === 0 && hours_so_far === 0 ? 'SÍ (varios días)' : 'No'}
-- Días ≥22: ${valid_days_so_far >= 22 ? 'SÍ (bono $' + ((valid_days_so_far - 22) * 3) + ')' : 'No'}
-
-NECESITA HOY:
-- Horas: ${hoy_horas_sugeridas}h
-- PKO: ${pko_sugeridos_hoy} (5 min c/u)
-- Diamantes para estar en track: ${required_diamonds_per_day.toLocaleString()}
-
-Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más relevante.`;
-
-    let recommendation = '';
-
-    // Try Gemini AI service with API key if available
-    let manager_note = '';
+    // Inicializar objeto de predicción
     let prediccion = {
       faltan_diamantes: needed_diamonds,
       faltan_horas: needed_hours,
       probabilidad_de_logro: 0,
       recomendacion_accion: ''
     };
+
+    // Calcular predicción ANTES de llamar a Gemini
+    const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
+    const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
+    prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
+    prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
+
+    const userPrompt = `CREADOR: ${creator.nombre}
+HOY: día ${currentDay} del mes ${currentMonth}, quedan ${remaining_calendar_days} días
+
+DATOS ACTUALES:
+- Días válidos: ${valid_days_so_far}/${target_valid_days}
+- Horas totales: ${hours_so_far.toFixed(1)}h/${target_hours}h
+- Diamantes: ${diamonds_so_far.toLocaleString()}/${target_diamonds.toLocaleString()}
+- Promedio diario: ${(diamonds_so_far / (valid_days_so_far || 1)).toFixed(0)} diamantes/día
+- Días sin transmitir: ${diasSinTransmitir}
+
+ANÁLISIS:
+- Progreso hacia hito 20d/70h: ${porcentajeHito.toFixed(0)}%
+- ¿Cerca de hito? ${cercaDeHito ? 'SÍ (<15% restante)' : 'No'}
+- ¿Superó graduación ${target_diamonds.toLocaleString()}? ${superoGraduacion ? 'SÍ' : 'No'}
+- Días ≥22: ${valid_days_so_far >= 22 ? 'SÍ (bono $' + ((valid_days_so_far - 22) * 3) + ' USD)' : 'No'}
+- Probabilidad de lograr meta: ${(prediccion.probabilidad_de_logro * 100).toFixed(0)}%
+
+META DIARIA:
+- Horas sugeridas: ${hoy_horas_sugeridas}h
+- Diamantes necesarios: ${required_diamonds_per_day.toLocaleString()}
+- PKO recomendados: ${pko_sugeridos_hoy}
+
+Genera el mensaje completo siguiendo el formato profesional de WhatsApp.`;
+
+    let recommendation = '';
+    let manager_note = '';
 
     if (geminiApiKey) {
       try {
@@ -352,24 +364,25 @@ Genera mensaje en 2-3 líneas según las reglas, priorizando la situación más 
     if (!recommendation) {
       console.warn('⚠️ Gemini no generó contenido → usando plantilla basada en reglas locales');
       
-      // Generar mensaje breve estilo humano basado en métricas
       const ritmo = valid_days_so_far > 0 ? (diamonds_so_far / valid_days_so_far).toFixed(0) : '0';
-      const metaDiaria = Math.max(1, Math.ceil(required_hours_per_day));
-      const necesitaDias = needed_valid_days > 0 ? ` Suma 1 día válido.` : '';
+      const cercaHito = cercaDeHito ? `\n\n¡Estás MUY CERCA de alcanzar tu hito de ${target_valid_days} días y ${target_hours} horas! Solo faltan ${needed_valid_days} días y ${needed_hours.toFixed(0)} horas.` : '';
+      const bonoExtra = valid_days_so_far >= 22 ? `\n\nPor tu consistencia de ${valid_days_so_far} días, estás generando $${((valid_days_so_far - 22) * 3)} USD extra este mes. ¡Excelente!` : '';
       
       recommendation = 
-        `Vas ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h y ${diamonds_so_far.toLocaleString()}💎 (ritmo: ${ritmo}/día). ` +
-        `Hoy apunta a ${metaDiaria}h y ${required_diamonds_per_day.toLocaleString()}💎.${necesitaDias} ¡Sí se puede! ✨`;
+        `Hola ${creator.nombre}, te saluda el equipo de SoulLatino. Te envío esta recomendación con estadísticas al día de ayer:\n\n` +
+        `Llevas ${valid_days_so_far} días en vivo y ${hours_so_far.toFixed(1)} horas acumuladas, con ${diamonds_so_far.toLocaleString()} diamantes generados (es decir, ${ritmo} por día).` +
+        cercaHito +
+        bonoExtra +
+        `\n\nHoy trata de:\n- Hacer live ${Math.max(1, Math.ceil(required_hours_per_day))} horas\n- Acumular ${(required_diamonds_per_day / 1000).toFixed(0)}k diamantes` +
+        (needed_valid_days > 0 ? `\n- Completar 1 día válido más` : '') +
+        `\n\n¡Sí se puede! ✨`;
       
-      manager_note = `${creator.nombre} sin IA (plantilla local): ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()}💎`;
+      manager_note = `${creator.nombre} - Plantilla local (sin IA): ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()}💎`;
     }
     
-    // Calcular predicción si no se hizo antes
-    if (prediccion.probabilidad_de_logro === 0) {
-      const ritmoActual = valid_days_so_far > 0 ? diamonds_so_far / valid_days_so_far : 0;
-      const ritmoRequerido = remaining_calendar_days > 0 ? needed_diamonds / remaining_calendar_days : 0;
-      prediccion.probabilidad_de_logro = ritmoRequerido > 0 ? Math.min(0.95, ritmoActual / ritmoRequerido) : 0;
-      prediccion.recomendacion_accion = `Requiere ${required_diamonds_per_day.toLocaleString()} diam/día y ${required_hours_per_day.toFixed(1)}h/día durante ${remaining_calendar_days} días`;
+    // Predicción ya calculada antes del prompt de IA (líneas 202-205)
+    // Si aún no se generó manager_note, crearlo ahora
+    if (!manager_note) {
       manager_note = `${creator.nombre} - ${valid_days_so_far}d/${hours_so_far.toFixed(1)}h/${diamonds_so_far.toLocaleString()} 💎`;
     }
 
