@@ -53,6 +53,8 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   const [userRole, setUserRole] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [metaDialogOpen, setMetaDialogOpen] = useState(false);
+  const [whatsappPreview, setWhatsappPreview] = useState<string>("");
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -245,7 +247,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const userName = user?.email?.split('@')[0] || "el equipo";
-      const message = interactionService.generateWhatsAppMessage(creator, userName);
+      const message = await interactionService.generateWhatsAppMessage(creator, userName);
       
       await interactionService.sendWhatsAppMessage(creator, message, 'seguimiento');
       
@@ -262,9 +264,25 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     }
   };
 
-  const generateWhatsAppSummary = (userName: string = "el equipo") => {
+  const generateWhatsAppSummary = async (userName: string = "el equipo") => {
     if (!creator) return "";
-    return interactionService.generateWhatsAppMessage(creator, userName);
+    return await interactionService.generateWhatsAppMessage(creator, userName);
+  };
+
+  const loadWhatsAppPreview = async () => {
+    if (!creator || loadingPreview) return;
+    
+    setLoadingPreview(true);
+    try {
+      const userName = user?.email?.split('@')[0] || "el equipo";
+      const preview = await generateWhatsAppSummary(userName);
+      setWhatsappPreview(preview);
+    } catch (error) {
+      console.error('[CreatorDetailDialog] Error generando preview:', error);
+      setWhatsappPreview("Error generando vista previa");
+    } finally {
+      setLoadingPreview(false);
+    }
   };
 
   const getMonthlyGrowth = () => {
@@ -478,6 +496,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                         disabled={!creator.telefono}
                         size="sm"
                         className="w-full"
+                        onClick={loadWhatsAppPreview}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         Vista Previa del Mensaje
@@ -488,15 +507,23 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                         <div className="space-y-2">
                           <h4 className="font-semibold">Mensaje que se enviará</h4>
                           <div className="p-4 neo-card-sm rounded-lg border border-border max-h-60 overflow-y-auto">
-                            <p className="text-sm whitespace-pre-wrap font-display">
-                              {generateWhatsAppSummary(user?.email?.split('@')[0] || "el equipo")}
-                            </p>
+                            {loadingPreview ? (
+                              <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <span className="ml-2 text-sm text-muted-foreground">Cargando preview...</span>
+                              </div>
+                            ) : (
+                              <p className="text-sm whitespace-pre-wrap font-display">
+                                {whatsappPreview || "Haz clic en 'Vista Previa' para cargar el mensaje"}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <Button 
                           className="w-full"
                           variant="success"
                           onClick={handleOpenWhatsApp}
+                          disabled={loadingPreview}
                         >
                           <MessageSquare className="h-5 w-5 mr-2" />
                           Enviar por WhatsApp

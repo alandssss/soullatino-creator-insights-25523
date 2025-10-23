@@ -147,14 +147,55 @@ export class InteractionService {
   }
 
   /**
-   * Genera mensaje de WhatsApp personalizado
+   * Obtiene las estadísticas del mes actual del creador
    */
-  static generateWhatsAppMessage(creator: Creator, userName: string = "el equipo"): string {
+  static async getCurrentMonthStats(creatorId: string) {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const mesReferencia = firstDayOfMonth.toISOString().split('T')[0];
+
+    // Obtener estadísticas diarias del mes actual
+    const { data: dailyStats, error } = await supabase
+      .from("creator_daily_stats")
+      .select("diamantes, duracion_live_horas, dias_validos_live")
+      .eq("creator_id", creatorId)
+      .gte("fecha", mesReferencia)
+      .order("fecha", { ascending: false });
+
+    if (error) {
+      console.error('[InteractionService] Error obteniendo stats mensuales:', error);
+      return { dias: 0, horas: 0, diamantes: 0 };
+    }
+
+    if (!dailyStats || dailyStats.length === 0) {
+      return { dias: 0, horas: 0, diamantes: 0 };
+    }
+
+    // Sumar todas las estadísticas del mes
+    const totales = dailyStats.reduce(
+      (acc, day) => ({
+        dias: acc.dias + (day.dias_validos_live || 0),
+        horas: acc.horas + (day.duracion_live_horas || 0),
+        diamantes: acc.diamantes + (day.diamantes || 0),
+      }),
+      { dias: 0, horas: 0, diamantes: 0 }
+    );
+
+    return totales;
+  }
+
+  /**
+   * Genera mensaje de WhatsApp personalizado con datos del mes actual
+   */
+  static async generateWhatsAppMessage(creator: Creator, userName: string = "el equipo"): Promise<string> {
+    // Obtener estadísticas actualizadas del mes actual
+    const stats = await InteractionService.getCurrentMonthStats(creator.id);
+    
     return `Hola soy ${userName} de SoulLatino, tus estadisticas al dia de ayer son:\n\n📅 ${
-      creator.dias_live || 0
-    } Dias Live\n⏰ ${(creator.horas_live || 0).toFixed(1)} Horas Live\n💎 ${(
-      creator.diamantes || 0
-    ).toLocaleString()} Diamantes\n\n¿Podemos hablar para ayudarte en como mejorar ese desempeño?`;
+      stats.dias
+    } Dias Live\n⏰ ${stats.horas.toFixed(1)} Horas Live\n💎 ${
+      stats.diamantes.toLocaleString()
+    } Diamantes\n\n¿Podemos hablar para ayudarte en como mejorar ese desempeño?`;
   }
 
   /**
