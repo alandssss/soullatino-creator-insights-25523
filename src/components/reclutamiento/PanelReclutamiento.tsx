@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Phone, Mail, TrendingUp, Users, CheckCircle2, Clock } from "lucide-react";
+import { UserPlus, Phone, Mail, TrendingUp, Users, CheckCircle2, Clock, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { NuevoProspectoDialog } from "./NuevoProspectoDialog";
+import { EditarProspectoDialog } from "./EditarProspectoDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -29,6 +30,8 @@ export const PanelReclutamiento = () => {
   const [prospectos, setProspectos] = useState<Prospecto[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedProspecto, setSelectedProspecto] = useState<Prospecto | null>(null);
 
   useEffect(() => {
     fetchProspectos();
@@ -49,6 +52,11 @@ export const PanelReclutamiento = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (prospecto: Prospecto) => {
+    setSelectedProspecto(prospecto);
+    setEditDialogOpen(true);
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -177,6 +185,7 @@ export const PanelReclutamiento = () => {
                       <TableHead>Seguidores</TableHead>
                       <TableHead>Agente</TableHead>
                       <TableHead>Fecha Contacto</TableHead>
+                      <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -217,6 +226,16 @@ export const PanelReclutamiento = () => {
                         <TableCell>
                           {format(new Date(prospecto.fecha_contacto), 'dd MMM yyyy', { locale: es })}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(prospecto)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -233,6 +252,16 @@ export const PanelReclutamiento = () => {
         onSuccess={() => {
           fetchProspectos();
           setDialogOpen(false);
+        }}
+      />
+
+      <EditarProspectoDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen}
+        prospecto={selectedProspecto}
+        onSuccess={() => {
+          fetchProspectos();
+          setEditDialogOpen(false);
         }}
       />
     </>
