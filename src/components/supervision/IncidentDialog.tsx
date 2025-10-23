@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,16 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
   const [severidad, setSeveridad] = useState<"baja" | "media" | "alta">("baja");
   const [accionSugerida, setAccionSugerida] = useState("ninguna");
 
-  const handleSubmit = async () => {
+  // Resetear formulario al abrir
+  useEffect(() => {
+    if (open) {
+      setReporte("");
+      setSeveridad("baja");
+      setAccionSugerida("ninguna");
+    }
+  }, [open]);
+
+  const handleSubmit = useCallback(async () => {
     if (!reporte.trim()) {
       toast({
         title: "Campo requerido",
@@ -70,9 +79,6 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
         description: `Reporte guardado para ${creator.nombre}`,
       });
 
-      setReporte("");
-      setSeveridad("baja");
-      setAccionSugerida("ninguna");
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -85,7 +91,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [creator.id, creator.nombre, reporte, severidad, accionSugerida, toast, onOpenChange, onSuccess]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

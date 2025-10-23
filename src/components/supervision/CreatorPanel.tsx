@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, memo, ChangeEvent } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -77,14 +77,22 @@ export function CreatorPanel({
   const isMobile = useIsMobile();
   const isDesktop = !isMobile;
 
+  // Resetear estados al abrir o cambiar creator
+  useEffect(() => {
+    if (open && creator) {
+      setSelectedFlags({});
+      setNotes("");
+    }
+  }, [open, creator?.id]);
+
   if (!creator) return null;
 
-  const toggleFlag = (flag: string) => {
+  const toggleFlag = useCallback((flag: string) => {
     setSelectedFlags(prev => ({
       ...prev,
       [flag]: !prev[flag]
     }));
-  };
+  }, []);
 
   const getRiesgoColor = (riesgo?: string) => {
     switch (riesgo) {
@@ -95,7 +103,7 @@ export function CreatorPanel({
     }
   };
 
-  const quickLog = async () => {
+  const quickLog = useCallback(async () => {
     if (Object.keys(selectedFlags).length === 0) {
       toast({
         title: "Sin selección",
@@ -147,11 +155,26 @@ export function CreatorPanel({
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [creator.id, selectedFlags, notes, toast, onReload]);
 
   const timeSinceLog = latestLog 
     ? Math.floor((Date.now() - new Date(latestLog.fecha_evento).getTime()) / (1000 * 60))
     : null;
+
+  // Componente memoizado para el Textarea
+  const NotesInput = memo(({ value, onChange, disabled }: { 
+    value: string; 
+    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void; 
+    disabled: boolean 
+  }) => (
+    <Textarea
+      value={value}
+      onChange={onChange}
+      placeholder="Escribe observaciones adicionales..."
+      className="neo-input min-h-[80px] resize-none"
+      disabled={disabled}
+    />
+  ));
 
   const PanelContent = () => (
     <>
@@ -266,7 +289,10 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant={selectedFlags.en_vivo ? "default" : "outline"}
-                onClick={() => toggleFlag('en_vivo')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFlag('en_vivo');
+                }}
                 disabled={submitting}
                 className="neo-button flex-col h-auto py-3"
               >
@@ -276,7 +302,10 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant={selectedFlags.en_batalla ? "default" : "outline"}
-                onClick={() => toggleFlag('en_batalla')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFlag('en_batalla');
+                }}
                 disabled={submitting}
                 className="neo-button flex-col h-auto py-3"
               >
@@ -286,7 +315,10 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant={selectedFlags.buena_iluminacion ? "default" : "outline"}
-                onClick={() => toggleFlag('buena_iluminacion')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFlag('buena_iluminacion');
+                }}
                 disabled={submitting}
                 className="neo-button flex-col h-auto py-3"
               >
@@ -299,7 +331,10 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant={selectedFlags.audio_claro ? "default" : "outline"}
-                onClick={() => toggleFlag('audio_claro')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFlag('audio_claro');
+                }}
                 disabled={submitting}
                 className="neo-button flex-col h-auto py-3"
               >
@@ -309,7 +344,10 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant={selectedFlags.set_profesional ? "default" : "outline"}
-                onClick={() => toggleFlag('set_profesional')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFlag('set_profesional');
+                }}
                 disabled={submitting}
                 className="neo-button flex-col h-auto py-3"
               >
@@ -319,7 +357,8 @@ export function CreatorPanel({
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   onOpenIncident();
                   onOpenChange(false);
                 }}
@@ -334,11 +373,9 @@ export function CreatorPanel({
             {/* Campo de notas */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Notas adicionales (opcional)</label>
-              <Textarea
+              <NotesInput
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Escribe observaciones adicionales..."
-                className="neo-input min-h-[80px] resize-none"
                 disabled={submitting}
               />
             </div>
