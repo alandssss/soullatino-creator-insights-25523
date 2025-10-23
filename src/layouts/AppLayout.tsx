@@ -37,8 +37,8 @@ const AppLayout = () => {
       .select("role, created_at")
       .eq("user_id", user.id);
     
-    // Priorizar roles: admin > manager > supervisor > viewer
-    const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
+    // Priorizar roles: admin > manager > supervisor > reclutador > viewer
+    const priority: Record<string, number> = { admin: 5, manager: 4, supervisor: 3, reclutador: 2, viewer: 1 };
     const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
     
     setUserRole(sortedRoles[0]?.role || null);
@@ -58,8 +58,8 @@ const AppLayout = () => {
     { to: "/dashboard/pending", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
     { to: "/alertas", label: "Alertas", roles: ['admin', 'manager'] },
     { to: "/creators", label: "Administración", roles: ['admin'] },
-    { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor'] },
-    { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager'] },
+    { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
+    { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
   ].filter(link => userRole && link.roles.includes(userRole));
 
   return (

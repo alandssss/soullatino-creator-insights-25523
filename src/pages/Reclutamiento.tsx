@@ -37,8 +37,8 @@ const Reclutamiento = () => {
     
     setUserRole(role);
 
-    // Solo admins y managers pueden acceder
-    if (role !== 'admin' && role !== 'manager') {
+    // Solo admins, managers y reclutadores pueden acceder
+    if (role !== 'admin' && role !== 'manager' && role !== 'reclutador') {
       navigate("/");
       return;
     }

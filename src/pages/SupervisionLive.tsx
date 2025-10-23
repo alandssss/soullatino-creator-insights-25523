@@ -83,12 +83,12 @@ export default function SupervisionLive() {
       .select('role, created_at')
       .eq('user_id', user.id);
     
-    // Priorizar roles: admin > manager > supervisor > viewer
-    const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
+    // Priorizar roles: admin > manager > supervisor > reclutador > viewer
+    const priority: Record<string, number> = { admin: 5, manager: 4, supervisor: 3, reclutador: 2, viewer: 1 };
     const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
     const userRole = sortedRoles[0]?.role || null;
 
-    if (!userRole || !['admin', 'manager', 'supervisor'].includes(userRole)) {
+    if (!userRole || !['admin', 'manager', 'supervisor', 'reclutador'].includes(userRole)) {
       toast({
         title: "Acceso denegado",
         description: "No tienes permisos para acceder a este módulo",
