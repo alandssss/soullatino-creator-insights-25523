@@ -726,7 +726,7 @@ export type Database = {
       refresh_recommendations_today: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "manager" | "viewer" | "supervisor"
+      app_role: "admin" | "manager" | "viewer" | "supervisor" | "reclutador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -854,7 +854,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "viewer", "supervisor"],
+      app_role: ["admin", "manager", "viewer", "supervisor", "reclutador"],
     },
   },
 } as const
