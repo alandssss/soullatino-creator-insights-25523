@@ -7,9 +7,22 @@ if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('/sw.js?ts=' + Date.now())
+        .register('/sw.js?v=7&ts=' + Date.now())
         .then((registration) => {
           console.log('SW registered: ', registration);
+          
+          // Forzar actualización del SW si hay uno nuevo
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // Nuevo SW disponible, notificar al usuario
+                  console.log('Nueva versión disponible. Recarga la página para actualizar.');
+                }
+              });
+            }
+          });
         })
         .catch((registrationError) => {
           console.log('SW registration failed: ', registrationError);

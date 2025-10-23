@@ -1,6 +1,6 @@
-const CACHE_NAME = 'soullatino-v6';
-const RUNTIME_CACHE = 'soullatino-runtime-v6';
-const STATIC_CACHE = 'soullatino-static-v6';
+const CACHE_NAME = 'soullatino-v7';
+const RUNTIME_CACHE = 'soullatino-runtime-v7';
+const STATIC_CACHE = 'soullatino-static-v7';
 
 const urlsToCache = [
   '/',
@@ -50,14 +50,22 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ============= EXCLUSIONES: Admin y archivos sensibles =============
-  const adminPaths = ['/admin', '/creators', '/dashboard', '/panel', '/alertas', '/supervision'];
+  const adminPaths = ['/admin', '/creators', '/dashboard', '/panel', '/alertas', '/supervision', '/login'];
   const isAdmin = adminPaths.some(p => url.pathname.startsWith(p));
   const blockExt = ['.xlsx', '.xls', '.csv', '.json'];
   const isBlockedFile = blockExt.some(ext => url.pathname.endsWith(ext));
 
   if (isAdmin || isBlockedFile) {
     // Siempre red, NUNCA cache para evitar datos viejos en admin
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Si falla la red en rutas admin, mostrar página de error en lugar de cache viejo
+        return new Response('Offline - Recarga la página cuando tengas conexión', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      })
+    );
     return;
   }
 

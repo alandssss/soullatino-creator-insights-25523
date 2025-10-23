@@ -3,7 +3,11 @@ import * as React from "react";
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
+  // Inicializar con el valor real desde el principio para evitar flashes
+  const [isMobile, setIsMobile] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < MOBILE_BREAKPOINT;
+  });
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -11,24 +15,24 @@ export function useIsMobile() {
       setIsMobile('matches' in e ? e.matches : window.innerWidth < MOBILE_BREAKPOINT);
     };
     
-    // Set initial state
+    // Actualizar estado inicial basado en media query
     setIsMobile(mql.matches);
     
-    // Use addEventListener if available, otherwise fallback to addListener
-    try {
+    // Compatibilidad Android/iOS: intentar addEventListener, fallback a addListener
+    if (mql.addEventListener) {
       mql.addEventListener("change", onChange);
-    } catch {
+    } else if (mql.addListener) {
       mql.addListener(onChange);
     }
     
     return () => {
-      try {
+      if (mql.removeEventListener) {
         mql.removeEventListener("change", onChange);
-      } catch {
+      } else if (mql.removeListener) {
         mql.removeListener(onChange);
       }
     };
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }
