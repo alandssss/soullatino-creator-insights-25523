@@ -34,6 +34,9 @@ interface Creator {
   telefono?: string;
   dias_en_agencia?: number;
   diam_live_mes?: number;
+  horas_live_mes?: number;
+  dias_live_mes?: number;
+  last_month_diamantes?: number;
 }
 
 interface SupervisionLog {

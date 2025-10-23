@@ -35,11 +35,9 @@ interface Creator {
   telefono?: string;
   dias_en_agencia?: number;
   last_month_diamantes?: number;
-  tiktok_username?: string;
+  diam_live_mes?: number;
   horas_live_mes?: number;
   dias_live_mes?: number;
-  graduacion?: string;
-  manager?: string;
 }
 
 interface SupervisionLog {

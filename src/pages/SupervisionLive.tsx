@@ -28,6 +28,9 @@ interface Creator {
   telefono?: string;
   dias_en_agencia?: number;
   last_month_diamantes?: number;
+  diam_live_mes?: number;
+  horas_live_mes?: number;
+  dias_live_mes?: number;
 }
 
 interface SupervisionLog {
@@ -97,7 +100,33 @@ export default function SupervisionLive() {
         .order('nombre');
 
       if (creatorsError) throw creatorsError;
-      setCreators(creatorsData || []);
+
+      // Calcular mes de referencia (primer día del mes actual)
+      const now = new Date();
+      const mesReferencia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+      // Cargar métricas del mes actual desde creator_bonificaciones
+      const { data: bonificacionesData, error: bonificacionesError } = await supabase
+        .from('creator_bonificaciones')
+        .select('creator_id, diam_live_mes, horas_live_mes, dias_live_mes')
+        .eq('mes_referencia', mesReferencia);
+
+      if (bonificacionesError) console.warn('Error cargando bonificaciones:', bonificacionesError);
+
+      // Crear mapa de métricas por creator_id
+      const metricsMap = new Map(
+        (bonificacionesData || []).map(m => [m.creator_id, m])
+      );
+
+      // Mergear métricas en creadores
+      const enrichedCreators = (creatorsData || []).map(c => ({
+        ...c,
+        diam_live_mes: metricsMap.get(c.id)?.diam_live_mes || 0,
+        horas_live_mes: metricsMap.get(c.id)?.horas_live_mes || 0,
+        dias_live_mes: metricsMap.get(c.id)?.dias_live_mes || 0,
+      }));
+
+      setCreators(enrichedCreators);
 
       // Cargar logs recientes (últimas 24h)
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
