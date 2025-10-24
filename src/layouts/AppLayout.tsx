@@ -5,7 +5,6 @@ import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, NavLink } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
-import Admin from "@/pages/Admin";
 import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
 import CreatorsList from "@/pages/CreatorsList";
@@ -60,12 +59,14 @@ const AppLayout = () => {
   const isViewer = userRole === 'viewer';
 
   const navLinks = [
-    { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
-    { to: "/bonificaciones", label: "Bonificaciones", roles: ['admin', 'manager', 'viewer'] },
-    { to: "/alertas", label: "Alertas", roles: ['admin', 'manager', 'viewer'] },
+    { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+    { to: "/bonificaciones", label: "Bonificaciones", roles: ['admin', 'manager'] },
+    { to: "/alertas", label: "Alertas", roles: ['admin', 'manager'] },
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
-    { to: "/admin", label: "⚙️ Admin", roles: ['admin'] },
+    { to: "/creators", label: "Admin", roles: ['admin'] },
+    { to: "/branding", label: "Branding", roles: ['admin'] },
+    { to: "/scoring", label: "Scoring", roles: ['admin'] },
     { to: "/ia-effectiveness", label: "IA Stats", roles: ['admin', 'manager'] },
   ].filter(link => userRole && link.roles.includes(userRole));
 
@@ -162,9 +163,9 @@ const AppLayout = () => {
         <div className="container mx-auto px-3 md:px-6 py-4 md:py-6 max-w-full">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/admin" element={<Admin />} />
             <Route path="/bonificaciones" element={<BonificacionesDashboard />} />
             <Route path="/alertas" element={<AlertasSugerenciasPage />} />
+            <Route path="/creators" element={<CreatorsList />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
             <Route path="/branding" element={<BrandingSettings />} />

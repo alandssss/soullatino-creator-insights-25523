@@ -7,14 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, TrendingUp, Eye, Zap, LogOut, MessageCircle } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { CreatorDetailDialog } from "@/components/CreatorDetailDialog";
-// Admin components moved to /admin page
+import { AdminUploadPanel } from "@/components/AdminUploadPanel";
+import { AdminActivityPanel } from "@/components/AdminActivityPanel";
+import { UserManagement } from "@/components/UserManagement";
 import { LowActivityPanel } from "@/components/LowActivityPanel";
 import { WorkTimeTracker } from "@/components/WorkTimeTracker";
 import { StatCard } from "@/components/shared/StatCard";
-import DiamondsBars3D from "@/components/dashboard/DiamondsBars3D";
-import TopPerformersCards from "@/components/dashboard/TopPerformersCards";
-import CriticalAlertsPanel from "@/components/dashboard/CriticalAlertsPanel";
-import { Suspense, lazy } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
@@ -175,33 +173,49 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-6 py-8 space-y-8">
         <PageHeader
-          title="Dashboard Operativo"
-          description="Visualización interactiva y métricas de alto impacto"
+          title="Dashboard"
+          description="Resumen de métricas y rendimiento de tus creadores"
           sticky={false}
         />
 
-        {/* Critical Alerts - Real-time monitoring */}
-        <CriticalAlertsPanel />
+        {userRole === "admin" && (
+          <div className="space-y-8">
+            <UserManagement />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdminUploadPanel />
+              <AdminActivityPanel />
+            </div>
+          </div>
+        )}
 
-        {/* Top Performers - Visual impact */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <span>🏆</span>
-            Top Performers del Mes
-          </h2>
-          <TopPerformersCards creators={creators} />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Creadores"
+            value={totalCreators}
+            icon={Users}
+            variant="primary"
+          />
+          <StatCard
+            title="Total Diamantes"
+            value={totalDiamonds.toLocaleString()}
+            icon={Zap}
+            variant="accent"
+          />
+          <StatCard
+            title="Total Vistas"
+            value={`${(totalViews / 1000000).toFixed(1)}M`}
+            icon={Eye}
+            variant="default"
+          />
+          <StatCard
+            title="Hito Promedio"
+            value={`${(avgHito / 1000).toFixed(0)}K`}
+            icon={TrendingUp}
+            variant="accent"
+            subtitle="Diamantes"
+          />
         </div>
 
-        {/* 3D Diamonds Chart - Interactive visualization */}
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        }>
-          <DiamondsBars3D creators={creators} />
-        </Suspense>
-
-        {/* KPI Panels - Strategic metrics */}
         <GraduacionAlert />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
