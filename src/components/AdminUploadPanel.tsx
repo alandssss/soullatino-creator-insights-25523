@@ -310,8 +310,8 @@ export const AdminUploadPanel = () => {
       });
 
       // Recalcular bonificaciones automáticamente
-      const { error: calcError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
-        body: { mes_referencia: '2025-10-01' }
+      const { error: calcError } = await supabase.functions.invoke('calculate-bonificaciones-unified', {
+        body: { mode: 'predictive', mes_referencia: '2025-10-01' }
       });
 
       if (calcError) {

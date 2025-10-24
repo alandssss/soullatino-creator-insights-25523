@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      auth_attempts: {
+        Row: {
+          attempt_time: string | null
+          id: string
+          ip_address: string | null
+          success: boolean | null
+          user_email: string
+        }
+        Insert: {
+          attempt_time?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          user_email: string
+        }
+        Update: {
+          attempt_time?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          user_email?: string
+        }
+        Relationships: []
+      }
       creator_bonificaciones: {
         Row: {
           bono_extra_usd: number | null
@@ -716,6 +740,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_brute_force: {
+        Args: { p_email: string; p_ip: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
