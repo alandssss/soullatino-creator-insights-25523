@@ -380,10 +380,16 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           descripcion: string | null
+          diam_antes_recomendacion: number | null
+          diam_despues_recomendacion: number | null
           fecha_creacion: string | null
+          fecha_seguimiento: string | null
           icono: string | null
           id: string
+          lift_percentage: number | null
           prioridad: string | null
+          resultado_creador: string | null
+          seguida_por_manager: boolean | null
           tipo: string | null
           titulo: string | null
         }
@@ -392,10 +398,16 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           descripcion?: string | null
+          diam_antes_recomendacion?: number | null
+          diam_despues_recomendacion?: number | null
           fecha_creacion?: string | null
+          fecha_seguimiento?: string | null
           icono?: string | null
           id?: string
+          lift_percentage?: number | null
           prioridad?: string | null
+          resultado_creador?: string | null
+          seguida_por_manager?: boolean | null
           tipo?: string | null
           titulo?: string | null
         }
@@ -404,10 +416,16 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           descripcion?: string | null
+          diam_antes_recomendacion?: number | null
+          diam_despues_recomendacion?: number | null
           fecha_creacion?: string | null
+          fecha_seguimiento?: string | null
           icono?: string | null
           id?: string
+          lift_percentage?: number | null
           prioridad?: string | null
+          resultado_creador?: string | null
+          seguida_por_manager?: boolean | null
           tipo?: string | null
           titulo?: string | null
         }
@@ -577,6 +595,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scoring_weights: {
+        Row: {
+          bono_por_dia_extra: number | null
+          created_at: string | null
+          id: string
+          peso_dias_en_agencia: number | null
+          tenant_id: string
+          umbral_amarillo_multiplicador: number | null
+          umbral_dias_nuevos: number | null
+          umbral_verde_multiplicador: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bono_por_dia_extra?: number | null
+          created_at?: string | null
+          id?: string
+          peso_dias_en_agencia?: number | null
+          tenant_id?: string
+          umbral_amarillo_multiplicador?: number | null
+          umbral_dias_nuevos?: number | null
+          umbral_verde_multiplicador?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bono_por_dia_extra?: number | null
+          created_at?: string | null
+          id?: string
+          peso_dias_en_agencia?: number | null
+          tenant_id?: string
+          umbral_amarillo_multiplicador?: number | null
+          umbral_dias_nuevos?: number | null
+          umbral_verde_multiplicador?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       supervision_live_logs: {
         Row: {
           accion_sugerida: string | null
@@ -647,6 +701,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenant_branding: {
+        Row: {
+          accent_color: string | null
+          created_at: string | null
+          custom_domain: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          product_name: string | null
+          secondary_color: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          product_name?: string | null
+          secondary_color?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string | null
+          custom_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          product_name?: string | null
+          secondary_color?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -737,6 +830,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_ia_effectiveness: {
+        Row: {
+          lift_promedio_no_seguidas: number | null
+          lift_promedio_seguidas: number | null
+          mes: string | null
+          recomendaciones_ignoradas: number | null
+          recomendaciones_seguidas: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
