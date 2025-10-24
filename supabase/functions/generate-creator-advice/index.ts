@@ -1,17 +1,12 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimit } from "../_shared/rate-limit.ts";
+import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 
-const FRONTEND_ORIGIN = Deno.env.get("FRONTEND_ORIGIN") ?? "https://gestion.soullatino.mx";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TZ = "America/Chihuahua";
-
-const cors = {
-  "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-};
 
 function nowInTZ(tz: string) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -160,12 +155,27 @@ function msgManager(params: {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: cors });
+    return handleCORSPreflight(origin);
   }
+
+  // Rate limiting: 20 req/min (IA - caro)
+  const rl = await rateLimit(req, { key: "generate-creator-advice", limitPerMin: 20 });
+  if (!rl.ok) return withCORS(rl.response!, origin);
+
   try {
     const auth = req.headers.get("Authorization") ?? "";
-    if (!auth) return new Response(JSON.stringify({ error: "missing auth" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+    if (!auth) {
+      return withCORS(
+        new Response(JSON.stringify({ error: "missing auth" }), { 
+          status: 401, 
+          headers: { "Content-Type": "application/json" } 
+        }),
+        origin
+      );
+    }
 
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: auth } },
@@ -175,13 +185,25 @@ serve(async (req) => {
     if (roleErr || !canReadRoles) {
       const { data: canReadViewer } = await userClient.rpc("has_role", { _user_id: (await userClient.auth.getUser()).data.user?.id, _role: "viewer" as any });
       if (!canReadViewer) {
-        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+        return withCORS(
+          new Response(JSON.stringify({ error: "unauthorized" }), { 
+            status: 401, 
+            headers: { "Content-Type": "application/json" } 
+          }),
+          origin
+        );
       }
     }
 
     const { creator_id } = await req.json();
     if (!creator_id) {
-      return new Response(JSON.stringify({ error: "creator_id requerido" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+      return withCORS(
+        new Response(JSON.stringify({ error: "creator_id requerido" }), { 
+          status: 400, 
+          headers: { "Content-Type": "application/json" } 
+        }),
+        origin
+      );
     }
 
     const hoyTZ = nowInTZ(TZ);
@@ -197,7 +219,13 @@ serve(async (req) => {
       .single();
 
     if (creatorErr || !creatorRow) {
-      return new Response(JSON.stringify({ error: "creator_not_found" }), { status: 404, headers: { ...cors, "Content-Type": "application/json" } });
+      return withCORS(
+        new Response(JSON.stringify({ error: "creator_not_found" }), { 
+          status: 404, 
+          headers: { "Content-Type": "application/json" } 
+        }),
+        origin
+      );
     }
 
     const { data: liveData, error: liveErr } = await userClient
@@ -208,7 +236,13 @@ serve(async (req) => {
       .lte("fecha", dateToISO(ayer));
 
     if (liveErr) {
-      return new Response(JSON.stringify({ error: "live_query_error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+      return withCORS(
+        new Response(JSON.stringify({ error: "live_query_error" }), { 
+          status: 500, 
+          headers: { "Content-Type": "application/json" } 
+        }),
+        origin
+      );
     }
 
     let agg: LiveMes = { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 };
@@ -302,12 +336,21 @@ serve(async (req) => {
       advice: para_creador,
     };
 
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return withCORS(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+      origin
+    );
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: "internal_error" }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    return withCORS(
+      new Response(JSON.stringify({ error: "internal_error" }), { 
+        status: 500, 
+        headers: { "Content-Type": "application/json" } 
+      }),
+      origin
+    );
   }
 });

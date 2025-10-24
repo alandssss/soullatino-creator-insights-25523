@@ -17,7 +17,7 @@ interface NuevoProspectoDialogProps {
 
 const prospectoSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
-  telefono: z.string().trim().max(20).optional().nullable(),
+  telefono: z.string().trim().regex(/^\+?[1-9]\d{1,14}$/, "Formato inválido. Usa formato internacional (+52...)").max(20).optional().nullable().or(z.literal('')),
   email: z.string().trim().email("Email inválido").max(255).optional().nullable().or(z.literal('')),
   tiktok_username: z.string().trim().max(100).optional().nullable(),
   instagram: z.string().trim().max(100).optional().nullable(),

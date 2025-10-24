@@ -7,6 +7,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, FileSpreadsheet, Loader2, Database, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
+import { z } from "zod";
+
+// Schema de validación para datos del Excel
+const ExcelPayloadSchema = z.array(z.object({
+  creator_username: z.string().trim().min(1, "Username requerido").max(100),
+  phone_e164: z.string().trim().regex(/^\+?[1-9]\d{1,14}$/, "Teléfono inválido (formato E.164)").max(20).optional().nullable(),
+  dias_actuales: z.number().int().min(0).max(31),
+  horas_actuales: z.number().min(0).max(744), // Max horas en un mes
+  diamantes_actuales: z.number().int().min(0).max(100000000),
+  estado_graduacion: z.string().max(100).optional().nullable(),
+  manager: z.string().max(100).optional().nullable(),
+  grupo: z.string().max(100).optional().nullable(),
+}));
 
 export const AdminUploadPanel = () => {
   const [uploading, setUploading] = useState(false);
@@ -119,6 +132,24 @@ export const AdminUploadPanel = () => {
 
     setUploading(true);
     try {
+      // Validar el archivo antes de enviarlo
+      const jsonData = await processExcelFile(file);
+      
+      // Validar con Zod
+      try {
+        ExcelPayloadSchema.parse(jsonData);
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          const firstError = validationError.errors[0];
+          toast({
+            title: "Datos inválidos en Excel",
+            description: `${firstError.path.join('.')}: ${firstError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Enviar el archivo directamente a la función del backend
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
@@ -154,8 +185,8 @@ export const AdminUploadPanel = () => {
       // Recalcular bonificaciones del mes actual
       try {
         const mesRef = new Date().toISOString().slice(0, 7) + '-01';
-        const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
-          body: { mes_referencia: mesRef }
+        const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-unified', {
+          body: { mode: 'predictive', mes_referencia: mesRef }
         });
 
         if (bonifError) {

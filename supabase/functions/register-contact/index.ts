@@ -1,15 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { rateLimit } from "../_shared/rate-limit.ts";
+import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCORSPreflight(origin);
   }
+
+  // Rate limiting: 5 req/min (formulario público - spam)
+  const rl = await rateLimit(req, { key: "register-contact", limitPerMin: 5 });
+  if (!rl.ok) return withCORS(rl.response!, origin);
 
   try {
     console.log('[register-contact] Starting...');
@@ -81,24 +84,30 @@ serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        record_id: logData.id,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({
+          success: true,
+          record_id: logData.id,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
+      origin
     );
 
   } catch (error: any) {
     console.error('[register-contact] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error?.message || 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({ error: error?.message || 'Unknown error' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      ),
+      origin
     );
   }
 });

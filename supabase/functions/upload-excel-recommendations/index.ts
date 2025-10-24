@@ -1,26 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { rateLimit } from "../_shared/rate-limit.ts";
+import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCORSPreflight(origin);
   }
+
+  // Rate limiting: 10 req/min (upload pesado)
+  const rl = await rateLimit(req, { key: "upload-excel-recommendations", limitPerMin: 10 });
+  if (!rl.ok) return withCORS(rl.response!, origin);
 
   try {
     console.log('[upload-excel-recommendations] Starting...');
     
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No autorizado' }), { 
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return withCORS(
+        new Response(JSON.stringify({ error: 'No autorizado' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        origin
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -109,17 +115,20 @@ serve(async (req) => {
       );
       
       if (!hasNameColumn) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Excel debe contener una columna de nombre',
-            hint: 'Columnas aceptadas: Nombre, Usuario, Creator Name, TikTok, etc.',
-            columns_found: Object.keys(firstRow),
-            expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes']
-          }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+        return withCORS(
+          new Response(
+            JSON.stringify({ 
+              error: 'Excel debe contener una columna de nombre',
+              hint: 'Columnas aceptadas: Nombre, Usuario, Creator Name, TikTok, etc.',
+              columns_found: Object.keys(firstRow),
+              expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes']
+            }),
+            { 
+              status: 400, 
+              headers: { 'Content-Type': 'application/json' } 
+            }
+          ),
+          origin
         );
       }
     }
@@ -240,18 +249,21 @@ serve(async (req) => {
 
     if (!mapped.length) {
       const sampleRow = rawData[0] || {};
-      return new Response(
-        JSON.stringify({ 
-          error: 'Sin filas válidas después de normalizar',
-          hint: 'Verifica que el Excel tenga columnas: Nombre, Dias, Horas, Diamantes',
-          columns_found: Object.keys(sampleRow),
-          expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes'],
-          debug_info: 'Revisa los logs para ver qué columnas fueron detectadas'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
-        }
+      return withCORS(
+        new Response(
+          JSON.stringify({ 
+            error: 'Sin filas válidas después de normalizar',
+            hint: 'Verifica que el Excel tenga columnas: Nombre, Dias, Horas, Diamantes',
+            columns_found: Object.keys(sampleRow),
+            expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes'],
+            debug_info: 'Revisa los logs para ver qué columnas fueron detectadas'
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate' }
+          }
+        ),
+        origin
       );
     }
 
@@ -267,9 +279,12 @@ serve(async (req) => {
 
     if (creatorsByUserError) {
       console.error('[upload-excel-recommendations] Error fetching creators:', creatorsByUserError);
-      return new Response(
-        JSON.stringify({ error: creatorsByUserError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: creatorsByUserError.message }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -325,9 +340,12 @@ serve(async (req) => {
 
       if (createErr) {
         console.error('[upload-excel-recommendations] Error creating creators:', createErr);
-        return new Response(
-          JSON.stringify({ error: createErr.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        return withCORS(
+          new Response(
+            JSON.stringify({ error: createErr.message }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          ),
+          origin
         );
       }
 
@@ -354,9 +372,12 @@ serve(async (req) => {
     }).filter(Boolean) as any[];
 
     if (!dailyRows.length) {
-      return new Response(
-        JSON.stringify({ error: 'No se pudieron resolver creadores para las filas cargadas' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: 'No se pudieron resolver creadores para las filas cargadas' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -378,9 +399,12 @@ serve(async (req) => {
 
     if (insertErr) {
       console.error('[upload-excel-recommendations] Insert error:', insertErr);
-      return new Response(
-        JSON.stringify({ error: insertErr.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: insertErr.message }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -394,32 +418,36 @@ serve(async (req) => {
       console.error('[upload-excel-recommendations] Error refreshing view:', refreshError);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        records_processed: mapped.length
-      }),
-      {
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, must-revalidate'
-        },
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({
+          success: true,
+          records_processed: mapped.length
+        }),
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, must-revalidate'
+          },
+        }
+      ),
+      origin
     );
 
   } catch (error: any) {
     console.error('[upload-excel-recommendations] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error?.message || 'Unknown error' }),
-      {
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, must-revalidate'
-        },
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({ error: error?.message || 'Unknown error' }),
+        {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, must-revalidate'
+          },
+        }
+      ),
+      origin
     );
   }
 });

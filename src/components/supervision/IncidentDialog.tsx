@@ -19,6 +19,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { SupervisionLogSchema } from "@/core/validation/schemas/supervision";
+import { z } from "zod";
 
 interface Creator {
   id: string;
@@ -60,15 +62,26 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
 
     setSubmitting(true);
     try {
+      // Validar datos con Zod antes de enviar
+      const validatedData = SupervisionLogSchema.parse({
+        creator_id: creator.id,
+        observer_name: "Sistema", // Se obtendrá del user context en el backend
+        en_vivo: false,
+        cumple_normas: false,
+        severidad,
+        accion_sugerida: accionSugerida.trim() || null,
+        reporte: reporte.trim(),
+      });
+
       const { error } = await supabase.functions.invoke('supervision-quicklog', {
         body: {
-          creator_id: creator.id,
+          creator_id: validatedData.creator_id,
           flags: {
-            cumple_normas: false
+            cumple_normas: validatedData.cumple_normas
           },
-          reporte: reporte.trim(),
-          severidad,
-          accion_sugerida: accionSugerida.trim() || null
+          reporte: validatedData.reporte,
+          severidad: validatedData.severidad,
+          accion_sugerida: validatedData.accion_sugerida
         }
       });
 
@@ -83,11 +96,21 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
       onSuccess();
     } catch (error: any) {
       console.error('Error reporting incident:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo guardar el reporte",
-        variant: "destructive",
-      });
+      
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Validación fallida",
+          description: `${firstError.path.join('.')}: ${firstError.message}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "No se pudo guardar el reporte",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSubmitting(false);
     }

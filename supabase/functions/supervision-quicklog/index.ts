@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { rateLimit } from "../_shared/rate-limit.ts";
+import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 
 interface QuickLogRequest {
   creator_id: string;
@@ -23,9 +20,15 @@ interface QuickLogRequest {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCORSPreflight(origin);
   }
+
+  // Rate limiting: 60 req/min (logs frecuentes)
+  const rl = await rateLimit(req, { key: "supervision-quicklog", limitPerMin: 60 });
+  if (!rl.ok) return withCORS(rl.response!, origin);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -33,7 +36,13 @@ serve(async (req) => {
     
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: 'No authorization header' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -44,9 +53,12 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('Auth error:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -59,9 +71,12 @@ serve(async (req) => {
 
     if (!roleData || !['admin', 'manager', 'supervisor'].includes(roleData.role)) {
       console.error('Insufficient permissions:', roleData?.role);
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: requires admin, manager or supervisor role' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: 'Forbidden: requires admin, manager or supervisor role' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -83,9 +98,12 @@ serve(async (req) => {
       .limit(1);
 
     if (recentLogs && recentLogs.length > 0) {
-      return new Response(
-        JSON.stringify({ error: 'Rate limit: wait 60 seconds before logging again for this creator' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return withCORS(
+        new Response(
+          JSON.stringify({ error: 'Rate limit: wait 60 seconds before logging again for this creator' }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
       );
     }
 
@@ -128,12 +146,15 @@ serve(async (req) => {
 
     console.log('Quick log created:', newLog.id);
 
-    return new Response(
-      JSON.stringify({ success: true, log: newLog }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({ success: true, log: newLog }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      ),
+      origin
     );
   } catch (error: any) {
     // Log detailed error server-side only (for debugging)
@@ -144,12 +165,15 @@ serve(async (req) => {
     });
     
     // Return generic error to client (prevents information disclosure)
-    return new Response(
-      JSON.stringify({ error: 'Unable to process supervision log' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+    return withCORS(
+      new Response(
+        JSON.stringify({ error: 'Unable to process supervision log' }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      ),
+      origin
     );
   }
 });
