@@ -53,21 +53,18 @@ serve(async (req) => {
       );
     }
 
-    // Si no existe, crear uno nuevo con el rol proporcionado o 'viewer' por defecto
-    const { role = 'viewer' } = await req.json().catch(() => ({}));
+    // SECURITY FIX: Always assign 'viewer' role by default for new users
+    // Role upgrades must be done by admins via the 'manage-user' function
+    // This prevents privilege escalation attacks
+    const defaultRole = 'viewer';
 
-    // Validar el rol
-    const validRoles = ['admin', 'manager', 'viewer', 'supervisor'];
-    if (!validRoles.includes(role)) {
-      throw new Error(`Rol inválido: ${role}`);
-    }
+    console.log(`[ensure-user-role] Asignando rol por defecto '${defaultRole}' para user ${user.id}`);
+    console.log(`[ensure-user-role] NOTA: Para cambiar roles, usar la función 'manage-user' con permisos de admin`);
 
-    console.log(`[ensure-user-role] Creando nuevo rol '${role}' para user ${user.id}`);
-
-    // Insertar el nuevo rol
+    // Insertar el rol por defecto (viewer)
     const { data, error } = await supabase
       .from('user_roles')
-      .insert({ user_id: user.id, role })
+      .insert({ user_id: user.id, role: defaultRole })
       .select()
       .single();
 
