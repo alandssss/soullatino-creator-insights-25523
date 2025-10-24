@@ -12,10 +12,11 @@ import { AdminActivityPanel } from "@/components/AdminActivityPanel";
 import { UserManagement } from "@/components/UserManagement";
 import { LowActivityPanel } from "@/components/LowActivityPanel";
 import { WorkTimeTracker } from "@/components/WorkTimeTracker";
-// Imports removed: feedback and predictive panels deleted
 import { StatCard } from "@/components/shared/StatCard";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingState } from "@/components/shared/LoadingState";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
 
 type Creator = Tables<"creators">;
 
@@ -32,6 +33,17 @@ const Dashboard = () => {
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      const timer = setTimeout(() => {
+        if (shouldShowTour('first-time')) {
+          startTour('first-time');
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, user]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -202,9 +214,11 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <OnboardingChecklist />
           <LowActivityPanel />
-          <WorkTimeTracker userEmail={user?.email} />
         </div>
+        
+        <WorkTimeTracker userEmail={user?.email} />
 
         <Card className="rounded-2xl border-2 border-border/50">
           <CardHeader className="pb-4">

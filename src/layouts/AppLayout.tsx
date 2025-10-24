@@ -12,6 +12,9 @@ import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
 import BonificacionesDashboard from "@/pages/BonificacionesDashboard";
 import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
+import BrandingSettings from "@/pages/BrandingSettings";
+import ScoringConfig from "@/pages/ScoringConfig";
+import IAEffectiveness from "@/pages/IAEffectiveness";
 import logo from "@/assets/logo-optimized.webp";
 import {
   Sheet,
@@ -62,6 +65,9 @@ const AppLayout = () => {
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
     { to: "/creators", label: "Admin", roles: ['admin'] },
+    { to: "/branding", label: "Branding", roles: ['admin'] },
+    { to: "/scoring", label: "Scoring", roles: ['admin'] },
+    { to: "/ia-effectiveness", label: "IA Stats", roles: ['admin', 'manager'] },
   ].filter(link => userRole && link.roles.includes(userRole));
 
   return (
@@ -162,6 +168,9 @@ const AppLayout = () => {
             <Route path="/creators" element={<CreatorsList />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
+            <Route path="/branding" element={<BrandingSettings />} />
+            <Route path="/scoring" element={<ScoringConfig />} />
+            <Route path="/ia-effectiveness" element={<IAEffectiveness />} />
             <Route path="/debug" element={<DebugTools />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

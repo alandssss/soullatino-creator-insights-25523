@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { creatorAnalytics } from "@/services/creatorAnalytics";
 import { MetricCard } from "@/components/MetricCard";
 import { MilestoneCard } from "@/components/shared/MilestoneCard";
+import { RootCausePanel } from "@/components/bonificaciones/RootCausePanel";
 
 interface BonificacionesPanelProps {
   creatorId: string;
@@ -292,6 +293,9 @@ export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPa
                 </p>
               </div>
             )}
+
+            {/* Root Cause Analysis */}
+            <RootCausePanel bonificacion={bonificacion} />
 
             {/* Última actualización */}
             <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
