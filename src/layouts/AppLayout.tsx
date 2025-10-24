@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, NavLink } from "react-router-dom";
-import DashboardOverview from "@/pages/DashboardOverview";
+import Dashboard from "@/pages/Dashboard";
 import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
 import CreatorsList from "@/pages/CreatorsList";
 import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
+import BonificacionesDashboard from "@/pages/BonificacionesDashboard";
 import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
 import logo from "@/assets/logo-optimized.webp";
@@ -55,11 +56,12 @@ const AppLayout = () => {
   const isViewer = userRole === 'viewer';
 
   const navLinks = [
-    { to: "/dashboard/pending", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+    { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+    { to: "/bonificaciones", label: "Bonificaciones", roles: ['admin', 'manager'] },
     { to: "/alertas", label: "Alertas", roles: ['admin', 'manager'] },
-    { to: "/creators", label: "Administración", roles: ['admin'] },
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
+    { to: "/creators", label: "Admin", roles: ['admin'] },
   ].filter(link => userRole && link.roles.includes(userRole));
 
   return (
@@ -154,8 +156,8 @@ const AppLayout = () => {
       <main className="flex-1 w-full overflow-x-hidden">
         <div className="container mx-auto px-3 md:px-6 py-4 md:py-6 max-w-full">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard/pending" replace />} />
-            <Route path="/dashboard/*" element={<DashboardOverview />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/bonificaciones" element={<BonificacionesDashboard />} />
             <Route path="/alertas" element={<AlertasSugerenciasPage />} />
             <Route path="/creators" element={<CreatorsList />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />

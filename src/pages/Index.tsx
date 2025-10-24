@@ -11,7 +11,7 @@ const Index = () => {
       const { supabase } = await import("@/integrations/supabase/client");
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        navigate("/");
       }
     };
     checkAuth();

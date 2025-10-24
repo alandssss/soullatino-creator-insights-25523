@@ -12,9 +12,7 @@ import { AdminActivityPanel } from "@/components/AdminActivityPanel";
 import { UserManagement } from "@/components/UserManagement";
 import { LowActivityPanel } from "@/components/LowActivityPanel";
 import { WorkTimeTracker } from "@/components/WorkTimeTracker";
-import { MonthlyFeedbackCalendar } from "@/components/MonthlyFeedbackCalendar";
-import { FeedbackImpactChart } from "@/components/FeedbackImpactChart";
-import { PanelPredictivoCreadores } from "@/components/PanelPredictivoCreadores";
+// Imports removed: feedback and predictive panels deleted
 import { StatCard } from "@/components/shared/StatCard";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingState } from "@/components/shared/LoadingState";
@@ -203,16 +201,9 @@ const Dashboard = () => {
           />
         </div>
 
-        <PanelPredictivoCreadores />
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <LowActivityPanel />
           <WorkTimeTracker userEmail={user?.email} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MonthlyFeedbackCalendar />
-          <FeedbackImpactChart />
         </div>
 
         <Card className="rounded-2xl border-2 border-border/50">

@@ -6,30 +6,21 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Phone, Calendar, TrendingUp, Target, Sparkles, Loader2, Clock, Award, ArrowUp, ArrowDown, Minus, Eye } from "lucide-react";
+import { Calendar, TrendingUp, Target, Sparkles, Loader2, Award, ArrowUp, ArrowDown, Minus, Eye, MessageSquare } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { z } from "zod";
 import { BonificacionesPanel } from "./BonificacionesPanel";
 import { interactionService } from "@/services/interactionService";
 import { AsignarMetaDialog } from "./AsignarMetaDialog";
-import { InfoBox, infoBoxActions } from "@/components/shared/InfoBox";
-
-const interactionSchema = z.object({
-  tipo: z.string().trim().min(1, "Tipo de interacción requerido").max(100, "Máximo 100 caracteres"),
-  notas: z.string().trim().min(1, "Notas requeridas").max(2000, "Máximo 2000 caracteres"),
-  admin_nombre: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-});
+import { CreatorBasicInfo } from "./creator-detail/CreatorBasicInfo";
+import { CreatorInteractions } from "./creator-detail/CreatorInteractions";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -42,11 +33,6 @@ interface CreatorDetailDialogProps {
 
 export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDetailDialogProps) => {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
-  const [newInteraction, setNewInteraction] = useState({
-    tipo: "",
-    notas: "",
-    admin_nombre: "",
-  });
   const [aiAdvice, setAiAdvice] = useState<string>("");
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [milestone, setMilestone] = useState("");
@@ -55,6 +41,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   const [metaDialogOpen, setMetaDialogOpen] = useState(false);
   const [whatsappPreview, setWhatsappPreview] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [dailyStats, setDailyStats] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,8 +106,6 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       setMilestone("");
     }
   }, [open, creator]);
-
-  const [dailyStats, setDailyStats] = useState<any>(null);
 
   const loadDailyStats = async () => {
     if (!creator) return;
@@ -209,41 +194,6 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     }
   };
 
-  const addInteraction = async () => {
-    if (!creator) return;
-
-    try {
-      const validated = interactionSchema.parse(newInteraction);
-
-      await interactionService.recordInteraction(creator.id, {
-        tipo: validated.tipo,
-        notas: validated.notas,
-        admin_nombre: validated.admin_nombre,
-      });
-
-      toast({
-        title: "✅ Éxito",
-        description: "Interacción guardada correctamente",
-      });
-      
-      setNewInteraction({ tipo: "", notas: "", admin_nombre: "" });
-      fetchInteractions();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Error de validación",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "No se pudo guardar la interacción",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleOpenWhatsApp = async () => {
     if (!creator) return;
@@ -408,74 +358,10 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 space-y-6 pt-4">
+          <CreatorBasicInfo creator={creator} dailyStats={dailyStats} />
+
           <Card className="neo-card-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl font-semibold">
-                <div className="p-2 rounded-lg bg-primary/10 backdrop-blur-sm">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                </div>
-                Información del Creador
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoBox 
-                label="Usuario TikTok" 
-                value={`@${creator.tiktok_username || "No especificado"}`}
-              />
-              <InfoBox 
-                label="Teléfono" 
-                value={creator.telefono || "No especificado"}
-                actions={creator.telefono ? [
-                  infoBoxActions.phone(creator.telefono),
-                  infoBoxActions.whatsapp(creator.telefono)
-                ] : []}
-              />
-              <InfoBox 
-                label="Categoría" 
-                value={creator.categoria || "No especificada"}
-              />
-              <InfoBox 
-                label="Manager" 
-                value={creator.manager || "No asignado"}
-                mono
-                actions={creator.manager && creator.manager.includes('@') ? [
-                  infoBoxActions.email(creator.manager),
-                  infoBoxActions.copy(creator.manager)
-                ] : []}
-              />
-              
-              {/* Stats del día de hoy desde Excel */}
-              {dailyStats ? (
-                <>
-                  <div className="p-4 rounded-lg bg-green-500/10 backdrop-blur-sm border border-green-500/20">
-                    <p className="text-xs uppercase tracking-wider text-green-600 mb-1 font-medium">Días Live Hoy</p>
-                    <p className="font-bold text-xl text-green-600">{dailyStats.dias_validos_live || 0}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-blue-500/10 backdrop-blur-sm border border-blue-500/20">
-                    <p className="text-xs uppercase tracking-wider text-blue-600 mb-1 font-medium">Horas Hoy</p>
-                    <p className="font-bold text-xl text-blue-600">{dailyStats.duracion_live_horas?.toFixed(1) || 0}h</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20">
-                    <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium">Diamantes Hoy</p>
-                    <p className="font-bold text-2xl text-accent">{(dailyStats.diamantes || 0).toLocaleString()} 💎</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
-                    <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Días en Live</p>
-                    <p className="font-bold text-xl text-primary">{creator.dias_live || 0} días</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
-                    <p className="text-xs uppercase tracking-wider text-primary mb-1 font-medium">Horas en Live</p>
-                    <p className="font-bold text-xl text-primary">{creator.horas_live || 0} horas</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20">
-                    <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium">Diamantes</p>
-                    <p className="font-bold text-2xl text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
-                  </div>
-                </>
-              )}
+            <CardContent className="pt-6 space-y-4">
               <div className="p-4 rounded-lg neo-card-sm">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Engagement</p>
                 <p className="font-bold text-xl">{(creator.engagement_rate || 0).toFixed(1)}%</p>
@@ -745,86 +631,11 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsContent>
 
             <TabsContent value="agenda" className="space-y-4 mt-6">
-              <Card className="neo-card-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-semibold flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 backdrop-blur-sm">
-                      <Calendar className="h-5 w-5 text-primary" />
-                    </div>
-                    Historial de Interacciones
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-5">
-                    {(userRole === "admin" || userRole === "manager") && (
-                      <div className="space-y-4 p-5 neo-card-sm rounded-lg border border-border">
-                        <div className="space-y-2">
-                          <Label>Tipo de Interacción</Label>
-                          <Input
-                            value={newInteraction.tipo}
-                            onChange={(e) =>
-                              setNewInteraction({ ...newInteraction, tipo: e.target.value })
-                            }
-                            placeholder="Ej: Llamada, Email, Reunión"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Notas</Label>
-                          <Textarea
-                            value={newInteraction.notas}
-                            onChange={(e) =>
-                              setNewInteraction({ ...newInteraction, notas: e.target.value })
-                            }
-                            placeholder="Detalles de la interacción..."
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Nombre del Admin/Manager</Label>
-                          <Input
-                            value={newInteraction.admin_nombre}
-                            onChange={(e) =>
-                              setNewInteraction({ ...newInteraction, admin_nombre: e.target.value })
-                            }
-                            placeholder="Tu nombre"
-                          />
-                        </div>
-                        <Button onClick={addInteraction} variant="default" size="lg" className="w-full font-semibold">
-                          Agregar Interacción
-                        </Button>
-                      </div>
-                    )}
-                    <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
-                      {interactions.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">
-                          No hay interacciones registradas
-                        </p>
-                      ) : (
-                        interactions.map((interaction) => (
-                          <div
-                            key={interaction.id}
-                            className="p-4 rounded-lg neo-card-sm hover:neo-card-pressed transition-all cursor-pointer"
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-semibold text-base">{interaction.tipo}</span>
-                              <span className="text-xs font-medium text-muted-foreground neo-card-sm px-2 py-1 rounded-full">
-                                {new Date(interaction.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
-                              {interaction.notas}
-                            </p>
-                            {interaction.admin_nombre && (
-                              <p className="text-xs text-muted-foreground font-medium">
-                                Por: {interaction.admin_nombre}
-                              </p>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <CreatorInteractions 
+                creatorId={creator.id}
+                interactions={interactions}
+                onInteractionAdded={fetchInteractions}
+              />
             </TabsContent>
           </Tabs>
         </div>
