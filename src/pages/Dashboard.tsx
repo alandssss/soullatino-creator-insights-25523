@@ -17,6 +17,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
+import { KPIGraduacionNuevos } from "@/components/kpis/KPIGraduacionNuevos";
+import { NuevosCreadoresDetailPanel } from "@/components/kpis/NuevosCreadoresDetailPanel";
+import { GraduacionAlert } from "@/components/kpis/GraduacionAlert";
 
 type Creator = Tables<"creators">;
 
@@ -213,10 +216,16 @@ const Dashboard = () => {
           />
         </div>
 
+        <GraduacionAlert />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <KPIGraduacionNuevos />
           <OnboardingChecklist />
-          <LowActivityPanel />
         </div>
+
+        <NuevosCreadoresDetailPanel />
+
+        <LowActivityPanel />
         
         <WorkTimeTracker userEmail={user?.email} />
 

@@ -125,6 +125,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "creator_bonificaciones_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
       creator_daily_stats: {
@@ -199,6 +206,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
       creator_interactions: {
@@ -234,6 +248,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "creator_interactions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
       creator_live_daily: {
@@ -267,6 +288,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_live_daily_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
         ]
@@ -308,6 +336,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_metas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
         ]
@@ -370,6 +405,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_monthly_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
         ]
@@ -435,6 +477,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_recommendations_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
         ]
@@ -700,6 +749,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "supervision_live_logs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tenant_branding: {
@@ -801,6 +857,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_activity_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -829,6 +892,13 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_ia_effectiveness: {
@@ -838,6 +908,26 @@ export type Database = {
           mes: string | null
           recomendaciones_ignoradas: number | null
           recomendaciones_seguidas: number | null
+        }
+        Relationships: []
+      }
+      v_nuevos_creadores_detalle: {
+        Row: {
+          agente: string | null
+          diam_live_mes: number | null
+          dias_en_agencia: number | null
+          dias_live_mes: number | null
+          faltan_para_100k: number | null
+          fecha_incorporacion: string | null
+          graduado: boolean | null
+          horas_live_mes: number | null
+          id: string | null
+          manager: string | null
+          nivel_graduacion: string | null
+          nombre: string | null
+          progreso_100k_pct: number | null
+          telefono: string | null
+          tiktok_username: string | null
         }
         Relationships: []
       }
@@ -853,6 +943,20 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      kpi_new_creator_graduation: {
+        Args: { p_mes_referencia?: string }
+        Returns: {
+          brecha_porcentual_100k: number
+          estado_objetivo_100k: string
+          graduados_100k_mas: number
+          graduados_300k_mas: number
+          graduados_500k_mas: number
+          pct_graduacion_100k: number
+          pct_graduacion_300k: number
+          pct_graduacion_500k: number
+          total_nuevos: number
+        }[]
       }
       refresh_recommendations_today: { Args: never; Returns: undefined }
     }
