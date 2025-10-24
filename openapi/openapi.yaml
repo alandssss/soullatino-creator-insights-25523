@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: Soullatino Analytics API
+  version: "1.0.0"
+  description: |
+    API para gestión de creadores, bonificaciones y supervisión live.
+    Sistema de analytics para agencias de talento digital.
+  contact:
+    name: Soullatino Team
+    
+servers:
+  - url: https://mpseoscrzpnequwvzokn.supabase.co/functions/v1
+    description: Production (Lovable Cloud)
+
+security:
+  - BearerAuth: []
+
+paths:
+  /calculate-bonificaciones-unified:
+    post:
+      summary: Calcula bonificaciones (single/batch/predictive)
+      operationId: calculateBonificaciones
+      tags: [Bonificaciones]
+      description: |
+        Calcula bonificaciones mensuales para creadores basado en métricas de live streaming.
+        Soporta 3 modos: single (1 creator), batch (todos), predictive (con IA).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BonificacionRequest'
+            examples:
+              single:
+                summary: Calcular para un creador específico
+                value:
+                  creator_id: "123e4567-e89b-12d3-a456-426614174000"
+                  mes_referencia: "2025-10-01"
+                  mode: "single"
+              batch:
+                summary: Calcular para todos los creadores
+                value:
+                  mode: "batch"
+                  mes_referencia: "2025-10-01"
+      responses:
+        "200":
+          description: Cálculo exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BonificacionResponse'
+        "400":
+          $ref: '#/components/responses/ValidationError'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "429":
+          $ref: '#/components/responses/RateLimited'
+        "500":
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token de autenticación de Supabase
+      
+  schemas:
+    BonificacionRequest:
+      type: object
+      properties:
+        creator_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID del creador (null = calcular para todos)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        mes_referencia:
+          type: string
+          format: date
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          description: Primer día del mes (YYYY-MM-DD)
+          example: "2025-10-01"
+        mode:
+          type: string
+          enum: [single, batch, predictive]
+          default: batch
+          description: |
+            - single: Un creador específico
+            - batch: Todos los creadores
+            - predictive: Con recomendaciones de IA
+      required: [mode]
+      
+    BonificacionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indica si la operación fue exitosa
+        mode:
+          type: string
+          enum: [single, batch, predictive]
+        total_creadores:
+          type: integer
+          minimum: 0
+          description: Número total de creadores procesados
+        bonificaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bonificacion'
+            
+    Bonificacion:
+      type: object
+      properties:
+        creator_id:
+          type: string
+          format: uuid
+        mes_referencia:
+          type: string
+          format: date
+        dias_live_mes:
+          type: integer
+          minimum: 0
+          maximum: 31
+          description: Días con transmisiones en vivo en el mes
+        horas_live_mes:
+          type: number
+          format: float
+          minimum: 0
+          description: Total de horas en vivo en el mes
+        diam_live_mes:
+          type: number
+          format: float
+          minimum: 0
+          description: Total de diamantes ganados en el mes
+        dias_restantes:
+          type: integer
+          minimum: 0
+          description: Días restantes del mes
+        grad_50k:
+          type: boolean
+          description: Alcanzó graduación de 50K diamantes
+        grad_100k:
+          type: boolean
+        grad_300k:
+          type: boolean
+        grad_500k:
+          type: boolean
+        grad_1m:
+          type: boolean
+        hito_12d_40h:
+          type: boolean
+          description: Alcanzó hito de 12 días / 40 horas
+        hito_20d_60h:
+          type: boolean
+        hito_22d_80h:
+          type: boolean
+        bono_extra_usd:
+          type: number
+          format: float
+          minimum: 0
+          description: Bono extra en USD por días > 22
+        req_diam_por_dia:
+          type: number
+          format: float
+          minimum: 0
+          description: Diamantes requeridos por día para próximo objetivo
+        req_horas_por_dia:
+          type: number
+          format: float
+          minimum: 0
+          description: Horas requeridas por día para próximo hito
+        proximo_objetivo_tipo:
+          type: string
+          enum: [graduacion, graduacion_prioritaria, hito, mantenimiento]
+        proximo_objetivo_valor:
+          type: string
+          example: "300K"
+        es_prioridad_300k:
+          type: boolean
+          description: Es prioridad para alcanzar 300K (< 90 días en agencia)
+        cerca_de_objetivo:
+          type: boolean
+          description: Está cerca del objetivo (< 15% faltante)
+          
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Código de error
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        details:
+          type: string
+          description: Detalles adicionales del error
+          
+  responses:
+    ValidationError:
+      description: Error de validación de entrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "validation"
+            message: "Error de validación"
+            details: "creator_id: Invalid UUID format"
+            
+    Unauthorized:
+      description: No autenticado o token inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "unauthorized"
+            message: "Token de autenticación inválido"
+            
+    RateLimited:
+      description: Rate limit excedido
+      headers:
+        Retry-After:
+          schema: 
+            type: integer
+            example: 60
+          description: Segundos hasta poder reintentar
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "rate_limit"
+            message: "Demasiadas peticiones. Intenta de nuevo en 1 minuto."
+            
+    ServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "server_error"
+            message: "Error interno del servidor"
+
+tags:
+  - name: Bonificaciones
+    description: Cálculo y gestión de bonificaciones
