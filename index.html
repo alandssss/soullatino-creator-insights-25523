@@ -11,6 +11,21 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               img-src 'self' data: https:;
+               script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               connect-src 'self' 
+                 https://mpseoscrzpnequwvzokn.supabase.co 
+                 https://generativelanguage.googleapis.com 
+                 https://www.google-analytics.com
+                 wss://mpseoscrzpnequwvzokn.supabase.co;
+               font-src 'self' data: https://fonts.gstatic.com;
+               frame-ancestors 'none';
+               base-uri 'self';
+               form-action 'self';">
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#d4ff6a" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
