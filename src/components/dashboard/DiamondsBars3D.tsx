@@ -3,6 +3,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WebGLFallback } from "./WebGLFallback";
 
 interface Creator {
   id: string;
@@ -129,9 +130,15 @@ function Scene({ creators, onCreatorClick }: { creators: Creator[], onCreatorCli
 }
 
 export default function DiamondsBars3D({ creators, title = "Top 10 Creadores - Diamantes 3D" }: DiamondsBars3DProps) {
+  const [renderError, setRenderError] = useState(false);
+  
   const handleCreatorClick = (id: string) => {
     console.log("Clicked creator:", id);
   };
+
+  if (renderError) {
+    return <WebGLFallback message="Error al renderizar gráficos 3D. Tu dispositivo podría no soportar WebGL." />;
+  }
 
   return (
     <Card className="col-span-full">
@@ -146,6 +153,16 @@ export default function DiamondsBars3D({ creators, title = "Top 10 Creadores - D
           <Canvas
             camera={{ position: [0, 5, 12], fov: 50 }}
             shadows
+            onCreated={(state) => {
+              if (!state.gl) {
+                setRenderError(true);
+              }
+            }}
+            gl={{ 
+              antialias: true,
+              alpha: true,
+              preserveDrawingBuffer: true 
+            }}
           >
             <Suspense fallback={null}>
               <Scene creators={creators} onCreatorClick={handleCreatorClick} />

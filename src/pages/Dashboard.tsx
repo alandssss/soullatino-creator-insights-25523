@@ -22,6 +22,10 @@ import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
 import { KPIGraduacionNuevos } from "@/components/kpis/KPIGraduacionNuevos";
 import { NuevosCreadoresDetailPanel } from "@/components/kpis/NuevosCreadoresDetailPanel";
 import { GraduacionAlert } from "@/components/kpis/GraduacionAlert";
+import { isWebGLAvailable, getWebGLErrorMessage } from "@/utils/webglSupport";
+import { WebGLFallback } from "@/components/dashboard/WebGLFallback";
+import { WebGL3DErrorBoundary } from "@/components/dashboard/WebGL3DErrorBoundary";
+import { SimpleBarChart } from "@/components/dashboard/SimpleBarChart";
 
 type Creator = Tables<"creators">;
 
@@ -32,6 +36,7 @@ const Dashboard = () => {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [webGLSupported] = useState(isWebGLAvailable());
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -189,17 +194,29 @@ const Dashboard = () => {
             <span>🏆</span>
             Top Performers del Mes
           </h2>
-          <TopPerformersCards creators={creators} />
+          {webGLSupported ? (
+            <TopPerformersCards creators={creators} />
+          ) : (
+            <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
+              Visualización 3D no disponible. Mostrando vista simplificada.
+            </div>
+          )}
         </div>
 
-        {/* 3D Diamonds Chart - Interactive visualization */}
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        }>
-          <DiamondsBars3D creators={creators} />
-        </Suspense>
+        {/* 3D Diamonds Chart - Interactive visualization with fallback */}
+        {webGLSupported ? (
+          <WebGL3DErrorBoundary>
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <DiamondsBars3D creators={creators} />
+            </Suspense>
+          </WebGL3DErrorBoundary>
+        ) : (
+          <SimpleBarChart creators={creators} />
+        )}
 
         {/* KPI Panels - Strategic metrics */}
         <GraduacionAlert />
