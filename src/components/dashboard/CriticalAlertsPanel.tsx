@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Alert {
   id: string;
@@ -36,7 +38,94 @@ const mockAlerts: Alert[] = [
   },
 ];
 
-export default function CriticalAlertsPanel({ alerts = mockAlerts }: CriticalAlertsPanelProps) {
+export default function CriticalAlertsPanel({ alerts: propAlerts }: CriticalAlertsPanelProps) {
+  const [alerts, setAlerts] = useState<Alert[]>(propAlerts || mockAlerts);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!propAlerts) {
+      fetchRealAlerts();
+    } else {
+      setAlerts(propAlerts);
+      setLoading(false);
+    }
+  }, [propAlerts]);
+
+  const fetchRealAlerts = async () => {
+    const primerDiaMes = new Date();
+    primerDiaMes.setDate(1);
+    const mesReferencia = primerDiaMes.toISOString().split('T')[0];
+
+    try {
+      const { data, error } = await supabase
+        .from('creator_bonificaciones')
+        .select(`
+          creator_id,
+          diam_live_mes,
+          dias_live_mes,
+          horas_live_mes,
+          cerca_de_objetivo,
+          creators!inner(nombre)
+        `)
+        .eq('mes_referencia', mesReferencia);
+
+      if (error) throw error;
+
+      const newAlerts: Alert[] = [];
+
+      // Alerta: Creadores sin actividad
+      const sinActividad = data.filter(c => c.dias_live_mes === 0);
+      if (sinActividad.length > 0) {
+        newAlerts.push({
+          id: 'no-activity',
+          type: 'critical',
+          message: `${sinActividad.length} creadores sin actividad este mes`,
+          timestamp: new Date(),
+        });
+      }
+
+      // Alerta: Cerca de graduación
+      const cercaGraduacion = data.filter(c => c.cerca_de_objetivo);
+      if (cercaGraduacion.length > 0) {
+        newAlerts.push({
+          id: 'near-graduation',
+          type: 'warning',
+          message: `${cercaGraduacion.length} creadores cerca de graduación necesitan apoyo`,
+          timestamp: new Date(),
+        });
+      }
+
+      // Alerta: Bajo rendimiento
+      const bajoRendimiento = data.filter(c => 
+        c.diam_live_mes < 50000 && c.dias_live_mes > 10
+      );
+      if (bajoRendimiento.length > 0) {
+        newAlerts.push({
+          id: 'low-performance',
+          type: 'warning',
+          message: `${bajoRendimiento.length} creadores con bajo rendimiento pese a actividad`,
+          timestamp: new Date(),
+        });
+      }
+
+      // Alerta informativa: Creadores activos
+      const activos = data.filter(c => c.dias_live_mes > 0);
+      newAlerts.push({
+        id: 'active-creators',
+        type: 'info',
+        message: `${activos.length} creadores activos este mes`,
+        timestamp: new Date(),
+      });
+
+      setAlerts(newAlerts.length > 0 ? newAlerts : mockAlerts);
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      setAlerts(mockAlerts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getAlertIcon = (type: Alert["type"]) => {
     switch (type) {
       case "critical":

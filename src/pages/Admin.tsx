@@ -7,6 +7,9 @@ import { Shield, Upload, Users, Settings, TrendingUp, Activity } from "lucide-re
 import { UserManagement } from "@/components/UserManagement";
 import { AdminUploadPanel } from "@/components/AdminUploadPanel";
 import { AdminActivityPanel } from "@/components/AdminActivityPanel";
+import BrandingSettings from "@/pages/BrandingSettings";
+import ScoringConfig from "@/pages/ScoringConfig";
+import IAEffectiveness from "@/pages/IAEffectiveness";
 import { toast } from "sonner";
 
 export default function AdminPanel() {
@@ -143,51 +146,12 @@ export default function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="config" className="space-y-4">
-          <div className="grid gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración de Branding</CardTitle>
-                <CardDescription>
-                  Personaliza el logo, colores y nombre del producto
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Accede a <a href="/branding" className="text-primary underline">Branding Settings</a> para configurar</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración de Scoring</CardTitle>
-                <CardDescription>
-                  Ajusta pesos del algoritmo y umbrales de evaluación
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Accede a <a href="/scoring" className="text-primary underline">Scoring Config</a> para configurar</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <BrandingSettings />
+          <ScoringConfig />
         </TabsContent>
 
         <TabsContent value="ia" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas de IA</CardTitle>
-              <CardDescription>
-                Efectividad de recomendaciones y ROI del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Accede a <a href="/ia-effectiveness" className="text-primary underline">IA Effectiveness</a> para ver estadísticas</p>
-              </div>
-            </CardContent>
-          </Card>
+          <IAEffectiveness />
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">

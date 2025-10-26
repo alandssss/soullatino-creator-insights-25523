@@ -18,6 +18,19 @@ interface TopPerformersCardsProps {
 const medals = ["🥇", "🥈", "🥉"];
 
 export default function TopPerformersCards({ creators }: TopPerformersCardsProps) {
+  if (!creators || creators.length === 0) {
+    return (
+      <div className="col-span-full">
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            <p className="text-lg font-semibold">No hay datos disponibles</p>
+            <p className="text-sm mt-2">Espera a que se carguen los datos de los top performers</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const topCreators = creators
     .sort((a, b) => (b.diamantes || 0) - (a.diamantes || 0))
     .slice(0, 3);

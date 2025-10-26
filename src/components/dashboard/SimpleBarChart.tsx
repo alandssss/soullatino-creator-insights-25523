@@ -14,8 +14,24 @@ interface SimpleBarChartProps {
 }
 
 export function SimpleBarChart({ creators, title = "Top 10 Creadores - Diamantes" }: SimpleBarChartProps) {
+  if (!creators || creators.length === 0) {
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-lg font-semibold">No hay datos disponibles</p>
+            <p className="text-sm mt-2">Espera a que se carguen los datos del mes actual</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const data = creators.slice(0, 10).map(c => ({
-    name: c.nombre.substring(0, 10),
+    name: c.nombre?.substring(0, 10) || 'Sin nombre',
     diamantes: c.diamantes || 0,
     hito: c.hito_diamantes || 0,
   }));

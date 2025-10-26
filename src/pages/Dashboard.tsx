@@ -83,34 +83,49 @@ const Dashboard = () => {
 
   const fetchDailyStats = async () => {
     try {
-      // Obtener stats del día de hoy desde creator_daily_stats
-      const today = new Date().toISOString().split('T')[0];
+      setLoading(true);
+      
+      // Get first day of current month
+      const primerDiaMes = new Date();
+      primerDiaMes.setDate(1);
+      const mesReferencia = primerDiaMes.toISOString().split('T')[0];
+      
+      // Fetch from creator_bonificaciones with real data
       const { data, error } = await supabase
-        .from('creator_daily_stats')
+        .from('creator_bonificaciones')
         .select(`
-          *,
-          creators!inner(*)
+          creator_id,
+          diam_live_mes,
+          horas_live_mes,
+          dias_live_mes,
+          creators!inner(
+            id,
+            nombre,
+            views,
+            hito_diamantes,
+            telefono,
+            categoria
+          )
         `)
-        .eq('fecha', today)
-        .order('diamantes', { ascending: false });
+        .eq('mes_referencia', mesReferencia)
+        .order('diam_live_mes', { ascending: false });
 
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Convertir stats diarias a formato de creators
-        const creatorsFromStats = data.map((stat: any) => {
-          const creator = stat.creators;
+        const creatorsFromBonificaciones = data.map((item: any) => {
+          const creator = item.creators;
           return {
             ...creator,
-            diamantes: stat.diamantes || 0,
-            horas_live: stat.duracion_live_horas || 0,
-            dias_live: stat.dias_validos_live || 0,
+            diamantes: item.diam_live_mes || 0,
+            dias_live: item.dias_live_mes || 0,
+            horas_live: item.horas_live_mes || 0,
           };
         });
         
-        setCreators(creatorsFromStats);
+        setCreators(creatorsFromBonificaciones);
       } else {
-        // Fallback a tabla creators si no hay datos del día
+        // Fallback to creators table
         const { data: creatorsData } = await supabase
           .from("creators")
           .select("*")
@@ -119,14 +134,14 @@ const Dashboard = () => {
         setCreators(creatorsData || []);
       }
     } catch (error) {
-      console.error('Error loading daily stats:', error);
-      // Fallback silencioso a tabla creators
-      const { data: creatorsData } = await supabase
-        .from("creators")
-        .select("*")
-        .order("diamantes", { ascending: false });
-      
-      setCreators(creatorsData || []);
+      console.error("Error loading bonificaciones:", error);
+      toast({
+        title: "Error cargando datos",
+        description: "Problema al cargar las estadísticas de creadores.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
