@@ -6,22 +6,22 @@ import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 
 serve(async (req) => {
   const origin = req.headers.get("origin");
+  console.log('[upload-excel] === INICIO ===');
   
   if (req.method === 'OPTIONS') {
     return handleCORSPreflight(origin);
   }
 
-  // Rate limiting: 10 req/min (upload pesado)
-  const rl = await rateLimit(req, { key: "upload-excel-recommendations", limitPerMin: 10 });
+  // Rate limiting: 30 req/min (upload pesado pero menos estricto para admins)
+  const rl = await rateLimit(req, { key: "upload-excel-recommendations", limitPerMin: 30 });
   if (!rl.ok) return withCORS(rl.response!, origin);
 
   try {
-    console.log('[upload-excel-recommendations] Starting...');
-    
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
+      console.error('[upload-excel] NO auth header');
       return withCORS(
-        new Response(JSON.stringify({ error: 'No autorizado' }), { 
+        new Response(JSON.stringify({ error: 'No autorizado - Token requerido' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         }),
@@ -29,9 +29,47 @@ serve(async (req) => {
       );
     }
 
+    const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verificar usuario autenticado
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    console.log('[upload-excel] User verificado:', user?.id, 'Error:', userError);
+    
+    if (userError || !user) {
+      console.error('[upload-excel] Token inválido:', userError);
+      return withCORS(
+        new Response(JSON.stringify({ error: 'Token inválido' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        origin
+      );
+    }
+
+    // Verificar rol admin/manager
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    
+    console.log('[upload-excel] Rol del usuario:', roleData?.role);
+
+    if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
+      console.error('[upload-excel] Permisos insuficientes:', roleData?.role);
+      return withCORS(
+        new Response(JSON.stringify({ error: 'Requiere rol admin o manager' }), { 
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        origin
+      );
+    }
+
+    console.log('[upload-excel] Usuario autorizado, procesando archivo...');
 
     // Obtener datos del form
     const formData = await req.formData();

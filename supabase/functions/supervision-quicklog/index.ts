@@ -126,11 +126,22 @@ serve(async (req) => {
       accion_sugerida: accion_sugerida || null
     };
 
-    // Añadir notas o reporte según lo que venga
-    if (notas && notas.trim()) {
-      logData.reporte = notas.trim();
-    } else if (reporte) {
-      logData.reporte = reporte;
+    // Consolidar notas/reporte con mejor logging
+    console.log('[supervision-quicklog] Datos recibidos:', {
+      creator_id,
+      flags,
+      notas: notas ? `"${notas.substring(0, 50)}..."` : null,
+      reporte: reporte ? `"${reporte.substring(0, 50)}..."` : null,
+    });
+
+    // Usar 'notas' si existe, sino 'reporte'
+    const reporteFinal = (notas && notas.trim()) ? notas.trim() : (reporte || null);
+    
+    if (reporteFinal) {
+      logData.reporte = reporteFinal;
+      console.log('[supervision-quicklog] Reporte guardado:', reporteFinal.substring(0, 80));
+    } else {
+      console.warn('[supervision-quicklog] Sin notas ni reporte para guardar');
     }
 
     const { data: newLog, error: insertError } = await supabase
@@ -140,11 +151,16 @@ serve(async (req) => {
       .single();
 
     if (insertError) {
-      console.error('Insert error:', insertError);
+      console.error('[supervision-quicklog] Insert error detallado:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
       throw insertError;
     }
 
-    console.log('Quick log created:', newLog.id);
+    console.log('[supervision-quicklog] Quick log creado exitosamente:', newLog.id);
 
     return withCORS(
       new Response(

@@ -105,19 +105,37 @@ export class InteractionService {
   }
 
   /**
-   * Graba una nueva interacción
+   * Graba una nueva interacción (con validación de autenticación y rol)
    */
   static async recordInteraction(
     creatorId: string,
     details: InteractionDetails
   ): Promise<Interaction> {
+    // Verificar autenticación ANTES de insertar
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Debes iniciar sesión para registrar interacciones");
+    }
+
+    // Verificar rol del usuario
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (!roleData || !['admin', 'manager', 'supervisor'].includes(roleData.role)) {
+      throw new Error("No tienes permisos para registrar interacciones");
+    }
+
+    // Ahora sí, insertar
     const { data, error } = await supabase
       .from("creator_interactions")
       .insert({
         creator_id: creatorId,
         tipo: details.tipo,
         notas: details.notas,
-        admin_nombre: details.admin_nombre || "Admin",
+        admin_nombre: details.admin_nombre || session.user.email || "Manager",
       })
       .select()
       .single();

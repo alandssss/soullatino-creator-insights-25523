@@ -114,16 +114,39 @@ serve(async (req) => {
       .gte('fecha', firstDayOfMonth)
       .lte('fecha', today.toISOString().split('T')[0]);
 
+    console.log('[process-analytics] Stats obtenidas:', dailyStats?.length || 0, 'registros');
+
+    if (!dailyStats || dailyStats.length === 0) {
+      console.warn('[process-analytics] NO hay datos del mes actual para', creator.nombre);
+      
+      // Generar mensaje básico sin IA
+      const mensajeBasico = `Hola ${creator.nombre}, aún no tenemos datos de tus lives este mes. ¡Comienza a transmitir para generar tu recomendación personalizada!`;
+      
+      return new Response(
+        JSON.stringify({
+          recommendation: mensajeBasico,
+          manager_note: `${creator.nombre} - Sin datos este mes`,
+          prediction: {
+            faltan_diamantes: creator.hito_diamantes || 100000,
+            faltan_horas: 70,
+            probabilidad_de_logro: 0,
+            recomendacion_accion: 'Iniciar actividad'
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (statsError) {
       console.error('Error obteniendo stats diarias:', statsError);
     }
 
     // Agregar métricas del mes (dias_validos_live es acumulado, usar max; horas y diamantes sumar)
-    const valid_days_so_far = dailyStats?.reduce((max, d) => Math.max(max, d.dias_validos_live || 0), 0) || 0;
-    const hours_so_far = dailyStats?.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0) || 0;
-    const diamonds_so_far = dailyStats?.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
+    const valid_days_so_far = dailyStats.reduce((max, d) => Math.max(max, d.dias_validos_live || 0), 0) || 0;
+    const hours_so_far = dailyStats.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0) || 0;
+    const diamonds_so_far = dailyStats.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
 
-    console.log(`Métricas del mes para ${creator.nombre}:`, { valid_days_so_far, hours_so_far, diamonds_so_far });
+    console.log(`[process-analytics] Métricas del mes para ${creator.nombre}:`, { valid_days_so_far, hours_so_far, diamonds_so_far });
 
     // 3. Obtener hitos (por ahora valores por defecto, se pueden parametrizar)
     const target_valid_days = 20;
@@ -247,7 +270,7 @@ Genera el mensaje completo siguiendo el formato profesional de WhatsApp.`;
 
     if (geminiApiKey) {
       try {
-        console.log('Llamando a Gemini API con gemini-2.5-flash (role=user explícito)...');
+        console.log('[process-analytics] Llamando a Gemini API...');
         const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -269,9 +292,9 @@ Genera el mensaje completo siguiendo el formato profesional de WhatsApp.`;
           const finishReason = aiData.candidates?.[0]?.finishReason;
           const parts = aiData.candidates?.[0]?.content?.parts || [];
           
-          console.log('Gemini response:', {
+          console.log('[process-analytics] Respuesta Gemini:', {
+            candidates: aiData.candidates?.length || 0,
             finishReason,
-            partsCount: parts.length,
             hasContent: parts.length > 0
           });
 
@@ -284,6 +307,7 @@ Genera el mensaje completo siguiendo el formato profesional de WhatsApp.`;
 
           // Si vacío, loguear detalles de bloqueo/seguridad
           if (!recommendation) {
+            console.warn('[process-analytics] Gemini NO devolvió contenido, usando fallback');
             const promptFeedback = aiData.promptFeedback;
             const safetyRatings = aiData.candidates?.[0]?.safetyRatings;
             console.warn('⚠️ Gemini devolvió respuesta vacía:', {
