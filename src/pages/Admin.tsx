@@ -22,28 +22,40 @@ export default function AdminPanel() {
   }, []);
 
   const checkAdminAccess = async () => {
+    console.log('[Admin] 🔐 Verificando acceso...');
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      console.log('[Admin] Usuario:', user?.id);
+      console.log('[Admin] Error auth:', authError);
+      
       if (!user) {
+        console.log('[Admin] ❌ Sin usuario, redirigiendo a login');
         navigate("/login");
         return;
       }
 
-      const { data: roleData } = await supabase
+      const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .single();
 
+      console.log('[Admin] Rol obtenido:', roleData);
+      console.log('[Admin] Error rol:', roleError);
+
       if (roleData?.role !== "admin") {
+        console.log('[Admin] ❌ Rol insuficiente:', roleData?.role);
         toast.error("Acceso denegado. Solo administradores pueden acceder.");
         navigate("/");
         return;
       }
 
+      console.log('[Admin] ✅ Acceso concedido');
       setUserRole(roleData.role);
     } catch (error) {
-      console.error("Error checking admin access:", error);
+      console.error("[Admin] ❌ Error crítico:", error);
       navigate("/");
     } finally {
       setLoading(false);
