@@ -33,16 +33,28 @@ export const AdminUploadPanel = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (selectedFile.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || 
-          selectedFile.type === "application/vnd.ms-excel") {
-        setFile(selectedFile);
-      } else {
+      
+      // Validar por extensión Y tipo MIME (Android puede enviar octet-stream)
+      const fileName = selectedFile.name.toLowerCase();
+      const hasValidExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/octet-stream', // Android WebView puede usar este tipo
+      ];
+      const hasValidType = validTypes.includes(selectedFile.type);
+      
+      if (!hasValidExtension && !hasValidType) {
         toast({
           title: "Archivo inválido",
-          description: "Por favor selecciona un archivo Excel (.xlsx o .xls)",
+          description: "Solo se permiten archivos Excel (.xlsx, .xls)",
           variant: "destructive",
         });
+        return;
       }
+      
+      setFile(selectedFile);
     }
   };
 
@@ -166,6 +178,7 @@ export const AdminUploadPanel = () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: formData,
       });

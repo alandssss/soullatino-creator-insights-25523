@@ -47,6 +47,15 @@ window.addEventListener('unhandledrejection', (e) => {
 // Register/unregister service worker (avoid caching issues in dev)
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
+    // Detectar Android WebView y desactivar SW automáticamente (evita cache issues)
+    const ua = (navigator.userAgent || '').toLowerCase();
+    const isAndroidWebView = /android/.test(ua) && /wv/.test(ua);
+    
+    if (isAndroidWebView && !localStorage.getItem('DISABLE_SW')) {
+      console.log('[SW] Android WebView detectado - desactivando Service Worker automáticamente');
+      localStorage.setItem('DISABLE_SW', '1');
+    }
+    
     // Check if SW is disabled (safe mode for Android debugging)
     const swDisabled = localStorage.getItem('DISABLE_SW') === '1';
     
