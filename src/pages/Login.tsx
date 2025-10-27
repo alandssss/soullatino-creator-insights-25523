@@ -43,16 +43,30 @@ const Login = () => {
           description: "Revisa tu email para confirmar tu cuenta.",
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: validated.email,
           password: validated.password,
         });
         if (error) throw error;
+
+        // Verificar rol del usuario
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+
         toast({
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente.",
         });
-        navigate("/dashboard/pending");
+
+        // Redirigir según rol
+        if (roleData?.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
