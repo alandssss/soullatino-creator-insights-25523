@@ -149,17 +149,19 @@ serve(async (req) => {
       console.log('[DEBUG] Normalized headers:', headers);
       
       const hasNameColumn = headers.some(h => 
-        ['nombre', 'creador', 'usuario', 'username', 'creator name', 'name', 'tiktok', 'tiktok username'].includes(h)
+        ['nombre', 'creador', 'usuario', 'username', 'creator name', 'name', 'tiktok', 'tiktok username', 'nombre de usuario del creador', 'creators username', 'id del creador', 'creator id'].includes(h)
       );
       
       if (!hasNameColumn) {
         return withCORS(
           new Response(
             JSON.stringify({ 
-              error: 'Excel debe contener una columna de nombre',
-              hint: 'Columnas aceptadas: Nombre, Usuario, Creator Name, TikTok, etc.',
-              columns_found: Object.keys(firstRow),
-              expected_columns: ['Nombre/Usuario', 'Dias en Live', 'Horas', 'Diamantes']
+              error: 'excel_sin_nombre',
+              message: 'El Excel debe contener una columna de nombre de usuario',
+              detalles: 'Columnas esperadas: "Nombre de usuario del creador", "Username", "Creador", "TikTok", etc.',
+              columnas_encontradas: Object.keys(firstRow).slice(0, 10),
+              columnas_normalizadas: headers.slice(0, 10),
+              aliases_buscados: ['nombre', 'usuario', 'username', 'nombre de usuario del creador', 'tiktok', 'creator name']
             }),
             { 
               status: 400, 
@@ -172,7 +174,7 @@ serve(async (req) => {
     }
 
     const alias: Record<string, string> = {
-      // Nombres de usuario
+      // Nombres de usuario (AMPLIADO - TikTok español/inglés)
       'nombre': 'creator_username',
       'name': 'creator_username',
       'creador': 'creator_username',
@@ -184,6 +186,9 @@ serve(async (req) => {
       'tiktok': 'creator_username',
       'tiktok username': 'creator_username',
       'nombre de usuario del creador': 'creator_username',
+      'creators username': 'creator_username',
+      'id del creador': 'creator_username',
+      'creator id': 'creator_username',
       
       // Teléfonos
       'telefono': 'phone_e164',
@@ -191,21 +196,26 @@ serve(async (req) => {
       'phone': 'phone_e164',
       'celular': 'phone_e164',
       
-      // Días
+      // Días (AMPLIADO - TikTok español completo)
       'dias en live': 'dias_actuales',
       'dias': 'dias_actuales',
       'days': 'dias_actuales',
       'days live': 'dias_actuales',
       'dias live': 'dias_actuales',
       'dias validos de emisiones live': 'dias_actuales',
+      'valid go live days': 'dias_actuales',
+      'dias validos de emisiones live del mes pasado': 'dias_actuales',
+      'valid go live days last month': 'dias_actuales',
       
-      // Horas
+      // Horas (AMPLIADO - TikTok español completo)
       'duracion live': 'horas_actuales',
       'horas': 'horas_actuales',
       'hours': 'horas_actuales',
       'live hours': 'horas_actuales',
       'tiempo': 'horas_actuales',
       'duracion de live': 'horas_actuales',
+      'duracion de emisiones live (en horas) durante el ultimo mes': 'horas_actuales',
+      'live duration (hours) last month': 'horas_actuales',
       
       // Diamantes
       'diamantes': 'diamantes_actuales',
@@ -217,14 +227,31 @@ serve(async (req) => {
       'graduation': 'estado_graduacion',
       'graduacion': 'estado_graduacion',
       'estado': 'estado_graduacion',
+      'graduation status': 'estado_graduacion',
       
-      // Manager/Agente
+      // Manager/Agente (AMPLIADO)
       'manager': 'manager',
       'agente': 'manager',
+      'creator network manager': 'manager',
       
       // Grupo
       'grupo': 'grupo',
-      'group': 'grupo'
+      'group': 'grupo',
+      
+      // Nuevos seguidores
+      'nuevos seguidores': 'nuevos_seguidores',
+      'new followers': 'nuevos_seguidores',
+      'nuevos seguidores en el ultimo mes': 'nuevos_seguidores',
+      'new followers last month': 'nuevos_seguidores',
+      
+      // Emisiones/Partidas
+      'emisiones live': 'emisiones_live',
+      'live streams': 'emisiones_live',
+      'emisiones live en el ultimo mes': 'emisiones_live',
+      'live streams last month': 'emisiones_live',
+      'partidas': 'partidas',
+      'matches': 'partidas',
+      'diamantes de partidas': 'diamantes_partidas'
     };
 
     // Fecha de referencia (hoy en America/Chihuahua)

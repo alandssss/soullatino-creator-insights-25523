@@ -136,6 +136,25 @@ export default function DiamondsBars3D({ creators, title = "Top 10 Creadores - D
     console.log("Clicked creator:", id);
   };
 
+  if (!creators || creators.length === 0) {
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">💎</span>
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-lg font-semibold">No hay datos disponibles</p>
+            <p className="text-sm mt-2">Espera a que se carguen los datos del mes actual</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (renderError) {
     return <WebGLFallback message="Error al renderizar gráficos 3D. Tu dispositivo podría no soportar WebGL." />;
   }
