@@ -131,42 +131,60 @@ export const AdminUploadPanel = () => {
     }
 
     setUploading(true);
+    
+    console.log('[AdminUploadPanel] Iniciando upload de archivo:', file.name, file.size, 'bytes');
+    
     try {
-      // Validar el archivo antes de enviarlo
-      const jsonData = await processExcelFile(file);
+      // Obtener sesión y token
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      // Validar con Zod
-      try {
-        ExcelPayloadSchema.parse(jsonData);
-      } catch (validationError) {
-        if (validationError instanceof z.ZodError) {
-          const firstError = validationError.errors[0];
-          toast({
-            title: "Datos inválidos en Excel",
-            description: `${firstError.path.join('.')}: ${firstError.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
+      if (sessionError || !sessionData?.session) {
+        console.error('[AdminUploadPanel] Error de sesión:', sessionError);
+        toast({
+          title: "Error de autenticación",
+          description: "Debes iniciar sesión para cargar archivos",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Enviar el archivo directamente a la función del backend
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+      const token = sessionData.session.access_token;
+      console.log('[AdminUploadPanel] Token obtenido, preparando FormData...');
+
+      // Preparar FormData
       const formData = new FormData();
       formData.append('file', file);
 
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-excel-recommendations`, {
+      // Construir URL correcta
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const functionUrl = `${supabaseUrl}/functions/v1/upload-excel-recommendations`;
+      
+      console.log('[AdminUploadPanel] Enviando a:', functionUrl);
+
+      // Enviar archivo
+      const resp = await fetch(functionUrl, {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Authorization': `Bearer ${token}`,
         },
         body: formData,
       });
 
-      const payload = await resp.json();
+      console.log('[AdminUploadPanel] Response status:', resp.status, resp.statusText);
+
+      // Leer respuesta
+      let payload;
+      try {
+        payload = await resp.json();
+        console.log('[AdminUploadPanel] Response payload:', payload);
+      } catch (parseError) {
+        console.error('[AdminUploadPanel] Error parsing JSON:', parseError);
+        throw new Error('Respuesta inválida del servidor');
+      }
+
       if (!resp.ok) {
-        throw new Error(payload?.error || 'Error al subir el archivo');
+        console.error('[AdminUploadPanel] Error response:', payload);
+        throw new Error(payload?.error || payload?.message || `Error HTTP ${resp.status}`);
       }
 
       // Verificar cuántas filas se insertaron hoy
@@ -217,11 +235,17 @@ export const AdminUploadPanel = () => {
         window.location.reload();
       }, 2000);
     } catch (error: any) {
-      console.error("Error uploading file:", error);
+      console.error("[AdminUploadPanel] ERROR COMPLETO:", {
+        message: error?.message,
+        stack: error?.stack,
+        error: error,
+      });
+      
       toast({
-        title: "Error",
-        description: error?.message || "No se pudo procesar el archivo.",
+        title: "❌ Error al cargar archivo",
+        description: error?.message || "No se pudo procesar el archivo. Revisa la consola para más detalles.",
         variant: "destructive",
+        duration: 6000,
       });
     } finally {
       setUploading(false);
