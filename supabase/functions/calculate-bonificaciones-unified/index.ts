@@ -41,20 +41,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    console.log("Calculando bonificaciones:", { creator_id, mes_referencia, mode });
+    console.log("Calculando bonificaciones (redirected):", { creator_id, mes_referencia, mode });
 
-    // Llamar a función SQL nativa (cuando esté deployada)
-    const { data, error } = await supabase.rpc("fn_calcular_bonificaciones_mes_v2", {
-      p_creator_id: creator_id ?? null,
-      p_mes_referencia: mes_referencia ?? null,
-      p_mode: mode,
+    // @compat: redirigir a edge function canónica
+    const { data: invokeData, error: invokeError } = await supabase.functions.invoke("calculate-bonificaciones-predictivo", {
+      body: { mes_referencia: mes_referencia ?? null }
     });
 
-    if (error) {
-      console.error("Error en fn_calcular_bonificaciones_mes_v2:", error);
+    if (invokeError || !invokeData?.success) {
+      console.error("Error en calculate-bonificaciones-predictivo:", invokeError || invokeData);
       return withCORS(
         new Response(
-          JSON.stringify({ success: false, error: error.message }),
+          JSON.stringify({ success: false, error: invokeError?.message || "Calculation failed" }),
           { status: 500, headers: { "Content-Type": "application/json" } }
         ),
         origin
@@ -66,8 +64,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           mode,
-          total_creadores: Array.isArray(data) ? data.length : 0,
-          bonificaciones: data,
+          total_creadores: invokeData.total_creadores || 0,
+          bonificaciones: invokeData.bonificaciones,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       ),

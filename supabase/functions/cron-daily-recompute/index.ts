@@ -18,37 +18,34 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Refrescar vista materializada
-    console.log('[cron-daily-recompute] Refreshing creator_riesgos_mes...');
-    const { error: refreshError } = await supabase.rpc('refresh_creator_riesgos_mes');
-
-    if (refreshError) {
-      throw new Error(`Failed to refresh view: ${refreshError.message}`);
-    }
-
-    // Opcional: Recalcular bonificaciones para el mes actual
+    // @compat: Recalcular bonificaciones del mes actual usando función canónica
     const today = new Date();
     const mesReferencia = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
 
     console.log('[cron-daily-recompute] Calculating bonificaciones for:', mesReferencia);
-    const { error: bonifError } = await supabase.rpc('calcular_bonificaciones_mes', {
-      p_mes_referencia: mesReferencia
+    const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
+      body: { mes_referencia: mesReferencia }
     });
 
     if (bonifError) {
-      console.warn('[cron-daily-recompute] Bonificaciones calc warning:', bonifError);
+      console.error('[cron-daily-recompute] Bonificaciones calc error:', bonifError);
+      throw new Error(bonifError.message || JSON.stringify(bonifError));
     }
 
-    // Obtener estadísticas actualizadas
-    const { data: riesgos } = await supabase
-      .from('creator_riesgos_mes')
-      .select('prioridad_riesgo, faltan_dias, faltan_horas');
+    // Extraer data de la respuesta de la edge function
+    const responseData = bonifData as { success: boolean; bonificaciones?: any[] };
+    if (!responseData.success) {
+      throw new Error('Bonificaciones calculation returned success=false');
+    }
+
+    const bonificaciones = responseData.bonificaciones || [];
 
     const summary = {
-      total: riesgos?.length || 0,
-      riesgo_alto: riesgos?.filter(r => r.prioridad_riesgo >= 40).length || 0,
-      riesgo_medio: riesgos?.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40).length || 0,
-      riesgo_bajo: riesgos?.filter(r => r.prioridad_riesgo < 20).length || 0,
+      total: bonificaciones.length,
+      prioridad_300k: bonificaciones.filter((b: any) => b.es_prioridad_300k).length,
+      dias_restantes_promedio: bonificaciones.length > 0 
+        ? Math.round(bonificaciones.reduce((sum: number, b: any) => sum + (b.dias_restantes || 0), 0) / bonificaciones.length)
+        : 0,
     };
 
     console.log('[cron-daily-recompute] Completed successfully:', summary);

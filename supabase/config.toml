@@ -55,15 +55,19 @@ enable_confirmations = false
 [functions]
 enabled = true
 
+# @deprecated - Redirige a calculate-bonificaciones-predictivo
 [functions.calculate-bonificaciones-unified]
 verify_jwt = true
 
+# @deprecated - Use calculate-bonificaciones-predictivo
 [functions.calculate-bonificaciones]
 verify_jwt = true
 
+# @deprecated - Use calculate-bonificaciones-predictivo
 [functions.calculate-all-bonificaciones]
 verify_jwt = true
 
+# FUNCIÓN CANÓNICA - Usar esta
 [functions.calculate-bonificaciones-predictivo]
 verify_jwt = true
 
