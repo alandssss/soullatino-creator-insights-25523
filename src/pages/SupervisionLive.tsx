@@ -101,10 +101,40 @@ export default function SupervisionLive() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Cargar creadores
+      // Obtener fecha de hoy
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
+      
+      // Obtener IDs de creadores que tienen datos HOY en creator_daily_stats
+      const { data: dailyStatsToday, error: dailyError } = await supabase
+        .from('creator_daily_stats')
+        .select('creator_id')
+        .eq('fecha', today);
+
+      if (dailyError) throw dailyError;
+
+      const creatorIdsConDatosHoy = Array.from(
+        new Set((dailyStatsToday || []).map(ds => ds.creator_id))
+      );
+
+      console.log(`[SupervisionLive] Creadores con datos hoy (${today}):`, creatorIdsConDatosHoy.length);
+
+      // Si no hay datos hoy, retornar vacío
+      if (creatorIdsConDatosHoy.length === 0) {
+        setCreators([]);
+        setLoading(false);
+        toast({
+          title: "Sin datos",
+          description: "No hay creadores con datos del día actual. Sube un archivo Excel para continuar.",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Cargar SOLO los creadores que tienen datos hoy
       const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
         .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes, tiktok_username, graduacion, manager')
+        .in('id', creatorIdsConDatosHoy)
         .order('nombre');
 
       if (creatorsError) throw creatorsError;
