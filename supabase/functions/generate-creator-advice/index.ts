@@ -89,50 +89,118 @@ function msgCreador(params: {
   diamActual: number;
 }) {
   const n = params.nombre ?? "creador";
+  const promHorasDia = params.dias_live_mes > 0 ? (params.horas_live_mes / params.dias_live_mes).toFixed(1) : "0.0";
   
   // REGLA 2: Alerta si >3 días sin transmitir
   const diasSinTransmitir = params.diasTranscurridos - params.dias_live_mes;
   if (diasSinTransmitir > 3 && params.dias_live_mes < 5) {
-    return `⚠️ ${n}, llevas varios días sin transmitir. Para mantener tu bonificación, necesitas transmitir ${params.reqDiamDia?.toFixed(0) ?? 5000} diamantes/día y ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h/día. ¿Confirmamos tu live de hoy y 5 PKO de 5 min? 💪`;
+    return `⚠️ ${n} - ALERTA INACTIVIDAD
+
+📊 Estado:
+• Días sin transmitir: ${diasSinTransmitir}
+• Días live del mes: ${params.dias_live_mes}
+
+🎯 Plan HOY (obligatorio):
+• Horas requeridas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
+• Diamantes/día: ${params.reqDiamDia?.toFixed(0) ?? 5000}
+• PKO mínimo: 5 batallas × 5min
+• Horario sugerido: revisar picos`;
   }
 
-  // REGLA 6: Datos en cero por varios días (recordatorio empático)
+  // REGLA 6: Datos en cero por varios días
   if (params.diamActual === 0 && params.horas_live_mes === 0 && params.diasTranscurridos > 5) {
-    return `${n}, sabemos que a veces las cosas se complican 💙. El equipo SoulLatino está aquí para apoyarte. ¿Podemos ayudarte a planear tus próximos lives? Necesitamos verte brillar ✨`;
+    return `${n} - CONTACTO URGENTE REQUERIDO
+
+📋 Situación:
+• Sin actividad registrada en ${params.diasTranscurridos} días
+• Estado: requiere intervención del equipo
+
+🤝 Siguiente paso:
+• Agendar llamada con manager
+• Revisar disponibilidad y objetivos
+• Replantear estrategia del mes`;
   }
 
-  // REGLA 5: Superó una graduación (felicitación)
+  // REGLA 5: Superó una graduación
   if (params.faltanDiam !== null && params.faltanDiam <= 0 && params.gradTarget) {
-    return `🎉🎊 ¡FELICIDADES ${n.toUpperCase()}! 🎊🎉\n¡Alcanzaste tu graduación de ${params.gradTarget.toLocaleString()} diamantes! 💎✨\nSigue así, tu próxima meta es aún más grande. ¡Eres imparable! 🔥🚀`;
+    return `🎉 ${n} - GRADUACIÓN ALCANZADA
+
+✅ Logro:
+• Nivel: ${params.gradTarget.toLocaleString()} diamantes
+• Días completados: ${params.dias_live_mes}
+• Horas acumuladas: ${Math.round(params.horas_live_mes)}h
+
+🎯 Próximo objetivo:
+• Mantener o superar nivel actual
+• Bono adicional por días extra >22`;
   }
 
   // REGLA 4: Nuevo (<90 días) y no ha llegado a 300K
   if (params.prioridad300k) {
     const porcentaje = params.gradTarget ? ((params.diamActual / params.gradTarget) * 100).toFixed(0) : 0;
-    return `🔵 ${n}, como eres nuevo en la agencia, tu prioridad es alcanzar 300K diamantes este mes 💎\nLlevas ${params.diamActual.toLocaleString()} (${porcentaje}%). Faltan ${params.faltanDiam?.toLocaleString()} → ${params.reqDiamDia?.toFixed(0)}/día en ${params.diasRestantes} días.\n¿Confirmamos ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h hoy y 10 PKO de 5 min? ¡Vamos por esos 300K! 🚀`;
+    return `🔵 ${n} - PRIORIDAD 300K (NUEVO <90d)
+
+📊 Progreso actual:
+• Diamantes: ${params.diamActual.toLocaleString()} / ${params.gradTarget?.toLocaleString()}
+• Avance: ${porcentaje}%
+• Faltante: ${params.faltanDiam?.toLocaleString()}
+
+🎯 Plan de acción:
+• Diamantes/día requeridos: ${params.reqDiamDia?.toFixed(0)}
+• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
+• PKO objetivo: 10 batallas × 5min
+• Días restantes: ${params.diasRestantes}`;
   }
 
   // REGLA 1: Cerca de un hito (<15%)
-  const progresoHitoDias = (params.dias_live_mes / params.hito.d) * 100;
-  const progresoHitoHoras = (params.horas_live_mes / params.hito.h) * 100;
   const cercaDeHito = (params.faltan_dias <= Math.ceil(params.hito.d * 0.15)) || (params.faltan_horas <= params.hito.h * 0.15);
   
   if (cercaDeHito && params.faltan_dias > 0) {
-    return `🔥 ${n}, ¡ESTÁS MUY CERCA! 🔥\nSolo te faltan ${params.faltan_dias} día(s) y ${params.faltan_horas.toFixed(1)}h para tu hito de ${params.hito.d}d/${params.hito.h}h 🎯\n¿Confirmamos ${Math.ceil(params.faltan_horas / Math.max(1, params.diasRestantes))}h hoy y 10 PKO? ¡No te detengas ahora! 💪✨`;
+    return `🔥 ${n} - CERCA DEL HITO
+
+📊 Faltante mínimo:
+• Días: ${params.faltan_dias} (objetivo: ${params.hito.d})
+• Horas: ${params.faltan_horas.toFixed(1)}h (objetivo: ${params.hito.h}h)
+
+🎯 Push final:
+• Horas hoy: ${Math.ceil(params.faltan_horas / Math.max(1, params.diasRestantes))}h
+• PKO: 10 batallas × 5min
+• Días disponibles: ${params.diasRestantes}`;
   }
 
   // REGLA 3: Ya cumplió ≥22 días (bono constancia)
   if (params.diasExtra > 0) {
-    return `🎉 ${n}, ¡FELICIDADES por tu constancia! 🎉\nLlevas ${params.dias_live_mes} días en vivo → Generas $${params.bonoExtraUSD} USD extra por consistencia 💵\nSigue así: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h/día y 10 PKO. ¡Cada día cuenta! 🔥`;
+    return `🎉 ${n} - BONO CONSTANCIA ACTIVADO
+
+✅ Logro de consistencia:
+• Días completados: ${params.dias_live_mes}
+• Días extra >22: ${params.diasExtra}
+• Bono generado: $${params.bonoExtraUSD} USD
+
+🎯 Mantener nivel:
+• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
+• PKO diario: 10 batallas × 5min
+• Cada día extra = +$3 USD`;
   }
 
-  // Mensaje estándar motivacional
-  const hitoLine = `🎯 Hito ${params.hito.d}d/${params.hito.h}h: llevas ${params.dias_live_mes}d y ${params.horas_live_mes.toFixed(1)}h`;
-  const gradLine = params.gradTarget && params.faltanDiam && params.faltanDiam > 0
-    ? `💎 Para ${params.gradTarget.toLocaleString()}: faltan ${params.faltanDiam.toLocaleString()} (${params.reqDiamDia?.toFixed(0)}/día)`
-    : `💎 ¡Superaste 1M este mes!`;
+  // Mensaje estándar con métricas objetivas
+  const gradStatus = params.gradTarget && params.faltanDiam && params.faltanDiam > 0
+    ? `${params.diamActual.toLocaleString()} / ${params.gradTarget.toLocaleString()} (falta: ${params.faltanDiam.toLocaleString()})`
+    : `${params.diamActual.toLocaleString()} (objetivo superado)`;
 
-  return `🔥 ${n}, excelente avance\n${hitoLine}\n${gradLine}\n\n✅ Hoy: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h en vivo + 10 PKO × 5 min. ¡Tú puedes! 💪`;
+  return `📊 ${n} - RESUMEN MENSUAL
+
+Estado actual:
+• Diamantes: ${gradStatus}
+• Días live: ${params.dias_live_mes} / ${params.hito.d}
+• Horas totales: ${Math.round(params.horas_live_mes)}h / ${params.hito.h}h
+• Promedio horas/día: ${promHorasDia}h
+
+🎯 Requerimientos diarios:
+• Diamantes/día: ${params.reqDiamDia?.toFixed(0) ?? "—"}
+• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
+• PKO sugerido: 10 × 5min
+• Días restantes: ${params.diasRestantes}`;
 }
 
 function msgManager(params: {
@@ -144,14 +212,34 @@ function msgManager(params: {
   estado: "verde"|"amarillo"|"rojo";
   prioridad300k: boolean; bonoExtraUSD: number; diasExtra: number;
 }) {
-  const head = `${params.nombre ?? "Creador"} — corte ${params.fechaCorte}`;
-  const hitoLine = `Hito ${params.hito.d}/${params.hito.h}: ${params.dias_live_mes}d / ${params.horas_live_mes.toFixed(1)}h; faltan ${params.faltan_dias}d / ${params.faltan_horas.toFixed(1)}h.`;
-  const gradLine = params.gradTarget
-    ? `Grad ${params.gradTarget.toLocaleString()}: lleva ${params.diam.toLocaleString()} → faltan ${params.faltanDiam!.toLocaleString()} (req ${params.reqDiamDia ?? "—"}/día, ${params.diasRestantes} días).`
-    : `Sin próxima grad (≥1M).`;
-  const pri = params.prioridad300k ? "Prioridad <90d: 300K." : "";
-  const bono = params.diasExtra > 0 ? `Bono: ${params.diasExtra}d >22 ⇒ $${params.bonoExtraUSD}.` : "";
-  return `${head}\n${hitoLine}\n${gradLine}\nEstado: ${params.estado}. ${pri} ${bono}\nPlan: 2h hoy, 10 PKO, supervisión luz/audio/normas, registrar en supervision_live_logs.`;
+  const semaforo = params.estado === "verde" ? "🟢" : params.estado === "amarillo" ? "🟡" : "🔴";
+  const tag = params.prioridad300k ? " [<90d]" : "";
+  
+  const metricasDiam = params.gradTarget 
+    ? `${params.diam.toLocaleString()} / ${params.gradTarget.toLocaleString()} (falta: ${params.faltanDiam!.toLocaleString()})`
+    : `${params.diam.toLocaleString()} (≥1M)`;
+  
+  const accionPorEstado = params.estado === "rojo" 
+    ? `🚨 ACCIÓN: Contacto inmediato requerido`
+    : params.estado === "amarillo"
+    ? `⚠️ SEGUIMIENTO: Ajustar ritmo/estrategia`
+    : `✅ OBJETIVO: Monitoreo estándar`;
+
+  return `${semaforo} ${params.nombre ?? "Creador"}${tag} — ${params.fechaCorte}
+
+Métricas actuales:
+• Diamantes: ${metricasDiam}
+• Hito: ${params.dias_live_mes}d / ${params.horas_live_mes.toFixed(1)}h (obj: ${params.hito.d}d/${params.hito.h}h)
+• Requerimientos: ${params.reqDiamDia ?? "—"} diam/día, ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h/día
+• Días disponibles: ${params.diasRestantes}
+${params.diasExtra > 0 ? `• Bono constancia: $${params.bonoExtraUSD} (${params.diasExtra}d >22)` : ''}
+
+${accionPorEstado}
+
+Plan operativo:
+• Objetivo diario: 2h live + 10 PKO × 5min
+• Supervisión: luz/audio/normas (reg. en supervision_live_logs)
+• Seguimiento: revisar progreso en 48h`;
 }
 
 serve(async (req) => {
@@ -228,35 +316,57 @@ serve(async (req) => {
       );
     }
 
-    const { data: liveData, error: liveErr } = await userClient
-      .from("creator_live_daily")
-      .select("fecha, horas, diamantes")
+    // @compat: Intentar primero desde creator_bonificaciones (misma fuente que panel)
+    const mesRefStr = dateToISO(inicioMes);
+    const { data: bonifRow } = await userClient
+      .from("creator_bonificaciones")
+      .select("dias_live_mes, horas_live_mes, diam_live_mes")
       .eq("creator_id", creator_id)
-      .gte("fecha", dateToISO(inicioMes))
-      .lte("fecha", dateToISO(ayer));
-
-    if (liveErr) {
-      return withCORS(
-        new Response(JSON.stringify({ error: "live_query_error" }), { 
-          status: 500, 
-          headers: { "Content-Type": "application/json" } 
-        }),
-        origin
-      );
-    }
+      .eq("mes_referencia", mesRefStr)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     let agg: LiveMes = { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 };
-    if (liveData && liveData.length) {
-      const diasValidos = new Set<string>();
-      let horas = 0, diam = 0;
-      for (const r of liveData) {
-        const h = Number(r.horas ?? 0);
-        const d = Number(r.diamantes ?? 0);
-        horas += h;
-        diam += d;
-        if (h > 0) diasValidos.add(String(r.fecha));
+
+    if (bonifRow) {
+      // Usar datos del panel de bonificaciones (MTD, sin duplicados)
+      agg = {
+        dias_live_mes: bonifRow.dias_live_mes || 0,
+        horas_live_mes: bonifRow.horas_live_mes || 0,
+        diam_live_mes: bonifRow.diam_live_mes || 0,
+      };
+    } else {
+      // Fallback: calcular desde creator_live_daily
+      const { data: liveData, error: liveErr } = await userClient
+        .from("creator_live_daily")
+        .select("fecha, horas, diamantes")
+        .eq("creator_id", creator_id)
+        .gte("fecha", dateToISO(inicioMes))
+        .lte("fecha", dateToISO(ayer));
+
+      if (liveErr) {
+        return withCORS(
+          new Response(JSON.stringify({ error: "live_query_error" }), { 
+            status: 500, 
+            headers: { "Content-Type": "application/json" } 
+          }),
+          origin
+        );
       }
-      agg = { dias_live_mes: diasValidos.size, horas_live_mes: horas, diam_live_mes: diam };
+
+      if (liveData && liveData.length) {
+        const diasValidos = new Set<string>();
+        let horas = 0, diam = 0;
+        for (const r of liveData) {
+          const h = Number(r.horas ?? 0);
+          const d = Number(r.diamantes ?? 0);
+          horas += h;
+          diam += d;
+          if (h > 0) diasValidos.add(String(r.fecha));
+        }
+        agg = { dias_live_mes: diasValidos.size, horas_live_mes: horas, diam_live_mes: diam };
+      }
     }
 
     const sinDatos = agg.dias_live_mes === 0 && agg.horas_live_mes === 0 && agg.diam_live_mes === 0;

@@ -67,11 +67,10 @@ serve(async (req) => {
         statsMap.set(stat.creator_id, { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 });
       }
       const current = statsMap.get(stat.creator_id)!;
-      // dias_validos_live es acumulado en el Excel, usar el máximo
+      // @compat: Excel viene con datos MTD acumulados - usar máximo para evitar duplicación al recargar
       current.dias_live_mes = Math.max(current.dias_live_mes, stat.dias_validos_live || 0);
-      // Horas y diamantes: sumar (por si hay múltiples registros)
-      current.horas_live_mes += stat.duracion_live_horas || 0;
-      current.diam_live_mes += stat.diamantes || 0;
+      current.horas_live_mes = Math.max(current.horas_live_mes, stat.duracion_live_horas || 0);
+      current.diam_live_mes = Math.max(current.diam_live_mes, stat.diamantes || 0);
     });
 
     console.log(`Creadores con datos en statsMap: ${statsMap.size}`);

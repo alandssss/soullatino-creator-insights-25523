@@ -32,6 +32,11 @@ serve(async (req) => {
       throw new Error(bonifError.message || JSON.stringify(bonifError));
     }
 
+    // @compat: Log diagnóstico si la respuesta no es exitosa
+    if (!bonifData?.success) {
+      console.warn('[cron-daily-recompute] ⚠️ calculate-bonificaciones-predictivo no retornó success=true:', bonifData);
+    }
+
     // Extraer data de la respuesta de la edge function
     const responseData = bonifData as { success: boolean; bonificaciones?: any[] };
     if (!responseData.success) {

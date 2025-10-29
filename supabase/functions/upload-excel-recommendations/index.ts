@@ -458,9 +458,10 @@ serve(async (req) => {
       console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
     }
 
+    // @compat: Upsert para idempotencia - evita duplicados si se reprocesa el mismo día
     const { error: insertErr } = await supabase
       .from('creator_daily_stats')
-      .insert(dailyRows);
+      .upsert(dailyRows, { onConflict: 'creator_id,fecha' });
 
     if (insertErr) {
       console.error('[upload-excel-recommendations] Insert error:', insertErr);
