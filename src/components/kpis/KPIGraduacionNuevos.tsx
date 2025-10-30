@@ -34,14 +34,79 @@ export function KPIGraduacionNuevos() {
 
   const loadKPI = async () => {
     try {
-      const { data, error } = await supabase
-        .rpc('kpi_new_creator_graduation');
+      // @snapshot: Get latest snapshot date
+      const { data: latestSnap } = await supabase
+        .from('creator_daily_stats')
+        .select('fecha')
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setKpi(data[0] as GraduationKPI);
+      if (!latestSnap) {
+        setError('No hay snapshot diario');
+        setLoading(false);
+        return;
       }
+
+      const snapshotDate = latestSnap.fecha;
+      
+      const { data: snapshotStats } = await supabase
+        .from('creator_daily_stats')
+        .select('creator_id')
+        .eq('fecha', snapshotDate);
+
+      const snapshotIds = (snapshotStats || []).map(s => s.creator_id);
+
+      // Get creators from snapshot (active only)
+      const { data: creators } = await supabase
+        .from('creators')
+        .select('id, dias_en_agencia, status')
+        .in('id', snapshotIds)
+        .eq('status', 'activo');
+
+      if (!creators) {
+        setError('No hay creadores en snapshot');
+        setLoading(false);
+        return;
+      }
+
+      // Filter nuevos (≤90 days)
+      const nuevos = creators.filter(c => (c.dias_en_agencia || 0) <= 90);
+      const nuevosIds = nuevos.map(c => c.id);
+
+      // Get bonificaciones for current month (nuevos only)
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      const { data: bonifs } = await supabase
+        .from('creator_bonificaciones')
+        .select('creator_id, diam_live_mes')
+        .eq('mes_referencia', currentMonth)
+        .in('creator_id', nuevosIds);
+
+      // Calculate graduations
+      const graduados100k = bonifs?.filter(b => (b.diam_live_mes || 0) >= 100000).length || 0;
+      const graduados300k = bonifs?.filter(b => (b.diam_live_mes || 0) >= 300000).length || 0;
+      const graduados500k = bonifs?.filter(b => (b.diam_live_mes || 0) >= 500000).length || 0;
+
+      const pct100k = nuevos.length > 0 ? (graduados100k * 100) / nuevos.length : 0;
+      const pct300k = nuevos.length > 0 ? (graduados300k * 100) / nuevos.length : 0;
+      const pct500k = nuevos.length > 0 ? (graduados500k * 100) / nuevos.length : 0;
+
+      const objetivo = 4.0;
+      const brecha = pct100k - objetivo;
+
+      setKpi({
+        total_nuevos: nuevos.length,
+        graduados_100k_mas: graduados100k,
+        graduados_300k_mas: graduados300k,
+        graduados_500k_mas: graduados500k,
+        pct_graduacion_100k: Math.round(pct100k * 100) / 100,
+        pct_graduacion_300k: Math.round(pct300k * 100) / 100,
+        pct_graduacion_500k: Math.round(pct500k * 100) / 100,
+        estado_objetivo_100k: pct100k >= objetivo ? 'CUMPLIDO' : 'PENDIENTE',
+        brecha_porcentual_100k: Math.round(brecha * 100) / 100
+      });
+
+      console.log(`[KPIGraduacionNuevos] Snapshot: ${snapshotDate}, Nuevos: ${nuevos.length}, Graduados 100K+: ${graduados100k}`);
     } catch (err: any) {
       setError(err.message);
       console.error('Error loading graduation KPI:', err);

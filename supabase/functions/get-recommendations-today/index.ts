@@ -18,6 +18,36 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // @snapshot: Get latest snapshot date
+    const { data: latestSnap } = await supabase
+      .from('creator_daily_stats')
+      .select('fecha')
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .single();
+
+    const snapshotDate = latestSnap?.fecha;
+
+    if (!snapshotDate) {
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          recommendations: [],
+          summary: { total: 0, riesgo_alto: 0, riesgo_medio: 0, riesgo_bajo: 0, con_deficit_dias: 0, con_deficit_horas: 0 },
+          hint: 'No hay snapshot diario. Sube un archivo Excel.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get snapshot creator IDs
+    const { data: snapshotStats } = await supabase
+      .from('creator_daily_stats')
+      .select('creator_id')
+      .eq('fecha', snapshotDate);
+
+    const snapshotIds = new Set((snapshotStats || []).map(s => s.creator_id));
+
     // Obtener recomendaciones de la vista materializada
     const { data: recommendations, error } = await supabase
       .from('recommendations_today')
@@ -29,23 +59,27 @@ serve(async (req) => {
       throw error;
     }
 
+    // @snapshot: Filter to only snapshot creators
+    const filtered = (recommendations || []).filter(r => snapshotIds.has(r.creator_id));
+
     // Calcular resumen
     const summary = {
-      total: recommendations?.length || 0,
-      riesgo_alto: recommendations?.filter(r => r.prioridad_riesgo >= 40).length || 0,
-      riesgo_medio: recommendations?.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40).length || 0,
-      riesgo_bajo: recommendations?.filter(r => r.prioridad_riesgo < 20).length || 0,
-      con_deficit_dias: recommendations?.filter(r => r.faltan_dias > 0).length || 0,
-      con_deficit_horas: recommendations?.filter(r => r.faltan_horas > 0).length || 0,
+      total: filtered.length,
+      riesgo_alto: filtered.filter(r => r.prioridad_riesgo >= 40).length,
+      riesgo_medio: filtered.filter(r => r.prioridad_riesgo >= 20 && r.prioridad_riesgo < 40).length,
+      riesgo_bajo: filtered.filter(r => r.prioridad_riesgo < 20).length,
+      con_deficit_dias: filtered.filter(r => r.faltan_dias > 0).length,
+      con_deficit_horas: filtered.filter(r => r.faltan_horas > 0).length,
     };
 
-    console.log('[get-recommendations-today] Returning', recommendations?.length, 'recommendations');
+    console.log(`[get-recommendations-today] Snapshot: ${snapshotDate}, Filtered: ${filtered.length}/${recommendations.length}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        recommendations: recommendations || [],
-        summary
+        recommendations: filtered,
+        summary,
+        snapshot_date: snapshotDate
       }),
       {
         headers: { 

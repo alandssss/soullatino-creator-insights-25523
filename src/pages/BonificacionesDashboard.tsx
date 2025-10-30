@@ -64,22 +64,54 @@ const BonificacionesDashboard = () => {
   const loadBonificaciones = async () => {
     setLoading(true);
     try {
+      // @snapshot: Get latest snapshot date first
+      const { data: latestSnap } = await supabase
+        .from('creator_daily_stats')
+        .select('fecha')
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!latestSnap) {
+        toast({
+          title: "Sin snapshot",
+          description: "No hay datos diarios. Sube un archivo Excel.",
+          variant: "default",
+        });
+        setBonificaciones([]);
+        setLoading(false);
+        return;
+      }
+
+      const snapshotDate = latestSnap.fecha;
+      
+      // Get all snapshot creator IDs
+      const { data: snapshotStats } = await supabase
+        .from('creator_daily_stats')
+        .select('creator_id')
+        .eq('fecha', snapshotDate);
+
+      const snapshotIds = (snapshotStats || []).map(s => s.creator_id);
+
+      console.log(`[BonificacionesDashboard] Snapshot: ${snapshotDate}, IDs: ${snapshotIds.length}`);
+
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       
+      // @snapshot: Filter bonificaciones ONLY from snapshot
       const { data: bonifData, error: bonifError } = await supabase
         .from("creator_bonificaciones")
         .select("*")
         .eq("mes_referencia", currentMonth)
+        .in("creator_id", snapshotIds)
         .order("diam_live_mes", { ascending: false });
 
       if (bonifError) throw bonifError;
 
-      // Enrich with creator data
-      const creatorIds = bonifData?.map(b => b.creator_id).filter(Boolean) || [];
+      // Enrich with creator data (only from snapshot)
       const { data: creators } = await supabase
         .from("creators")
         .select("id, nombre, telefono")
-        .in("id", creatorIds);
+        .in("id", snapshotIds);
 
       const enriched = (bonifData || []).map(bonif => {
         const creator = creators?.find(c => c.id === bonif.creator_id);
@@ -91,6 +123,12 @@ const BonificacionesDashboard = () => {
       });
 
       setBonificaciones(enriched);
+      
+      toast({
+        title: "Datos cargados",
+        description: `${enriched.length} creadores del snapshot ${snapshotDate}`,
+        variant: "default",
+      });
     } catch (error: any) {
       console.error("Error loading bonificaciones:", error);
       toast({

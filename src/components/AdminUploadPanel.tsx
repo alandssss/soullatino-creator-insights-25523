@@ -213,6 +213,18 @@ export const AdminUploadPanel = () => {
         duration: 5000,
       });
 
+      // ⭐ Show warning if some rows didn't match
+      if (payload.no_match && payload.no_match.length > 0) {
+        toast({
+          title: "⚠️ Algunos registros no mapearon",
+          description: `${payload.no_match.length} filas del Excel no tienen creador en la BD. Verifica usernames/teléfonos.`,
+          variant: "destructive",
+          duration: 8000,
+        });
+        
+        console.warn('[AdminUploadPanel] No match:', payload.no_match);
+      }
+
       // Recalcular bonificaciones del mes actual
       try {
         const mesRef = new Date().toISOString().slice(0, 7) + '-01';

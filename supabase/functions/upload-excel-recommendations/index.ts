@@ -420,11 +420,23 @@ serve(async (req) => {
       });
     }
 
-    // Construir filas finales para daily_stats
+    // Construir filas finales para daily_stats + track no-match
+    const noMatch: any[] = [];  // ⭐ Track Excel rows without matching creator
+    
     const dailyRows = mapped.map(r => {
       const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
       const creatorId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
-      if (!creatorId) return null;
+      
+      if (!creatorId) {
+        console.warn(`[upload-excel-recommendations] No creator found for username "${r.creator_username}" phone "${r.phone_e164}"`);
+        noMatch.push({
+          username: r.creator_username,
+          phone: r.phone_e164,
+          diamantes: r.diamantes_actuales
+        });
+        return null;
+      }
+      
       return {
         creator_id: creatorId,
         fecha: today,
@@ -446,13 +458,11 @@ serve(async (req) => {
       );
     }
 
-    // Reemplazar datos del día para evitar duplicados
-    const creatorIds = Array.from(new Set(dailyRows.map(r => r.creator_id)));
+    // @snapshot: Delete ALL records for this date to replace complete snapshot
     const { error: delErr } = await supabase
       .from('creator_daily_stats')
       .delete()
-      .eq('fecha', today)
-      .in('creator_id', creatorIds);
+      .eq('fecha', today);
 
     if (delErr) {
       console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
@@ -488,7 +498,10 @@ serve(async (req) => {
       new Response(
         JSON.stringify({
           success: true,
-          records_processed: mapped.length
+          records_processed: mapped.length,
+          inserted: dailyRows.length,
+          snapshot_date: today,
+          no_match: noMatch  // ⭐ Return non-matching rows for manual review
         }),
         {
           headers: { 

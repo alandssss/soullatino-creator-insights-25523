@@ -101,41 +101,55 @@ export default function SupervisionLive() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // @compat: Buscar datos de hoy Y ayer para tolerar desfase de zona horaria en carga de Excel
-      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
-      const yesterday = new Date(Date.now() - 24*60*60*1000).toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
-      
-      // Obtener IDs de creadores que tienen datos HOY o AYER en creator_daily_stats
-      const { data: dailyStatsToday, error: dailyError } = await supabase
+      // @snapshot: Get latest snapshot date (most recent data)
+      const { data: latestSnapshot, error: snapErr } = await supabase
         .from('creator_daily_stats')
-        .select('creator_id')
-        .in('fecha', [today, yesterday]);
+        .select('fecha')
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (dailyError) throw dailyError;
-
-      const creatorIdsConDatosHoy = Array.from(
-        new Set((dailyStatsToday || []).map(ds => ds.creator_id))
-      );
-
-      console.log(`[SupervisionLive] Creadores con datos recientes (${yesterday} o ${today}):`, creatorIdsConDatosHoy.length);
-
-      // Si no hay datos hoy, retornar vacío
-      if (creatorIdsConDatosHoy.length === 0) {
+      if (snapErr || !latestSnapshot) {
         setCreators([]);
         setLoading(false);
         toast({
-          title: "Sin datos recientes",
-          description: `No hay creadores con datos de ${yesterday} o ${today}. Sube un archivo Excel para continuar.`,
+          title: "Sin snapshot diario",
+          description: "No hay datos disponibles. Sube un archivo Excel para comenzar.",
           variant: "default",
         });
         return;
       }
 
-      // Cargar SOLO los creadores que tienen datos hoy
+      const snapshotDate = latestSnapshot.fecha;
+      
+      // Get creator IDs from snapshot
+      const { data: snapshotStats, error: statsErr } = await supabase
+        .from('creator_daily_stats')
+        .select('creator_id')
+        .eq('fecha', snapshotDate);
+
+      if (statsErr) throw statsErr;
+
+      const snapshotIds = new Set((snapshotStats || []).map(s => s.creator_id));
+      
+      console.log(`[SupervisionLive] Snapshot date: ${snapshotDate}, Creators: ${snapshotIds.size}`);
+
+      if (snapshotIds.size === 0) {
+        setCreators([]);
+        setLoading(false);
+        toast({
+          title: "Snapshot vacío",
+          description: `No hay creadores en el snapshot de ${snapshotDate}.`,
+          variant: "default",
+        });
+        return;
+      }
+
+      // Load ONLY creators from snapshot
       const { data: creatorsData, error: creatorsError } = await supabase
         .from('creators')
         .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes, tiktok_username, graduacion, manager')
-        .in('id', creatorIdsConDatosHoy)
+        .in('id', Array.from(snapshotIds))
         .order('nombre');
 
       if (creatorsError) throw creatorsError;
