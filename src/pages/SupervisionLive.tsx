@@ -101,14 +101,15 @@ export default function SupervisionLive() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Obtener fecha de hoy
+      // @compat: Buscar datos de hoy Y ayer para tolerar desfase de zona horaria en carga de Excel
       const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
+      const yesterday = new Date(Date.now() - 24*60*60*1000).toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' });
       
-      // Obtener IDs de creadores que tienen datos HOY en creator_daily_stats
+      // Obtener IDs de creadores que tienen datos HOY o AYER en creator_daily_stats
       const { data: dailyStatsToday, error: dailyError } = await supabase
         .from('creator_daily_stats')
         .select('creator_id')
-        .eq('fecha', today);
+        .in('fecha', [today, yesterday]);
 
       if (dailyError) throw dailyError;
 
@@ -116,15 +117,15 @@ export default function SupervisionLive() {
         new Set((dailyStatsToday || []).map(ds => ds.creator_id))
       );
 
-      console.log(`[SupervisionLive] Creadores con datos hoy (${today}):`, creatorIdsConDatosHoy.length);
+      console.log(`[SupervisionLive] Creadores con datos recientes (${yesterday} o ${today}):`, creatorIdsConDatosHoy.length);
 
       // Si no hay datos hoy, retornar vacío
       if (creatorIdsConDatosHoy.length === 0) {
         setCreators([]);
         setLoading(false);
         toast({
-          title: "Sin datos",
-          description: "No hay creadores con datos del día actual. Sube un archivo Excel para continuar.",
+          title: "Sin datos recientes",
+          description: `No hay creadores con datos de ${yesterday} o ${today}. Sube un archivo Excel para continuar.`,
           variant: "default",
         });
         return;
