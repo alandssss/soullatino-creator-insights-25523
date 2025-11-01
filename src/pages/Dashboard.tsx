@@ -13,7 +13,7 @@ import { WorkTimeTracker } from "@/components/WorkTimeTracker";
 import { StatCard } from "@/components/shared/StatCard";
 import DiamondsBars3D from "@/components/dashboard/DiamondsBars3D";
 import TopPerformersCards from "@/components/dashboard/TopPerformersCards";
-import CriticalAlertsPanel from "@/components/dashboard/CriticalAlertsPanel";
+
 import { Suspense, lazy } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingState } from "@/components/shared/LoadingState";
@@ -222,8 +222,6 @@ const Dashboard = () => {
           sticky={false}
         />
 
-        {/* Critical Alerts - Real-time monitoring */}
-        <CriticalAlertsPanel />
 
         {/* Top Performers - Visual impact */}
         <div className="space-y-4">

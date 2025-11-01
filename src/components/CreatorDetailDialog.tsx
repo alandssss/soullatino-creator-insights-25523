@@ -21,6 +21,9 @@ import { interactionService } from "@/services/interactionService";
 import { AsignarMetaDialog } from "./AsignarMetaDialog";
 import { CreatorBasicInfo } from "./creator-detail/CreatorBasicInfo";
 import { CreatorInteractions } from "./creator-detail/CreatorInteractions";
+import { CreatorAlerts } from "./creator-detail/CreatorAlerts";
+import { FeedbackGuide } from "./FeedbackGuide";
+import { AlertCircle, Lightbulb } from "lucide-react";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -336,11 +339,6 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <DrawerTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent flex flex-wrap items-center gap-2 sm:gap-3">
               {creator.nombre}
-              {milestone && (
-                <span className="text-xs sm:text-sm font-normal text-muted-foreground neo-card-sm px-2 sm:px-3 py-1 rounded-full">
-                  {milestone}
-                </span>
-              )}
             </DrawerTitle>
             
             {/* Botón de IA prominente en header */}
@@ -432,21 +430,31 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           </Card>
 
           <Tabs defaultValue="bonificaciones" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-2">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-2">
               <TabsTrigger value="bonificaciones" className="gap-2">
                 <Award className="h-4 w-4" />
                 <span className="hidden sm:inline">Bonificaciones</span>
                 <span className="sm:hidden">💎</span>
               </TabsTrigger>
-              <TabsTrigger value="metas" className="gap-2">
-                <Target className="h-4 w-4" />
-                <span className="hidden sm:inline">Metas</span>
-                <span className="sm:hidden">🎯</span>
+              <TabsTrigger value="alertas" className="gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Alertas</span>
+                <span className="sm:hidden">⚠️</span>
               </TabsTrigger>
               <TabsTrigger value="advice" className="gap-2">
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Consejos IA</span>
                 <span className="sm:hidden">IA</span>
+              </TabsTrigger>
+              <TabsTrigger value="guia" className="gap-2">
+                <Lightbulb className="h-4 w-4" />
+                <span className="hidden sm:inline">Guía</span>
+                <span className="sm:hidden">💡</span>
+              </TabsTrigger>
+              <TabsTrigger value="metas" className="gap-2">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">Metas</span>
+                <span className="sm:hidden">🎯</span>
               </TabsTrigger>
               <TabsTrigger value="milestones" className="gap-2">
                 <Target className="h-4 w-4" />
@@ -464,7 +472,25 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsList>
 
             <TabsContent value="bonificaciones" className="space-y-4 mt-6">
-              <BonificacionesPanel creatorId={creator.id} creatorName={creator.nombre} />
+              <BonificacionesPanel 
+                creatorId={creator.id} 
+                creatorName={creator.nombre}
+                creatorPhone={creator.telefono}
+              />
+            </TabsContent>
+
+            <TabsContent value="alertas" className="space-y-4 mt-6">
+              <Card className="neo-card-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    Alertas de Este Creador
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CreatorAlerts creatorId={creator.id} />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="metas" className="space-y-4 mt-6">
@@ -544,6 +570,10 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="guia" className="space-y-4 mt-6">
+              <FeedbackGuide />
             </TabsContent>
 
             <TabsContent value="milestones" className="space-y-4 mt-6">

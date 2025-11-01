@@ -10,7 +10,6 @@ import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
 import CreatorsList from "@/pages/CreatorsList";
 import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
-import BonificacionesDashboard from "@/pages/BonificacionesDashboard";
 import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
 import BrandingSettings from "@/pages/BrandingSettings";
@@ -61,7 +60,6 @@ const AppLayout = () => {
 
   const navLinks = [
     { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
-    { to: "/bonificaciones", label: "Bonificaciones", roles: ['admin', 'manager', 'viewer'] },
     { to: "/alertas", label: "Alertas", roles: ['admin', 'manager', 'viewer'] },
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
@@ -163,7 +161,6 @@ const AppLayout = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/bonificaciones" element={<BonificacionesDashboard />} />
             <Route path="/alertas" element={<AlertasSugerenciasPage />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />

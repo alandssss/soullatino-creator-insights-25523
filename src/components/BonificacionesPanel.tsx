@@ -8,13 +8,15 @@ import { creatorAnalytics } from "@/services/creatorAnalytics";
 import { MetricCard } from "@/components/MetricCard";
 import { MilestoneCard } from "@/components/shared/MilestoneCard";
 import { RootCausePanel } from "@/components/bonificaciones/RootCausePanel";
+import WhatsappButton from "@/components/WhatsappButton";
 
 interface BonificacionesPanelProps {
   creatorId: string;
   creatorName: string;
+  creatorPhone?: string | null;
 }
 
-export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPanelProps) => {
+export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: BonificacionesPanelProps) => {
   const [bonificacion, setBonificacion] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -117,6 +119,20 @@ export const BonificacionesPanel = ({ creatorId, creatorName }: BonificacionesPa
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {bonificacion && creatorPhone && (
+          <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+            <p className="text-xs text-muted-foreground mb-2">
+              💬 Enviar resumen de bonificaciones
+            </p>
+            <WhatsappButton
+              phone={creatorPhone}
+              country="MX"
+              message={`Hola ${creatorName}! 📊\n\nResumen del mes:\n• Días: ${bonificacion.dias_live_mes}\n• Horas: ${bonificacion.horas_live_mes?.toFixed(1)}h\n• Diamantes: ${bonificacion.diam_live_mes?.toLocaleString()} 💎\n\nMeta: ${bonificacion.meta_recomendada || 'Sin meta'}\n\n${bonificacion.texto_creador || ''}`}
+              className="w-full"
+            />
+          </div>
+        )}
+        
         {!bonificacion ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No hay datos calculados para este mes</p>

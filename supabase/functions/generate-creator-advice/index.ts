@@ -91,116 +91,77 @@ function msgCreador(params: {
   const n = params.nombre ?? "creador";
   const promHorasDia = params.dias_live_mes > 0 ? (params.horas_live_mes / params.dias_live_mes).toFixed(1) : "0.0";
   
+  let msg = `📊 *Resumen LIVE del Mes*\n\n`;
+  msg += `• Días: ${params.dias_live_mes}/${params.diasRestantes} restantes\n`;
+  msg += `• Horas: ${params.horas_live_mes.toFixed(1)}h\n`;
+  msg += `• Diamantes: ${params.diamActual.toLocaleString()} 💎\n\n`;
+
+  msg += `🎯 *Progreso a Metas:*\n`;
+  const faltaPara = {
+    50000: Math.max(0, 50000 - params.diamActual),
+    100000: Math.max(0, 100000 - params.diamActual),
+    300000: Math.max(0, 300000 - params.diamActual),
+    500000: Math.max(0, 500000 - params.diamActual),
+    1000000: Math.max(0, 1000000 - params.diamActual),
+  };
+
+  if (faltaPara[50000] > 0) msg += `• 50K: Faltan ${(faltaPara[50000]/1000).toFixed(0)}k 💎\n`;
+  if (faltaPara[100000] > 0) msg += `• 100K: Faltan ${(faltaPara[100000]/1000).toFixed(0)}k 💎\n`;
+  if (faltaPara[300000] > 0) msg += `• 300K: Faltan ${(faltaPara[300000]/1000).toFixed(0)}k 💎\n`;
+  if (faltaPara[500000] > 0) msg += `• 500K: Faltan ${(faltaPara[500000]/1000).toFixed(0)}k 💎\n`;
+  if (faltaPara[1000000] > 0) msg += `• 1M: Faltan ${(faltaPara[1000000]/1000).toFixed(0)}k 💎\n`;
+
+  msg += `\n💪 *Requerido por día:* ${params.reqDiamDia?.toFixed(0) ?? 5000} 💎\n\n`;
+  
   // REGLA 2: Alerta si >3 días sin transmitir
   const diasSinTransmitir = params.diasTranscurridos - params.dias_live_mes;
   if (diasSinTransmitir > 3 && params.dias_live_mes < 5) {
-    return `⚠️ ${n} - ALERTA INACTIVIDAD
-
-📊 Estado:
-• Días sin transmitir: ${diasSinTransmitir}
-• Días live del mes: ${params.dias_live_mes}
-
-🎯 Plan HOY (obligatorio):
-• Horas requeridas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
-• Diamantes/día: ${params.reqDiamDia?.toFixed(0) ?? 5000}
-• PKO mínimo: 5 batallas × 5min
-• Horario sugerido: revisar picos`;
+    msg += `⚠️ ALERTA INACTIVIDAD\n\n`;
+    msg += `• Días sin transmitir: ${diasSinTransmitir}\n`;
+    msg += `• Plan HOY: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h live + 10 PKO\n`;
+    return msg;
   }
 
   // REGLA 6: Datos en cero por varios días
   if (params.diamActual === 0 && params.horas_live_mes === 0 && params.diasTranscurridos > 5) {
-    return `${n} - CONTACTO URGENTE REQUERIDO
-
-📋 Situación:
-• Sin actividad registrada en ${params.diasTranscurridos} días
-• Estado: requiere intervención del equipo
-
-🤝 Siguiente paso:
-• Agendar llamada con manager
-• Revisar disponibilidad y objetivos
-• Replantear estrategia del mes`;
+    msg += `🤝 CONTACTO URGENTE REQUERIDO\n`;
+    msg += `Sin actividad en ${params.diasTranscurridos} días\n`;
+    return msg;
   }
 
   // REGLA 5: Superó una graduación
   if (params.faltanDiam !== null && params.faltanDiam <= 0 && params.gradTarget) {
-    return `🎉 ${n} - GRADUACIÓN ALCANZADA
-
-✅ Logro:
-• Nivel: ${params.gradTarget.toLocaleString()} diamantes
-• Días completados: ${params.dias_live_mes}
-• Horas acumuladas: ${Math.round(params.horas_live_mes)}h
-
-🎯 Próximo objetivo:
-• Mantener o superar nivel actual
-• Bono adicional por días extra >22`;
+    msg += `🎉 GRADUACIÓN ALCANZADA - ${params.gradTarget.toLocaleString()}\n`;
+    return msg;
   }
 
   // REGLA 4: Nuevo (<90 días) y no ha llegado a 300K
   if (params.prioridad300k) {
     const porcentaje = params.gradTarget ? ((params.diamActual / params.gradTarget) * 100).toFixed(0) : 0;
-    return `🔵 ${n} - PRIORIDAD 300K (NUEVO <90d)
-
-📊 Progreso actual:
-• Diamantes: ${params.diamActual.toLocaleString()} / ${params.gradTarget?.toLocaleString()}
-• Avance: ${porcentaje}%
-• Faltante: ${params.faltanDiam?.toLocaleString()}
-
-🎯 Plan de acción:
-• Diamantes/día requeridos: ${params.reqDiamDia?.toFixed(0)}
-• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
-• PKO objetivo: 10 batallas × 5min
-• Días restantes: ${params.diasRestantes}`;
+    msg += `🔵 PRIORIDAD 300K (NUEVO)\n`;
+    msg += `Avance: ${porcentaje}%\n`;
+    return msg;
   }
 
-  // REGLA 1: Cerca de un hito (<15%)
+  // REGLA 1: Cerca de un hito
   const cercaDeHito = (params.faltan_dias <= Math.ceil(params.hito.d * 0.15)) || (params.faltan_horas <= params.hito.h * 0.15);
-  
   if (cercaDeHito && params.faltan_dias > 0) {
-    return `🔥 ${n} - CERCA DEL HITO
-
-📊 Faltante mínimo:
-• Días: ${params.faltan_dias} (objetivo: ${params.hito.d})
-• Horas: ${params.faltan_horas.toFixed(1)}h (objetivo: ${params.hito.h}h)
-
-🎯 Push final:
-• Horas hoy: ${Math.ceil(params.faltan_horas / Math.max(1, params.diasRestantes))}h
-• PKO: 10 batallas × 5min
-• Días disponibles: ${params.diasRestantes}`;
+    msg += `🔥 CERCA DEL HITO ${params.hito.d}d/${params.hito.h}h\n`;
+    return msg;
   }
 
-  // REGLA 3: Ya cumplió ≥22 días (bono constancia)
+  // REGLA 3: Ya cumplió ≥22 días
   if (params.diasExtra > 0) {
-    return `🎉 ${n} - BONO CONSTANCIA ACTIVADO
-
-✅ Logro de consistencia:
-• Días completados: ${params.dias_live_mes}
-• Días extra >22: ${params.diasExtra}
-• Bono generado: $${params.bonoExtraUSD} USD
-
-🎯 Mantener nivel:
-• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
-• PKO diario: 10 batallas × 5min
-• Cada día extra = +$3 USD`;
+    msg += `🎉 BONO CONSTANCIA: $${params.bonoExtraUSD} USD\n`;
+    msg += `Días extra: ${params.diasExtra}\n`;
+    return msg;
   }
 
-  // Mensaje estándar con métricas objetivas
-  const gradStatus = params.gradTarget && params.faltanDiam && params.faltanDiam > 0
-    ? `${params.diamActual.toLocaleString()} / ${params.gradTarget.toLocaleString()} (falta: ${params.faltanDiam.toLocaleString()})`
-    : `${params.diamActual.toLocaleString()} (objetivo superado)`;
-
-  return `📊 ${n} - RESUMEN MENSUAL
-
-Estado actual:
-• Diamantes: ${gradStatus}
-• Días live: ${params.dias_live_mes} / ${params.hito.d}
-• Horas totales: ${Math.round(params.horas_live_mes)}h / ${params.hito.h}h
-• Promedio horas/día: ${promHorasDia}h
-
-🎯 Requerimientos diarios:
-• Diamantes/día: ${params.reqDiamDia?.toFixed(0) ?? "—"}
-• Horas/día: ${(params.faltan_horas / Math.max(1, params.diasRestantes)).toFixed(1)}h
-• PKO sugerido: 10 × 5min
-• Días restantes: ${params.diasRestantes}`;
+  // Mensaje estándar
+  msg += `📈 Continúa con el plan actual\n`;
+  msg += `Días restantes: ${params.diasRestantes}\n`;
+  
+  return msg;
 }
 
 function msgManager(params: {
