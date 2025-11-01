@@ -85,12 +85,45 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Get first day of current month
-      const primerDiaMes = new Date();
-      primerDiaMes.setDate(1);
-      const mesReferencia = primerDiaMes.toISOString().split('T')[0];
+      // 1️⃣ Obtener snapshot date más reciente
+      const { data: latestSnap } = await supabase
+        .from('creator_daily_stats')
+        .select('fecha')
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!latestSnap) {
+        setCreators([]);
+        toast({
+          title: "Sin snapshot diario",
+          description: "No hay datos. Sube un Excel para comenzar.",
+          variant: "default",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const snapshotDate = latestSnap.fecha;
+
+      // 2️⃣ Obtener IDs del snapshot (exactamente 188)
+      const { data: snapshotStats } = await supabase
+        .from('creator_daily_stats')
+        .select('creator_id')
+        .eq('fecha', snapshotDate);
+
+      const snapshotIds = (snapshotStats || []).map(s => s.creator_id);
       
-      // Fetch from creator_bonificaciones with real data
+      console.log(`[Dashboard] Snapshot: ${snapshotDate}, Creadores: ${snapshotIds.length}`);
+
+      if (snapshotIds.length === 0) {
+        setCreators([]);
+        setLoading(false);
+        return;
+      }
+
+      // 3️⃣ Obtener bonificaciones SOLO del snapshot
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       const { data, error } = await supabase
         .from('creator_bonificaciones')
         .select(`
@@ -107,37 +140,26 @@ const Dashboard = () => {
             categoria
           )
         `)
-        .eq('mes_referencia', mesReferencia)
+        .eq('mes_referencia', currentMonth)
+        .in('creator_id', snapshotIds)
         .order('diam_live_mes', { ascending: false });
 
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        const creatorsFromBonificaciones = data.map((item: any) => {
-          const creator = item.creators;
-          return {
-            ...creator,
-            diamantes: item.diam_live_mes || 0,
-            dias_live: item.dias_live_mes || 0,
-            horas_live: item.horas_live_mes || 0,
-          };
-        });
-        
-        setCreators(creatorsFromBonificaciones);
-      } else {
-        // Fallback to creators table
-        const { data: creatorsData } = await supabase
-          .from("creators")
-          .select("*")
-          .order("diamantes", { ascending: false });
-        
-        setCreators(creatorsData || []);
-      }
+      const creatorsFromBonificaciones = (data || []).map((item: any) => ({
+        ...item.creators,
+        diamantes: item.diam_live_mes || 0,
+        dias_live: item.dias_live_mes || 0,
+        horas_live: item.horas_live_mes || 0,
+      }));
+      
+      setCreators(creatorsFromBonificaciones);
+      
     } catch (error) {
       console.error("Error loading bonificaciones:", error);
       toast({
         title: "Error cargando datos",
-        description: "Problema al cargar las estadísticas de creadores.",
+        description: "Problema al cargar las estadísticas.",
         variant: "destructive",
       });
     } finally {
