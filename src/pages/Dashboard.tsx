@@ -112,7 +112,7 @@ const Dashboard = () => {
         .select('creator_id')
         .eq('fecha', snapshotDate);
 
-      const snapshotIds = (snapshotStats || []).map(s => s.creator_id);
+      const snapshotIds = [...new Set((snapshotStats || []).map(s => s.creator_id))];
       
       console.log(`[Dashboard] Snapshot: ${snapshotDate}, Creadores: ${snapshotIds.length}`);
 
@@ -153,7 +153,13 @@ const Dashboard = () => {
         horas_live: item.horas_live_mes || 0,
       }));
       
-      setCreators(creatorsFromBonificaciones);
+      // Deduplicar por creator.id
+      const uniqueCreators = Array.from(
+        new Map(creatorsFromBonificaciones.map(c => [c.id, c])).values()
+      );
+
+      setCreators(uniqueCreators);
+      console.log(`[Dashboard] Creadores únicos cargados: ${uniqueCreators.length}`);
       
     } catch (error) {
       console.error("Error loading bonificaciones:", error);
