@@ -63,7 +63,12 @@ export function BatallasPanel() {
         .eq('status', 'activo')
         .order('nombre');
       
-      setCreators(creatorsData || []);
+      // Deduplicar creadores por ID
+      const uniqueCreators = Array.from(
+        new Map((creatorsData || []).map(c => [c.id, c])).values()
+      );
+      setCreators(uniqueCreators);
+      console.log(`[BatallasPanel] Creadores únicos cargados: ${uniqueCreators.length}`);
 
       // Load batallas
       const { data: batallasData, error } = await supabase
