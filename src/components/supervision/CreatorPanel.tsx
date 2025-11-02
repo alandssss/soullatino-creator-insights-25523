@@ -28,6 +28,101 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CreatorBriefSummary } from "@/components/CreatorBriefSummary";
 import { openWhatsApp } from "@/utils/whatsapp";
+import { Badge } from "@/components/ui/badge";
+
+// Component for displaying creator's battles
+function BatallasCreatorSection({ creator }: { creator: Creator }) {
+  const { toast } = useToast();
+  const [batallas, setBatallas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadBatallas();
+  }, [creator.id]);
+
+  const loadBatallas = async () => {
+    try {
+      setLoading(true);
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('batallas')
+        .select('*')
+        .eq('creator_id', creator.id)
+        .eq('estado', 'programada')
+        .gte('fecha', hoy)
+        .order('fecha', { ascending: true })
+        .order('hora', { ascending: true })
+        .limit(3);
+      
+      setBatallas(data || []);
+    } catch (error: any) {
+      console.error('Error loading batallas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        ⚔️ Batallas Oficiales
+      </h3>
+      <div className="neo-card-sm p-3 rounded-lg space-y-2">
+        {loading ? (
+          <p className="text-xs text-muted-foreground">Cargando...</p>
+        ) : batallas.length > 0 ? (
+          <div className="space-y-2">
+            {batallas.map((b) => (
+              <div key={b.id} className="p-2 border border-border/50 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">{b.fecha} - {b.hora}</p>
+                    <p className="text-xs text-muted-foreground">vs {b.oponente}</p>
+                  </div>
+                  {b.tipo && (
+                    <Badge variant="outline" className="text-xs">{b.tipo}</Badge>
+                  )}
+                </div>
+                {b.guantes && (
+                  <p className="text-xs text-muted-foreground mt-1">🧤 {b.guantes}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">No hay batallas programadas</p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full neo-button"
+              onClick={async () => {
+                if (creator.telefono) {
+                  await openWhatsApp({
+                    phone: creator.telefono,
+                    message: `Hola ${creator.nombre}, ¿tienes alguna batalla oficial programada próximamente?`,
+                    creatorId: creator.id,
+                    creatorName: creator.nombre,
+                    actionType: 'seguimiento'
+                  });
+                } else {
+                  toast({
+                    title: "Sin teléfono",
+                    description: "Este creador no tiene número registrado",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Consultar por WhatsApp
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface Creator {
   id: string;
@@ -227,39 +322,7 @@ export function CreatorPanel({
           <Separator />
 
           {/* Batallas Oficiales */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              ⚔️ Batallas Oficiales
-            </h3>
-            <div className="neo-card-sm p-3 rounded-lg space-y-2">
-              <p className="text-xs text-muted-foreground">No hay batallas programadas</p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full neo-button"
-                onClick={async () => {
-                  if (creator.telefono) {
-                    await openWhatsApp({
-                      phone: creator.telefono,
-                      message: `Hola ${creator.nombre}, ¿tienes alguna batalla oficial programada próximamente?`,
-                      creatorId: creator.id,
-                      creatorName: creator.nombre,
-                      actionType: 'seguimiento'
-                    });
-                  } else {
-                    toast({
-                      title: "Sin teléfono",
-                      description: "Este creador no tiene número registrado",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Consultar por WhatsApp
-              </Button>
-            </div>
-          </div>
+          <BatallasCreatorSection creator={creator} />
 
           {latestLog && (
             <div className="space-y-2">

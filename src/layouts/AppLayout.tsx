@@ -15,6 +15,7 @@ import NotFound from "@/pages/NotFound";
 import BrandingSettings from "@/pages/BrandingSettings";
 import ScoringConfig from "@/pages/ScoringConfig";
 import IAEffectiveness from "@/pages/IAEffectiveness";
+import { BatallasPanel } from "@/components/batallas/BatallasPanel";
 import logo from "@/assets/logo-optimized.webp";
 import {
   Sheet,
@@ -61,6 +62,7 @@ const AppLayout = () => {
   const navLinks = [
     { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
     { to: "/alertas", label: "Alertas", roles: ['admin', 'manager', 'viewer'] },
+    { to: "/batallas", label: "⚔️ Batallas", roles: ['admin', 'manager', 'supervisor'] },
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
     { to: "/admin", label: "⚙️ Admin", roles: ['admin'] },
@@ -162,6 +164,7 @@ const AppLayout = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/alertas" element={<AlertasSugerenciasPage />} />
+            <Route path="/batallas" element={<BatallasPanel />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
             <Route path="/branding" element={<BrandingSettings />} />

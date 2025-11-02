@@ -100,3 +100,6 @@ verify_jwt = true
 
 [functions.manage-user]
 verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false

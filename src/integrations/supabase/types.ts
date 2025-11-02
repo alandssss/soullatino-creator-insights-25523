@@ -38,6 +38,66 @@ export type Database = {
         }
         Relationships: []
       }
+      batallas: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          estado: string | null
+          fecha: string
+          guantes: string | null
+          hora: string
+          id: string
+          notas: string | null
+          oponente: string
+          reto: string | null
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          estado?: string | null
+          fecha: string
+          guantes?: string | null
+          hora: string
+          id?: string
+          notas?: string | null
+          oponente: string
+          reto?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          estado?: string | null
+          fecha?: string
+          guantes?: string | null
+          hora?: string
+          id?: string
+          notas?: string | null
+          oponente?: string
+          reto?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batallas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batallas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_bonificaciones: {
         Row: {
           bono_extra_usd: number | null
