@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Users, TrendingUp, Eye, Zap, MessageCircle, Phone } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { dedupeBy, normalizePhone, normalizeName } from "@/lib/dedupe";
 import { Tables } from "@/integrations/supabase/types";
 import { CreatorDetailDialog } from "@/components/CreatorDetailDialog";
 import { AdminUploadPanel } from "@/components/AdminUploadPanel";
@@ -23,6 +26,8 @@ const CreatorsList = () => {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [hideDuplicates, setHideDuplicates] = useState(true);
+  const [allCreators, setAllCreators] = useState<Creator[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,6 +35,10 @@ const CreatorsList = () => {
     checkUser();
     fetchCreators();
   }, []);
+
+  useEffect(() => {
+    applyDeduplication();
+  }, [allCreators, hideDuplicates]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +75,23 @@ const CreatorsList = () => {
         variant: "destructive",
       });
     } else {
-      setCreators(data || []);
+      setAllCreators(data || []);
+    }
+  };
+
+  const applyDeduplication = () => {
+    if (hideDuplicates) {
+      const creatorsWithNorms = allCreators.map(c => ({
+        ...c,
+        phoneNorm: normalizePhone(c.telefono),
+        nameNorm: normalizeName(c.nombre),
+      }));
+      const unique = dedupeBy(creatorsWithNorms, c => c.phoneNorm || c.nameNorm);
+      setCreators(unique);
+      console.log(`[CreatorsList] Mostrando ${unique.length} creadores únicos de ${allCreators.length} totales`);
+    } else {
+      setCreators(allCreators);
+      console.log(`[CreatorsList] Mostrando todos los ${allCreators.length} creadores (duplicados incluidos)`);
     }
   };
 
@@ -159,7 +184,24 @@ const CreatorsList = () => {
 
       <Card className="neo-card border-primary/30">
         <CardHeader className="p-4 md:p-6">
-          <CardTitle className="text-lg md:text-xl font-bold text-foreground">Top Creadores</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg md:text-xl font-bold text-foreground">Top Creadores</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Mostrando {creators.length} creadores {hideDuplicates && allCreators.length !== creators.length && `únicos de ${allCreators.length} totales`}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="hide-duplicates"
+                checked={hideDuplicates}
+                onCheckedChange={setHideDuplicates}
+              />
+              <Label htmlFor="hide-duplicates" className="text-xs cursor-pointer">
+                Ocultar duplicados
+              </Label>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 pt-0">
           <div className="space-y-3 md:space-y-4">

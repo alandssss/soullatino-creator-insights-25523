@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { dedupeBy, normalizePhone, normalizeName } from "@/lib/dedupe";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -63,10 +64,14 @@ export function BatallasPanel() {
         .eq('status', 'activo')
         .order('nombre');
       
-      // Deduplicar creadores por ID
-      const uniqueCreators = Array.from(
-        new Map((creatorsData || []).map(c => [c.id, c])).values()
-      );
+      // Deduplicar creadores por teléfono normalizado o nombre
+      const creatorsWithNorms = (creatorsData || []).map(c => ({
+        ...c,
+        phoneNorm: normalizePhone(c.telefono),
+        nameNorm: normalizeName(c.nombre),
+      }));
+      
+      const uniqueCreators = dedupeBy(creatorsWithNorms, c => c.phoneNorm || c.nameNorm);
       setCreators(uniqueCreators);
       console.log(`[BatallasPanel] Creadores únicos cargados: ${uniqueCreators.length}`);
 
@@ -264,11 +269,24 @@ export function BatallasPanel() {
                           <SelectValue placeholder="Selecciona un creador" />
                         </SelectTrigger>
                         <SelectContent>
-                          {creators.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nombre}
-                            </SelectItem>
-                          ))}
+                          {creators.map((creator) => {
+                            // Verificar si hay otros creadores con el mismo nombre
+                            const duplicatesByName = creators.filter(c => 
+                              normalizeName(c.nombre) === normalizeName(creator.nombre)
+                            );
+                            const hasDuplicateName = duplicatesByName.length > 1;
+                            
+                            // Generar label distinguible
+                            const label = hasDuplicateName
+                              ? `${creator.nombre} · ${(creator as any).phoneNorm ? `+${(creator as any).phoneNorm.slice(-4)}` : `ID ${creator.id.slice(-4)}`}`
+                              : creator.nombre;
+                            
+                            return (
+                              <SelectItem key={creator.id} value={creator.id}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>

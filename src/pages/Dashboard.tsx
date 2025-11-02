@@ -114,7 +114,7 @@ const Dashboard = () => {
 
       const snapshotIds = [...new Set((snapshotStats || []).map(s => s.creator_id))];
       
-      console.log(`[Dashboard] Snapshot: ${snapshotDate}, Creadores: ${snapshotIds.length}`);
+      console.log(`[Dashboard] Snapshot: ${snapshotDate}, Creadores únicos del snapshot: ${snapshotIds.length}`);
 
       if (snapshotIds.length === 0) {
         setCreators([]);
@@ -159,7 +159,7 @@ const Dashboard = () => {
       );
 
       setCreators(uniqueCreators);
-      console.log(`[Dashboard] Creadores únicos cargados: ${uniqueCreators.length}`);
+      console.log(`[Dashboard] Creadores después del merge (únicos por ID): ${uniqueCreators.length}`);
       
     } catch (error) {
       console.error("Error loading bonificaciones:", error);
@@ -276,6 +276,9 @@ const Dashboard = () => {
         <Card className="rounded-2xl border-2 border-border/50">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-semibold">Top Creadores</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Mostrando {creators.length} creadores únicos del snapshot
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
