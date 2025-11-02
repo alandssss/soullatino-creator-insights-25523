@@ -63,11 +63,13 @@ verify_jwt = true
 [functions.calculate-bonificaciones]
 verify_jwt = true
 
-# @deprecated - Use calculate-bonificaciones-predictivo
+# @deprecated 2025-11-02 - Redirige a calculate-bonificaciones-predictivo
+# Razón: Leía columnas obsoletas en creators, lógica duplicada
+# SEGURO ELIMINAR tras validar que nadie la invoca directamente
 [functions.calculate-all-bonificaciones]
 verify_jwt = true
 
-# FUNCIÓN CANÓNICA - Usar esta
+# FUNCIÓN CANÓNICA - Usar esta para todos los cálculos de bonificaciones
 [functions.calculate-bonificaciones-predictivo]
 verify_jwt = true
 

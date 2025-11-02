@@ -100,6 +100,7 @@ export type Database = {
       }
       creator_bonificaciones: {
         Row: {
+          bono_dias_extra_usd: number | null
           bono_extra_usd: number | null
           cerca_de_objetivo: boolean | null
           created_at: string | null
@@ -108,7 +109,19 @@ export type Database = {
           dias_extra_22: number | null
           dias_live_mes: number | null
           dias_restantes: number | null
+          es_nuevo_menos_90_dias: boolean | null
           es_prioridad_300k: boolean | null
+          faltan_100k: number | null
+          faltan_1m: number | null
+          faltan_300k: number | null
+          faltan_500k: number | null
+          faltan_50k: number | null
+          fecha_calculo: string | null
+          fecha_estimada_100k: string | null
+          fecha_estimada_1m: string | null
+          fecha_estimada_300k: string | null
+          fecha_estimada_500k: string | null
+          fecha_estimada_50k: string | null
           grad_100k: boolean | null
           grad_1m: boolean | null
           grad_300k: boolean | null
@@ -120,12 +133,26 @@ export type Database = {
           horas_live_mes: number | null
           id: string
           mes_referencia: string
+          meta_recomendada: string | null
           proximo_objetivo_tipo: string | null
           proximo_objetivo_valor: string | null
           req_diam_por_dia: number | null
+          req_diam_por_dia_100k: number | null
+          req_diam_por_dia_1m: number | null
+          req_diam_por_dia_300k: number | null
+          req_diam_por_dia_500k: number | null
+          req_diam_por_dia_50k: number | null
           req_horas_por_dia: number | null
+          semaforo_100k: string | null
+          semaforo_1m: string | null
+          semaforo_300k: string | null
+          semaforo_500k: string | null
+          semaforo_50k: string | null
+          texto_creador: string | null
+          texto_manager: string | null
         }
         Insert: {
+          bono_dias_extra_usd?: number | null
           bono_extra_usd?: number | null
           cerca_de_objetivo?: boolean | null
           created_at?: string | null
@@ -134,7 +161,19 @@ export type Database = {
           dias_extra_22?: number | null
           dias_live_mes?: number | null
           dias_restantes?: number | null
+          es_nuevo_menos_90_dias?: boolean | null
           es_prioridad_300k?: boolean | null
+          faltan_100k?: number | null
+          faltan_1m?: number | null
+          faltan_300k?: number | null
+          faltan_500k?: number | null
+          faltan_50k?: number | null
+          fecha_calculo?: string | null
+          fecha_estimada_100k?: string | null
+          fecha_estimada_1m?: string | null
+          fecha_estimada_300k?: string | null
+          fecha_estimada_500k?: string | null
+          fecha_estimada_50k?: string | null
           grad_100k?: boolean | null
           grad_1m?: boolean | null
           grad_300k?: boolean | null
@@ -146,12 +185,26 @@ export type Database = {
           horas_live_mes?: number | null
           id?: string
           mes_referencia: string
+          meta_recomendada?: string | null
           proximo_objetivo_tipo?: string | null
           proximo_objetivo_valor?: string | null
           req_diam_por_dia?: number | null
+          req_diam_por_dia_100k?: number | null
+          req_diam_por_dia_1m?: number | null
+          req_diam_por_dia_300k?: number | null
+          req_diam_por_dia_500k?: number | null
+          req_diam_por_dia_50k?: number | null
           req_horas_por_dia?: number | null
+          semaforo_100k?: string | null
+          semaforo_1m?: string | null
+          semaforo_300k?: string | null
+          semaforo_500k?: string | null
+          semaforo_50k?: string | null
+          texto_creador?: string | null
+          texto_manager?: string | null
         }
         Update: {
+          bono_dias_extra_usd?: number | null
           bono_extra_usd?: number | null
           cerca_de_objetivo?: boolean | null
           created_at?: string | null
@@ -160,7 +213,19 @@ export type Database = {
           dias_extra_22?: number | null
           dias_live_mes?: number | null
           dias_restantes?: number | null
+          es_nuevo_menos_90_dias?: boolean | null
           es_prioridad_300k?: boolean | null
+          faltan_100k?: number | null
+          faltan_1m?: number | null
+          faltan_300k?: number | null
+          faltan_500k?: number | null
+          faltan_50k?: number | null
+          fecha_calculo?: string | null
+          fecha_estimada_100k?: string | null
+          fecha_estimada_1m?: string | null
+          fecha_estimada_300k?: string | null
+          fecha_estimada_500k?: string | null
+          fecha_estimada_50k?: string | null
           grad_100k?: boolean | null
           grad_1m?: boolean | null
           grad_300k?: boolean | null
@@ -172,10 +237,23 @@ export type Database = {
           horas_live_mes?: number | null
           id?: string
           mes_referencia?: string
+          meta_recomendada?: string | null
           proximo_objetivo_tipo?: string | null
           proximo_objetivo_valor?: string | null
           req_diam_por_dia?: number | null
+          req_diam_por_dia_100k?: number | null
+          req_diam_por_dia_1m?: number | null
+          req_diam_por_dia_300k?: number | null
+          req_diam_por_dia_500k?: number | null
+          req_diam_por_dia_50k?: number | null
           req_horas_por_dia?: number | null
+          semaforo_100k?: string | null
+          semaforo_1m?: string | null
+          semaforo_300k?: string | null
+          semaforo_500k?: string | null
+          semaforo_50k?: string | null
+          texto_creador?: string | null
+          texto_manager?: string | null
         }
         Relationships: [
           {

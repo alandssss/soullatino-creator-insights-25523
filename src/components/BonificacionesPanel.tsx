@@ -127,7 +127,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
             <WhatsappButton
               phone={creatorPhone}
               country="MX"
-              message={`Hola ${creatorName}! 📊\n\nResumen del mes:\n• Días: ${bonificacion.dias_live_mes}\n• Horas: ${bonificacion.horas_live_mes?.toFixed(1)}h\n• Diamantes: ${bonificacion.diam_live_mes?.toLocaleString()} 💎\n\nMeta: ${bonificacion.meta_recomendada || 'Sin meta'}\n\n${bonificacion.texto_creador || ''}`}
+              message={`Hola ${creatorName}! 📊\n\nResumen del mes:\n• Días: ${bonificacion.dias_live_mes || 0}\n• Horas: ${bonificacion.horas_live_mes?.toFixed(1) || 0}h\n• Diamantes: ${(bonificacion.diam_live_mes || 0).toLocaleString()} 💎\n\nMeta: ${bonificacion.meta_recomendada || bonificacion.proximo_objetivo_valor || 'Sin meta'}\n\n${bonificacion.texto_creador || ''}`}
               className="w-full"
             />
           </div>
@@ -176,15 +176,15 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               </h3>
               <div className="p-4 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-lg">{bonificacion.meta_recomendada || "Sin meta"}</p>
-                  {bonificacion.cerca_de_objetivo && (
+                  <p className="font-semibold text-lg">{bonificacion?.meta_recomendada || bonificacion?.proximo_objetivo_valor || "Sin meta"}</p>
+                  {bonificacion?.cerca_de_objetivo && (
                     <Badge variant="default">¡Cerca!</Badge>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">
-                  {bonificacion.texto_creador || "Calculando progreso..."}
+                  {bonificacion?.texto_creador || `Objetivo: ${bonificacion?.proximo_objetivo_valor || 'Sin definir'}. Progreso calculando...`}
                 </p>
-                {bonificacion.texto_manager && (
+                {bonificacion?.texto_manager && (
                   <p className="text-xs text-muted-foreground/80 italic border-t border-border/30 pt-2">
                     📋 Manager: {bonificacion.texto_manager}
                   </p>
@@ -199,29 +199,30 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               </h3>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { key: 'semaforo_50k', label: '50K', faltan: bonificacion.faltan_50k, req: bonificacion.req_diam_por_dia_50k, fecha: bonificacion.fecha_estimada_50k },
-                  { key: 'semaforo_100k', label: '100K', faltan: bonificacion.faltan_100k, req: bonificacion.req_diam_por_dia_100k, fecha: bonificacion.fecha_estimada_100k },
-                  { key: 'semaforo_300k', label: '300K', faltan: bonificacion.faltan_300k, req: bonificacion.req_diam_por_dia_300k, fecha: bonificacion.fecha_estimada_300k },
-                  { key: 'semaforo_500k', label: '500K', faltan: bonificacion.faltan_500k, req: bonificacion.req_diam_por_dia_500k, fecha: bonificacion.fecha_estimada_500k },
-                  { key: 'semaforo_1m', label: '1M', faltan: bonificacion.faltan_1m, req: bonificacion.req_diam_por_dia_1m, fecha: bonificacion.fecha_estimada_1m },
+                  { key: 'semaforo_50k', label: '50K', faltan: bonificacion?.faltan_50k, req: bonificacion?.req_diam_por_dia_50k, fecha: bonificacion?.fecha_estimada_50k },
+                  { key: 'semaforo_100k', label: '100K', faltan: bonificacion?.faltan_100k, req: bonificacion?.req_diam_por_dia_100k, fecha: bonificacion?.fecha_estimada_100k },
+                  { key: 'semaforo_300k', label: '300K', faltan: bonificacion?.faltan_300k, req: bonificacion?.req_diam_por_dia_300k, fecha: bonificacion?.fecha_estimada_300k },
+                  { key: 'semaforo_500k', label: '500K', faltan: bonificacion?.faltan_500k, req: bonificacion?.req_diam_por_dia_500k, fecha: bonificacion?.fecha_estimada_500k },
+                  { key: 'semaforo_1m', label: '1M', faltan: bonificacion?.faltan_1m, req: bonificacion?.req_diam_por_dia_1m, fecha: bonificacion?.fecha_estimada_1m },
                 ].map((meta) => {
-                  const semaforo = bonificacion[meta.key];
+                  const semaforo = bonificacion?.[meta.key] || 'rojo';
                   const bgColor = semaforo === 'verde' ? 'bg-green-500/20 border-green-500/50' :
                                  semaforo === 'amarillo' ? 'bg-yellow-500/20 border-yellow-500/50' :
                                  'bg-red-500/20 border-red-500/50';
                   const icon = semaforo === 'verde' ? '🟢' : semaforo === 'amarillo' ? '🟡' : '🔴';
+                  const faltan = meta.faltan ?? 0;
                   return (
                     <div
                       key={meta.key}
                       className={`p-2 rounded-lg text-center border ${bgColor}`}
-                      title={`Faltan: ${meta.faltan?.toLocaleString() || 0} | Req/día: ${meta.req?.toLocaleString() || 0}`}
+                      title={`Faltan: ${faltan.toLocaleString()} | Req/día: ${(meta.req ?? 0).toLocaleString()}`}
                     >
                       <p className="text-xs font-medium">
                         {icon} {meta.label}
                       </p>
-                      {meta.faltan > 0 && (
+                      {faltan > 0 && (
                         <p className="text-[10px] text-muted-foreground mt-1">
-                          -{(meta.faltan / 1000).toFixed(0)}k
+                          -{(faltan / 1000).toFixed(0)}k
                         </p>
                       )}
                     </div>
@@ -280,7 +281,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
             </div>
 
             {/* Bono Extra */}
-            {(bonificacion.bono_dias_extra_usd > 0 || bonificacion.bono_extra_usd > 0) && (
+            {((bonificacion?.bono_dias_extra_usd ?? 0) > 0 || (bonificacion?.bono_extra_usd ?? 0) > 0) && (
               <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
                 <div className="flex items-center justify-between">
                   <div>
@@ -302,7 +303,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
             )}
 
             {/* Indicador de creador nuevo */}
-            {bonificacion.es_nuevo_menos_90_dias && (
+            {(bonificacion?.es_nuevo_menos_90_dias || bonificacion?.es_prioridad_300k) && (
               <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                   🌟 Creador Nuevo (menos de 90 días)
@@ -315,7 +316,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
 
             {/* Última actualización */}
             <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
-              Última actualización: {new Date(bonificacion.fecha_calculo).toLocaleDateString('es-MX')}
+              Última actualización: {bonificacion?.fecha_calculo ? new Date(bonificacion.fecha_calculo).toLocaleDateString('es-MX') : 'Hoy'}
             </div>
           </>
         )}

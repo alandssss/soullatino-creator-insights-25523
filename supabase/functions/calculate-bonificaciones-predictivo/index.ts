@@ -145,6 +145,67 @@ serve(async (req) => {
       // Cerca de objetivo (< 15% faltante)
       const cerca_de_objetivo = faltante > 0 && faltante < (parseInt(proximo_objetivo_valor) * 0.15);
 
+      // ========== NUEVAS COLUMNAS: Semáforos, Faltantes y Fechas Estimadas ==========
+      const graduaciones = [
+        { valor: 50000, key: 'semaforo_50k', faltanKey: 'faltan_50k', reqKey: 'req_diam_por_dia_50k', fechaKey: 'fecha_estimada_50k' },
+        { valor: 100000, key: 'semaforo_100k', faltanKey: 'faltan_100k', reqKey: 'req_diam_por_dia_100k', fechaKey: 'fecha_estimada_100k' },
+        { valor: 300000, key: 'semaforo_300k', faltanKey: 'faltan_300k', reqKey: 'req_diam_por_dia_300k', fechaKey: 'fecha_estimada_300k' },
+        { valor: 500000, key: 'semaforo_500k', faltanKey: 'faltan_500k', reqKey: 'req_diam_por_dia_500k', fechaKey: 'fecha_estimada_500k' },
+        { valor: 1000000, key: 'semaforo_1m', faltanKey: 'faltan_1m', reqKey: 'req_diam_por_dia_1m', fechaKey: 'fecha_estimada_1m' }
+      ];
+
+      const semaforosData: any = {};
+      const hoy = new Date();
+      const diaDelMes = hoy.getDate();
+      const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+      const avanceTiempo = (diaDelMes / ultimoDiaMes) * 100;
+
+      graduaciones.forEach(grad => {
+        const faltan = Math.max(0, grad.valor - diam_live_mes);
+        const reqPorDia = diasRestantes > 0 ? Math.ceil(faltan / diasRestantes) : 0;
+        const avanceDiam = (diam_live_mes / grad.valor) * 100;
+        
+        let semaforo = 'rojo';
+        if (diam_live_mes >= grad.valor) {
+          semaforo = 'verde';
+        } else if (avanceDiam >= avanceTiempo * 0.85) {
+          semaforo = 'verde';
+        } else if (avanceDiam >= avanceTiempo * 0.6) {
+          semaforo = 'amarillo';
+        }
+
+        let fechaEstimada = null;
+        if (faltan > 0 && reqPorDia > 0 && diasRestantes > 0) {
+          const diasNecesarios = Math.ceil(faltan / reqPorDia);
+          fechaEstimada = new Date(hoy);
+          fechaEstimada.setDate(fechaEstimada.getDate() + diasNecesarios);
+        }
+
+        semaforosData[grad.key] = semaforo;
+        semaforosData[grad.faltanKey] = faltan;
+        semaforosData[grad.reqKey] = reqPorDia;
+        semaforosData[grad.fechaKey] = fechaEstimada ? fechaEstimada.toISOString().split('T')[0] : null;
+      });
+
+      // Textos de coaching
+      let textoCreador = '';
+      let textoManager = '';
+      let metaRecomendada = proximo_objetivo_valor;
+
+      if (es_prioridad_300k) {
+        metaRecomendada = '300K Diamantes (Prioridad)';
+        textoCreador = `🎯 Meta prioritaria: 300K diamantes. Faltan ${(300000 - diam_live_mes).toLocaleString()}. Requieres ${Math.ceil((300000 - diam_live_mes) / diasRestantes).toLocaleString()} por día.`;
+        textoManager = `Creador nuevo (<90 días). Enfocar en alcanzar 300K este mes.`;
+      } else if (cerca_de_objetivo) {
+        textoCreador = `¡Estás cerca de tu objetivo ${proximo_objetivo_valor}! Sigue así 💪`;
+        textoManager = `Cerca del objetivo. Monitorear y motivar.`;
+      } else if (faltante > 0) {
+        textoCreador = `Objetivo: ${proximo_objetivo_valor}. Faltan ${faltante.toLocaleString()}. Requieres ${req_diam_por_dia.toLocaleString()} diamantes/día.`;
+        textoManager = `Requiere ${req_diam_por_dia.toLocaleString()} diam/día para alcanzar ${proximo_objetivo_valor}.`;
+      }
+
+      const esNuevoMenos90Dias = (creator.dias_en_agencia || 0) < 90;
+
       return {
         creator_id: creator.id,
         mes_referencia: mesRef,
@@ -162,12 +223,19 @@ serve(async (req) => {
         grad_1m,
         dias_extra_22,
         bono_extra_usd,
+        bono_dias_extra_usd: bono_extra_usd, // Alias para compatibilidad frontend
         req_diam_por_dia,
         req_horas_por_dia,
         proximo_objetivo_tipo,
         proximo_objetivo_valor,
         es_prioridad_300k,
-        cerca_de_objetivo
+        cerca_de_objetivo,
+        ...semaforosData,
+        texto_creador: textoCreador,
+        texto_manager: textoManager,
+        meta_recomendada: metaRecomendada,
+        fecha_calculo: hoy.toISOString().split('T')[0],
+        es_nuevo_menos_90_dias: esNuevoMenos90Dias
       };
     }) || [];
 
