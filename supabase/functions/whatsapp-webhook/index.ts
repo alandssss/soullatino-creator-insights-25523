@@ -7,7 +7,6 @@ interface TwilioWebhookBody {
   MessageSid: string;
 }
 
-// 👇 crear supabase UNA sola vez
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -45,7 +44,7 @@ Deno.serve(async (req) => {
 
     console.log(`[whatsapp-webhook] Mensaje de ${phoneNumber}: ${mensaje}`);
 
-    // buscar creator
+    // buscar creator por teléfono (3 variantes)
     const { data: creator, error: creatorError } = await supabase
       .from("creators")
       .select("id, nombre, telefono")
@@ -56,19 +55,24 @@ Deno.serve(async (req) => {
     let respuesta = "";
 
     if (creatorError || !creator) {
-      respuesta = `📞 No encontramos tu número en Soullatino.\nEscribe a tu manager para registrarte.`;
+      // no está registrado
+      respuesta = `Hola 👋\nNo encontramos tu número en la agencia Soullatino.\nEscríbele a tu manager para que te registre y puedas ver tus batallas.`;
     } else {
+      // está registrado
+      const nombre = creator.nombre || "creador";
+
       if (mensaje === "batalla") {
-        respuesta = await getBatalla(supabase, creator.id, creator.nombre);
+        respuesta = await getBatalla(supabase, creator.id, nombre);
       } else if (mensaje === "batallas") {
-        respuesta = await getBatallas(supabase, creator.id);
+        respuesta = await getBatallas(supabase, creator.id, nombre);
       } else if (mensaje === "ayuda") {
-        respuesta = getAyuda();
+        respuesta = getAyuda(nombre);
       } else {
-        respuesta = `👋 Hola ${creator.nombre ?? ""}.\nEnvía:\n• "batalla" → tu próxima batalla\n• "batallas" → tus próximas 3\n• "ayuda" → ver comandos\n— Agencia Soullatino`;
+        // mensaje por defecto
+        respuesta = `Hola ${nombre} 👋\nSoy el asistente de Soullatino.\n\nPuedes escribir:\n• *batalla* → tu próxima batalla\n• *batallas* → tus próximas 3 batallas\n• *ayuda* → ver comandos\n\n— Agencia Soullatino`;
       }
 
-      // log
+      // log solo si sí es un creador
       await supabase.from("whatsapp_activity").insert({
         creator_id: creator.id,
         user_email: "Sistema WhatsApp",
@@ -105,10 +109,12 @@ Deno.serve(async (req) => {
   }
 });
 
+// ====== helpers de mensajes ======
+
 async function getBatalla(supabase: any, creatorId: string, nombre: string): Promise<string> {
   const hoy = new Date().toISOString().split("T")[0];
 
-  const { data: batalla, error } = await supabase
+  const { data: batalla } = await supabase
     .from("batallas")
     .select("*")
     .eq("creator_id", creatorId)
@@ -119,27 +125,28 @@ async function getBatalla(supabase: any, creatorId: string, nombre: string): Pro
     .limit(1)
     .single();
 
-  if (error || !batalla) {
-    return `ℹ️ No tienes batallas programadas en este momento.\nSi esperas una asignación, contacta a tu manager.`;
+  if (!batalla) {
+    return `Hola ${nombre} 👋\nPor ahora no tienes batallas programadas.\nSi esperabas una asignación, avisa a tu manager 🧡\n\n— Agencia Soullatino`;
   }
 
-  return `📣 Próxima batalla Soullatino
+  return `Hola ${nombre} 👋
+Esta es tu *próxima batalla*:
 
 📅 Fecha: ${batalla.fecha}
 🕒 Hora: ${batalla.hora}
 🆚 Contrincante: ${batalla.oponente}
-🧤 Potenciadores/guantes: ${batalla.guantes || "Sin especificar"}
-🎯 Reto: ${batalla.reto || "Sin especificar"}
-⚡ Modalidad: ${batalla.tipo || "Estándar"}
+🧤 Guantes/potenciadores: ${batalla.guantes || "sin especificar"}
+🎯 Reto: ${batalla.reto || "sin especificar"}
+⚡ Modalidad: ${batalla.tipo || "estándar"}
 
-Conéctate 10 minutos antes.
+⏰ Conéctate 10 minutos antes.
 — Agencia Soullatino`;
 }
 
-async function getBatallas(supabase: any, creatorId: string): Promise<string> {
+async function getBatallas(supabase: any, creatorId: string, nombre: string): Promise<string> {
   const hoy = new Date().toISOString().split("T")[0];
 
-  const { data: batallas, error } = await supabase
+  const { data: batallas } = await supabase
     .from("batallas")
     .select("*")
     .eq("creator_id", creatorId)
@@ -149,25 +156,26 @@ async function getBatallas(supabase: any, creatorId: string): Promise<string> {
     .order("hora", { ascending: true })
     .limit(3);
 
-  if (error || !batallas || batallas.length === 0) {
-    return `ℹ️ No tienes batallas programadas actualmente.\nSi esperas una asignación, contacta a tu manager.`;
+  if (!batallas || batallas.length === 0) {
+    return `Hola ${nombre} 👋\nNo tienes batallas programadas en este momento.\nSi alguna te falta o hubo cambio, escríbele a la agencia 🙌\n\n— Agencia Soullatino`;
   }
 
-  let msg = `📋 Próximas batallas asignadas:\n\n`;
+  let msg = `Hola ${nombre} 👋\nEstas son tus *próximas batallas*:\n\n`;
   batallas.forEach((b: any, i: number) => {
     msg += `${i + 1}) ${b.fecha} ${b.hora} — vs ${b.oponente}\n`;
   });
-  msg += `\nSi alguna fecha no te corresponde, avisa a la agencia.\n— Agencia Soullatino`;
+  msg += `\nSi alguna fecha no te corresponde, avisa a la agencia 🙌\n— Agencia Soullatino`;
 
   return msg;
 }
 
-function getAyuda(): string {
-  return `📲 Comandos Soullatino:
+function getAyuda(nombre: string): string {
+  return `Hola ${nombre} 👋
+Estos son los comandos disponibles:
 
-• batalla → muestra tu próxima batalla
-• batallas → muestra tus próximas 3
-• ayuda → muestra este menú
+• *batalla* → muestra tu próxima batalla
+• *batallas* → muestra tus próximas 3 batallas
+• *ayuda* → muestra este menú
 
 — Agencia Soullatino`;
 }
