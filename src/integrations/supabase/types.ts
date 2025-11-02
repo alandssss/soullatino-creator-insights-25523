@@ -1075,6 +1075,24 @@ export type Database = {
         Args: { p_email: string; p_ip: string }
         Returns: boolean
       }
+      get_recommendations_today: {
+        Args: never
+        Returns: {
+          creator_id: string
+          creator_username: string
+          diamantes_actuales: number
+          dias_actuales: number
+          dias_restantes: number
+          faltan_dias: number
+          faltan_horas: number
+          horas_actuales: number
+          horas_min_dia_sugeridas: number
+          phone_e164: string
+          prioridad_riesgo: number
+          proximo_objetivo: string
+          recommendation_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
