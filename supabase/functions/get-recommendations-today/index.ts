@@ -48,16 +48,19 @@ serve(async (req) => {
 
     const snapshotIds = new Set((snapshotStats || []).map(s => s.creator_id));
 
-    // Obtener recomendaciones de la vista materializada
-    const { data: recommendations, error } = await supabase
-      .from('recommendations_today')
-      .select('*')
-      .order('prioridad_riesgo', { ascending: false });
+    // Obtener recomendaciones mediante RPC segura (evita acceso directo a la MV)
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('get_recommendations_today');
 
-    if (error) {
-      console.error('[get-recommendations-today] Error:', error);
-      throw error;
+    if (rpcError) {
+      console.error('[get-recommendations-today] RPC Error:', rpcError);
+      throw rpcError;
     }
+
+    // Ordenar por prioridad en código para mantener comportamiento actual
+    const recommendations = (rpcData || []).sort(
+      (a: any, b: any) => (b?.prioridad_riesgo || 0) - (a?.prioridad_riesgo || 0)
+    );
 
     // @snapshot: Filter to only snapshot creators
     const filtered = (recommendations || []).filter(r => snapshotIds.has(r.creator_id));
