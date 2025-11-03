@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     if (creatorError || !creator) {
       // no está registrado
-      respuesta = `Hola 👋\nNo encontramos tu número en la agencia Soullatino.\nEscríbele a tu manager para que te registre y puedas ver tus batallas.`;
+      respuesta = `📞 No encontramos tu número en la agencia.\nPor favor escribe a tu manager para registrarte.\n\n— Agencia Soullatino`;
     } else {
       // está registrado
       const nombre = creator.nombre || "creador";
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         respuesta = getAyuda(nombre);
       } else {
         // mensaje por defecto
-        respuesta = `Hola ${nombre} 👋\nSoy el asistente de Soullatino.\n\nPuedes escribir:\n• *batalla* → tu próxima batalla\n• *batallas* → tus próximas 3 batallas\n• *ayuda* → ver comandos\n\n— Agencia Soullatino`;
+        respuesta = `👋 Hola ${nombre}\n\nEnvía "batalla" para ver tu próxima batalla\no "ayuda" para conocer los comandos.\n\n— Agencia Soullatino`;
       }
 
       // log solo si sí es un creador
@@ -126,20 +126,19 @@ async function getBatalla(supabase: any, creatorId: string, nombre: string): Pro
     .single();
 
   if (!batalla) {
-    return `Hola ${nombre} 👋\nPor ahora no tienes batallas programadas.\nSi esperabas una asignación, avisa a tu manager 🧡\n\n— Agencia Soullatino`;
+    return `ℹ️ Hola ${nombre}\n\nNo tienes batallas programadas en este momento.\nSi esperas una asignación, contacta a tu manager.\n\n— Agencia Soullatino`;
   }
 
-  return `Hola ${nombre} 👋
-Esta es tu *próxima batalla*:
+  return `📣 Próxima batalla
 
 📅 Fecha: ${batalla.fecha}
 🕒 Hora: ${batalla.hora}
 🆚 Contrincante: ${batalla.oponente}
-🧤 Guantes/potenciadores: ${batalla.guantes || "sin especificar"}
+🧤 Potenciadores/guantes: ${batalla.guantes || "sin especificar"}
 🎯 Reto: ${batalla.reto || "sin especificar"}
 ⚡ Modalidad: ${batalla.tipo || "estándar"}
 
-⏰ Conéctate 10 minutos antes.
+Conéctate 10 minutos antes.
 — Agencia Soullatino`;
 }
 
@@ -157,25 +156,24 @@ async function getBatallas(supabase: any, creatorId: string, nombre: string): Pr
     .limit(3);
 
   if (!batallas || batallas.length === 0) {
-    return `Hola ${nombre} 👋\nNo tienes batallas programadas en este momento.\nSi alguna te falta o hubo cambio, escríbele a la agencia 🙌\n\n— Agencia Soullatino`;
+    return `ℹ️ Hola ${nombre}\n\nNo tienes batallas programadas en este momento.\nSi esperas una asignación, contacta a tu manager.\n\n— Agencia Soullatino`;
   }
 
-  let msg = `Hola ${nombre} 👋\nEstas son tus *próximas batallas*:\n\n`;
+  let msg = `📋 Próximas batallas asignadas:\n\n`;
   batallas.forEach((b: any, i: number) => {
     msg += `${i + 1}) ${b.fecha} ${b.hora} — vs ${b.oponente}\n`;
   });
-  msg += `\nSi alguna fecha no te corresponde, avisa a la agencia 🙌\n— Agencia Soullatino`;
+  msg += `\nSi alguna fecha no te corresponde, avisa a la agencia.\n— Agencia Soullatino`;
 
   return msg;
 }
 
 function getAyuda(nombre: string): string {
-  return `Hola ${nombre} 👋
-Estos son los comandos disponibles:
+  return `📲 Comandos disponibles:
 
-• *batalla* → muestra tu próxima batalla
-• *batallas* → muestra tus próximas 3 batallas
-• *ayuda* → muestra este menú
+• batalla → muestra tu próxima batalla
+• batallas → muestra tus próximas 3
+• ayuda → muestra este menú
 
 — Agencia Soullatino`;
 }
