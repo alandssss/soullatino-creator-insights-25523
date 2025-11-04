@@ -1,6 +1,8 @@
-// Edge Function: Envía WhatsApp automático cuando se crea una batalla
+// Edge Function: Envía WhatsApp automático cuando se crea/actualiza una batalla
+// Soporta INSERT y UPDATE con mensajes personalizados
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -13,6 +15,22 @@ const WHATS_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM")!;
 
 // Seguridad del hook
 const HOOK_SECRET = Deno.env.get("BATTLE_CREATED_HOOK_SECRET")!;
+
+// ============= VALIDACIÓN CON ZOD =============
+
+const RequestSchema = z.object({
+  batalla_id: z.string().uuid("ID de batalla inválido"),
+  operation: z.enum(['INSERT', 'UPDATE']).optional().default('INSERT')
+});
+
+const BatallaFieldsSchema = z.object({
+  oponente: z.string().max(100).regex(/^[a-zA-Z0-9\sáéíóúñÁÉÍÓÚÑ_-]+$/).optional().nullable(),
+  reto: z.string().max(200).optional().nullable(),
+  tipo: z.string().max(50).optional().nullable(),
+  guantes: z.string().max(100).optional().nullable()
+});
+
+// ============= UTILIDADES =============
 
 function fmtFecha(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -33,7 +51,23 @@ Deno.serve(async (req) => {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const { batalla_id } = await req.json();
+    // Validar request con Zod
+    const rawBody = await req.json();
+    const parseResult = RequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error("[battle-created] Invalid request:", parseResult.error.errors);
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        reason: "validation_error",
+        errors: parseResult.error.errors
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { batalla_id, operation } = parseResult.data;
 
     // Leer batalla + creador
     const { data: batalla, error } = await supabase
@@ -68,17 +102,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Mensaje profesional Soullatino
-    const msg = `📣 Nueva batalla asignada
+    // Validar campos de batalla antes de construir mensaje
+    const fieldsValidation = BatallaFieldsSchema.safeParse({
+      oponente: batalla.oponente,
+      reto: batalla.reto,
+      tipo: batalla.tipo,
+      guantes: batalla.guantes
+    });
+
+    const validatedFields = fieldsValidation.success 
+      ? fieldsValidation.data 
+      : { oponente: null, reto: null, tipo: null, guantes: null };
+
+    // Mensaje personalizado según operación
+    const accion = operation === 'UPDATE' ? 'actualizada' : 'asignada';
+    const icono = operation === 'UPDATE' ? '🔄' : '📣';
+    const recordatorio = operation === 'UPDATE' 
+      ? '⚠️ Revisa los cambios y confirma tu disponibilidad.' 
+      : 'Conéctate 10 minutos antes.';
+
+    const msg = `${icono} Batalla ${accion}
 
 📅 Fecha: ${fmtFecha(batalla.fecha)}
 🕒 Hora: ${fmtHora(batalla.hora)}
-🆚 Contrincante: ${batalla.oponente ?? "por confirmar"}
-🧤 Potenciadores/guantes: ${batalla.guantes || "sin especificar"}
-🎯 Reto: ${batalla.reto?.trim() ? batalla.reto : "sin especificar"}
-⚡ Modalidad: ${batalla.tipo || "estándar"}
+🆚 Contrincante: ${validatedFields.oponente ?? "por confirmar"}
+🧤 Potenciadores: ${validatedFields.guantes || "sin especificar"}
+🎯 Reto: ${validatedFields.reto?.trim() ? validatedFields.reto : "sin especificar"}
+⚡ Modalidad: ${validatedFields.tipo || "estándar"}
 
-Conéctate 10 minutos antes.
+${recordatorio}
 — Agencia Soullatino`;
 
     // Enviar por Twilio
@@ -101,10 +153,21 @@ Conéctate 10 minutos antes.
     });
 
     const twJson = await tw.json().catch(() => ({}));
+    
+    // Logging sanitizado
     if (!tw.ok) {
-      console.error("[battle-created] Twilio error:", tw.status, twJson);
+      console.error("[battle-created] Twilio error:", tw.status, {
+        error_code: twJson.code || 'unknown',
+        message: twJson.message?.substring(0, 100) || 'No message',
+        batalla_id,
+        operation
+      });
     } else {
-      console.log("[battle-created] WhatsApp enviado:", twJson.sid);
+      console.log("[battle-created] WhatsApp sent successfully:", {
+        sid: twJson.sid?.substring(0, 10) + "...",
+        batalla_id,
+        operation
+      });
     }
 
     // Registrar en logs
@@ -116,7 +179,12 @@ Conéctate 10 minutos antes.
       creator_name: creator?.nombre || null,
     });
 
-    return new Response(JSON.stringify({ ok: true, twilio_sid: twJson.sid || null }), {
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      twilio_sid: twJson.sid || null,
+      operation,
+      batalla_id
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

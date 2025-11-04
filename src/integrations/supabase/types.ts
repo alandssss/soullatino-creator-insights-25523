@@ -93,6 +93,13 @@ export type Database = {
             foreignKeyName: "batallas_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batallas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -267,6 +274,13 @@ export type Database = {
             foreignKeyName: "creator_bonificaciones_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_bonificaciones_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -348,6 +362,13 @@ export type Database = {
             foreignKeyName: "creator_daily_stats_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -384,6 +405,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_interactions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
           {
@@ -432,6 +460,13 @@ export type Database = {
             foreignKeyName: "creator_live_daily_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_live_daily_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -474,6 +509,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_metas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
           {
@@ -549,6 +591,13 @@ export type Database = {
             foreignKeyName: "creator_monthly_stats_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_monthly_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -615,6 +664,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_recommendations_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
           {
@@ -891,6 +947,13 @@ export type Database = {
             foreignKeyName: "supervision_live_logs_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervision_live_logs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -999,6 +1062,13 @@ export type Database = {
             foreignKeyName: "whatsapp_activity_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_activity_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
@@ -1034,10 +1104,66 @@ export type Database = {
             foreignKeyName: "creator_daily_stats_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_batallas_pendientes_notificacion: {
+        Row: {
+          batalla_creada: string | null
+          batalla_id: string | null
+          creador: string | null
+          estado: string | null
+          estado_notificacion: string | null
+          estado_telefono: string | null
+          fecha: string | null
+          hora: string | null
+          notificacion_enviada: string | null
+          telefono: string | null
+          tiktok_username: string | null
+        }
+        Relationships: []
+      }
+      v_creators_sin_telefono: {
+        Row: {
+          agente: string | null
+          estado_telefono: string | null
+          id: string | null
+          manager: string | null
+          nombre: string | null
+          status: string | null
+          telefono: string | null
+          tiktok_username: string | null
+        }
+        Insert: {
+          agente?: string | null
+          estado_telefono?: never
+          id?: string | null
+          manager?: string | null
+          nombre?: string | null
+          status?: string | null
+          telefono?: string | null
+          tiktok_username?: string | null
+        }
+        Update: {
+          agente?: string | null
+          estado_telefono?: never
+          id?: string | null
+          manager?: string | null
+          nombre?: string | null
+          status?: string | null
+          telefono?: string | null
+          tiktok_username?: string | null
+        }
+        Relationships: []
       }
       v_ia_effectiveness: {
         Row: {
