@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimit } from "../_shared/rate-limit.ts";
 import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
+import { validate } from "../_shared/validation.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -244,16 +246,15 @@ serve(async (req) => {
       }
     }
 
-    const { creator_id } = await req.json();
-    if (!creator_id) {
-      return withCORS(
-        new Response(JSON.stringify({ error: "creator_id requerido" }), { 
-          status: 400, 
-          headers: { "Content-Type": "application/json" } 
-        }),
-        origin
-      );
-    }
+    // Validate input
+    const schema = z.object({
+      creator_id: z.string().uuid("ID de creador inválido"),
+    });
+
+    const result = await validate(req, schema);
+    if (!result.ok) return withCORS(result.response!, origin);
+
+    const { creator_id } = result.data;
 
     const hoyTZ = nowInTZ(TZ);
     const inicioMes = firstDayOfMonth(hoyTZ);

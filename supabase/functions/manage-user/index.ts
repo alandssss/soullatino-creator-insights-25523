@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0'
 import { corsHeaders } from '../_shared/cors.ts'
+import { validate } from '../_shared/validation.ts'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -64,7 +66,20 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { action, email, password, role } = await req.json()
+    // Validate input
+    const schema = z.object({
+      action: z.enum(['create', 'update_password'], { 
+        errorMap: () => ({ message: "Acción debe ser 'create' o 'update_password'" })
+      }),
+      email: z.string().email("Email inválido").max(255),
+      password: z.string().min(6, "Password debe tener al menos 6 caracteres").max(128),
+      role: z.enum(['admin', 'manager', 'viewer', 'supervisor', 'reclutador']).optional(),
+    })
+
+    const result = await validate(req, schema)
+    if (!result.ok) return result.response
+
+    const { action, email, password, role } = result.data
 
     if (action === 'create') {
       // Crear nuevo usuario

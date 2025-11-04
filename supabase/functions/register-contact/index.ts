@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { rateLimit } from "../_shared/rate-limit.ts";
 import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
+import { validate } from "../_shared/validation.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -17,15 +19,24 @@ serve(async (req) => {
   try {
     console.log('[register-contact] Starting...');
     
+    // Validate input
+    const schema = z.object({
+      creator_id: z.string().uuid("ID de creador inválido"),
+      creator_username: z.string().max(100).optional(),
+      phone_e164: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono E.164 inválido").optional(),
+      channel: z.enum(['WhatsApp', 'SMS', 'Email', 'Call'], { 
+        errorMap: () => ({ message: "Canal debe ser WhatsApp, SMS, Email o Call" })
+      }),
+    });
+
+    const result = await validate(req, schema);
+    if (!result.ok) return withCORS(result.response!, origin);
+
+    const { creator_id, creator_username, phone_e164, channel } = result.data;
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { creator_id, creator_username, phone_e164, channel } = await req.json();
-
-    if (!creator_id || !channel) {
-      throw new Error('Missing required fields: creator_id, channel');
-    }
 
     // Obtener user agent e IP
     const userAgent = req.headers.get('user-agent') || 'Unknown';

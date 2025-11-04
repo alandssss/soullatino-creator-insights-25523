@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validate } from "../_shared/validation.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +14,16 @@ serve(async (req) => {
   }
 
   try {
+    // Validate input
+    const schema = z.object({
+      creatorId: z.string().uuid("ID de creador inválido"),
+    });
+
+    const result = await validate(req, schema);
+    if (!result.ok) return result.response;
+
+    const { creatorId } = result.data;
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -22,15 +34,6 @@ serve(async (req) => {
         }
       }
     );
-
-    const { creatorId } = await req.json();
-
-    if (!creatorId) {
-      return new Response(
-        JSON.stringify({ error: "creatorId es requerido" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Calcular fecha del mes actual
     const fechaReporte = new Date();
