@@ -108,3 +108,15 @@ verify_jwt = false
 
 [functions.battle-created]
 verify_jwt = false
+
+# Endpoint público para pruebas manuales de WhatsApp (solo desarrollo)
+[functions.rapid-endpoint]
+verify_jwt = false
+
+# API interna - envío individual de batallas (requiere service role key)
+[functions.send-batalla]
+verify_jwt = true
+
+# CRON processor - procesamiento de cola de batallas (requiere service role key)
+[functions.process-battle-queue]
+verify_jwt = true
