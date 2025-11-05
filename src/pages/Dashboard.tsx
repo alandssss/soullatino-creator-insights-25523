@@ -20,7 +20,6 @@ import { LoadingState } from "@/components/shared/LoadingState";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
 import { KPIGraduacionNuevos } from "@/components/kpis/KPIGraduacionNuevos";
-import { NuevosCreadoresDetailPanel } from "@/components/kpis/NuevosCreadoresDetailPanel";
 import { GraduacionAlert } from "@/components/kpis/GraduacionAlert";
 import { isWebGLAvailable, getWebGLErrorMessage } from "@/utils/webglSupport";
 import { WebGLFallback } from "@/components/dashboard/WebGLFallback";
@@ -266,8 +265,6 @@ const Dashboard = () => {
           <KPIGraduacionNuevos />
           <OnboardingChecklist />
         </div>
-
-        <NuevosCreadoresDetailPanel />
 
         <LowActivityPanel />
         
