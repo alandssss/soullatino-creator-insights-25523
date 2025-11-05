@@ -1303,7 +1303,6 @@ export type Database = {
           dias_en_agencia: number | null
           dias_live_mes: number | null
           faltan_para_100k: number | null
-          fecha_incorporacion: string | null
           graduado: boolean | null
           horas_live_mes: number | null
           id: string | null

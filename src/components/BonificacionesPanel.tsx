@@ -207,27 +207,29 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               </CardContent>
             </Card>
 
-            {/* Mensaje para el Creador */}
-            {bonificacion?.texto_creador && (
-              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    💬 Mensaje para ti
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm sm:text-base">{bonificacion.texto_creador}</p>
-                  {creatorPhone && (
-                    <WhatsappButton
-                      phone={creatorPhone}
-                      country="MX"
-                      message={bonificacion.texto_creador}
-                      className="w-full"
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            {/* Mensaje para el Creador - SIEMPRE visible */}
+            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  💬 Mensaje Personalizado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm sm:text-base">
+                  {bonificacion?.texto_creador || 
+                   `¡Hola ${creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
+                </p>
+                {creatorPhone && (
+                  <WhatsappButton
+                    phone={creatorPhone}
+                    country="MX"
+                    message={bonificacion?.texto_creador || 
+                             `Hola ${creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
+                    className="w-full"
+                  />
+                )}
+              </CardContent>
+            </Card>
 
             {/* Notas para el Manager */}
             {bonificacion?.texto_manager && (userRole === 'admin' || userRole === 'manager') && (

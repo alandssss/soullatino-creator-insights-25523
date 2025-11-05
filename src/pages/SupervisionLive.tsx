@@ -64,6 +64,20 @@ export default function SupervisionLive() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
 
+  // Detectar parámetro creatorId en URL para pre-filtrar
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const preSelectedCreatorId = params.get('creatorId');
+    
+    if (preSelectedCreatorId && creators.length > 0) {
+      const creator = creators.find(c => c.id === preSelectedCreatorId);
+      if (creator) {
+        setSelectedCreator(creator);
+        setDrawerOpen(true);
+      }
+    }
+  }, [creators]);
+
   useEffect(() => {
     checkAccess();
     loadData();

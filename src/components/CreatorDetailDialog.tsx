@@ -21,10 +21,11 @@ import { interactionService } from "@/services/interactionService";
 import { AsignarMetaDialog } from "./AsignarMetaDialog";
 import { CreatorBasicInfo } from "./creator-detail/CreatorBasicInfo";
 import { CreatorInteractions } from "./creator-detail/CreatorInteractions";
-import { CreatorAlerts } from "./creator-detail/CreatorAlerts";
 import { FeedbackGuide } from "./FeedbackGuide";
 import { AlertCircle, Lightbulb, Swords } from "lucide-react";
-import { AddBattleDialog } from "./creator-detail/AddBattleDialog";
+import { CreatorRiskPanel } from "./creator-detail/CreatorRiskPanel";
+import { CreatorBattlesPanel } from "./creator-detail/CreatorBattlesPanel";
+import { CreatorSupervisionHistory } from "./creator-detail/CreatorSupervisionHistory";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -46,7 +47,6 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   const [whatsappPreview, setWhatsappPreview] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [dailyStats, setDailyStats] = useState<any>(null);
-  const [addBattleDialogOpen, setAddBattleDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -376,17 +376,6 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   message={buildWaMessage(creator)}
                   className="col-span-3"
                 />
-
-                {/* Botón Agregar Batalla Oficial */}
-                <Button 
-                  variant="default"
-                  onClick={() => setAddBattleDialogOpen(true)}
-                  className="col-span-3 gap-2"
-                  size="sm"
-                >
-                  <Swords className="h-4 w-4" />
-                  Agregar Batalla Oficial
-                </Button>
                 
                 {/* Botón Vista Previa del Mensaje existente */}
                 <div className="col-span-3">
@@ -443,7 +432,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           </Card>
 
           <Tabs defaultValue="bonificaciones" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-2">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-2">
               <TabsTrigger value="bonificaciones" className="gap-2">
                 <Award className="h-4 w-4" />
                 <span className="hidden sm:inline">Bonificaciones</span>
@@ -454,33 +443,15 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                 <span className="hidden sm:inline">Alertas</span>
                 <span className="sm:hidden">⚠️</span>
               </TabsTrigger>
-              <TabsTrigger value="advice" className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Consejos IA</span>
-                <span className="sm:hidden">IA</span>
-              </TabsTrigger>
-              <TabsTrigger value="guia" className="gap-2">
-                <Lightbulb className="h-4 w-4" />
-                <span className="hidden sm:inline">Guía</span>
-                <span className="sm:hidden">💡</span>
-              </TabsTrigger>
-              <TabsTrigger value="metas" className="gap-2">
-                <Target className="h-4 w-4" />
-                <span className="hidden sm:inline">Metas</span>
-                <span className="sm:hidden">🎯</span>
-              </TabsTrigger>
-              <TabsTrigger value="milestones" className="gap-2">
-                <Target className="h-4 w-4" />
-                <span className="hidden sm:inline">Hitos</span>
-              </TabsTrigger>
-              <TabsTrigger value="growth" className="gap-2">
-                <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Crecimiento</span>
-                <span className="sm:hidden">Stats</span>
-              </TabsTrigger>
               <TabsTrigger value="agenda" className="gap-2">
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Agenda</span>
+                <span className="sm:hidden">📅</span>
+              </TabsTrigger>
+              <TabsTrigger value="analisis" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Análisis</span>
+                <span className="sm:hidden">📊</span>
               </TabsTrigger>
             </TabsList>
 
@@ -493,140 +464,24 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsContent>
 
             <TabsContent value="alertas" className="space-y-4 mt-6">
-              <Card className="neo-card-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    Alertas de Este Creador
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CreatorAlerts creatorId={creator.id} />
-                </CardContent>
-              </Card>
+              <CreatorRiskPanel creatorId={creator.id} />
+              <CreatorSupervisionHistory creatorId={creator.id} />
             </TabsContent>
 
-            <TabsContent value="metas" className="space-y-4 mt-6">
-              <Card className="neo-card-sm">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 backdrop-blur-sm">
-                        <Target className="h-5 w-5 text-primary" />
-                      </div>
-                      Metas Asignadas
-                    </CardTitle>
-                    {(userRole === 'admin' || userRole === 'manager') && (
-                      <Button
-                        onClick={() => setMetaDialogOpen(true)}
-                        variant="default"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <Target className="h-4 w-4" />
-                        Asignar Meta
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Las metas asignadas aparecerán aquí próximamente.
-                  </p>
-                </CardContent>
-              </Card>
+            <TabsContent value="agenda" className="space-y-4 mt-6">
+              <CreatorBattlesPanel 
+                creatorId={creator.id}
+                creatorName={creator.nombre}
+              />
+              <CreatorInteractions 
+                creatorId={creator.id}
+                interactions={interactions}
+                onInteractionAdded={fetchInteractions}
+              />
             </TabsContent>
 
-            <TabsContent value="advice" className="space-y-4 mt-6">
-              <Card className="neo-card-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 backdrop-blur-sm">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                      </div>
-                      Recomendación Inteligente
-                    </CardTitle>
-                    <Button
-                      onClick={generateAIAdvice}
-                      disabled={loadingAdvice}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {loadingAdvice ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generando...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Generar Nueva
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={loadingAdvice ? "Cargando recomendación..." : aiAdvice}
-                    onChange={(e) => setAiAdvice(e.target.value)}
-                    placeholder="Haz clic en 'Generar Nueva' para obtener una recomendación personalizada basada en datos históricos..."
-                    className="min-h-[180px] text-base neo-input focus:border-primary/50 transition-colors leading-relaxed"
-                    disabled={loadingAdvice}
-                  />
-                  <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-primary/5 backdrop-blur-sm border border-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      La recomendación se genera basándose en los datos históricos del creador y sus hitos de rendimiento
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="guia" className="space-y-4 mt-6">
-              <FeedbackGuide />
-            </TabsContent>
-
-            <TabsContent value="milestones" className="space-y-4 mt-6">
-              <Card className="neo-card-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-semibold flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-accent/10 backdrop-blur-sm">
-                      <Target className="h-5 w-5 text-accent" />
-                    </div>
-                    Próximos Hitos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  {getMilestones().map((milestone, idx) => (
-                    <div key={idx} className="p-4 rounded-lg neo-card-sm space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-base flex items-center gap-2">
-                          <span className="text-xl">{milestone.icon}</span>
-                          {milestone.label}
-                        </span>
-                        <span className="text-sm font-medium text-muted-foreground neo-card-sm px-3 py-1 rounded-full">
-                          Faltan {milestone.remaining.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="h-3 neo-input rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-primary via-primary to-accent transition-all duration-500"
-                          style={{ width: `${milestone.progress}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-muted-foreground text-right">
-                        {milestone.progress.toFixed(1)}% completado
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="growth" className="space-y-4 mt-6">
+            <TabsContent value="analisis" className="space-y-4 mt-6">
+              {/* Comparación Mensual */}
               <Card className="neo-card-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-xl font-semibold flex items-center gap-3">
@@ -671,14 +526,45 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   })()}
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            <TabsContent value="agenda" className="space-y-4 mt-6">
-              <CreatorInteractions 
-                creatorId={creator.id}
-                interactions={interactions}
-                onInteractionAdded={fetchInteractions}
-              />
+              {/* Próximos Hitos */}
+              <Card className="neo-card-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-accent/10 backdrop-blur-sm">
+                      <Target className="h-5 w-5 text-accent" />
+                    </div>
+                    Próximos Hitos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {getMilestones().map((milestone, idx) => (
+                    <div key={idx} className="p-4 rounded-lg neo-card-sm space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-base flex items-center gap-2">
+                          <span className="text-xl">{milestone.icon}</span>
+                          {milestone.label}
+                        </span>
+                        <span className="text-sm font-medium text-muted-foreground neo-card-sm px-3 py-1 rounded-full">
+                          Faltan {milestone.remaining.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="h-3 neo-input rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary via-primary to-accent transition-all duration-500"
+                          style={{ width: `${milestone.progress}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground text-right">
+                        {milestone.progress.toFixed(1)}% completado
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Guía de Feedback */}
+              <FeedbackGuide />
             </TabsContent>
           </Tabs>
         </div>
@@ -691,24 +577,9 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
         creatorId={creator.id}
         creatorName={creator.nombre}
         onMetaAsignada={() => {
-          // Aquí podrías recargar las metas si las estuvieras mostrando
           toast({
             title: "Meta asignada correctamente",
             description: `Se ha asignado una nueva meta a ${creator.nombre}`,
-          });
-        }}
-      />
-
-      {/* Dialog para agregar batalla oficial */}
-      <AddBattleDialog
-        open={addBattleDialogOpen}
-        onOpenChange={setAddBattleDialogOpen}
-        creatorId={creator.id}
-        creatorName={creator.nombre}
-        onBattleCreated={() => {
-          toast({
-            title: "✅ Batalla creada",
-            description: `Batalla oficial programada para ${creator.nombre}`,
           });
         }}
       />
