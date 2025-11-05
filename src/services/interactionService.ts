@@ -189,17 +189,20 @@ export class InteractionService {
       return { dias: 0, horas: 0, diamantes: 0 };
     }
 
-    // Sumar todas las estadísticas del mes
-    const totales = dailyStats.reduce(
-      (acc, day) => ({
-        dias: acc.dias + (day.dias_validos_live || 0),
-        horas: acc.horas + (day.duracion_live_horas || 0),
-        diamantes: acc.diamantes + (day.diamantes || 0),
-      }),
-      { dias: 0, horas: 0, diamantes: 0 }
-    );
+    // ✅ CORRECCIÓN: dias_validos_live y duracion_live_horas YA SON ACUMULADOS
+    // Tomar el registro más reciente para días/horas, sumar diamantes diarios
+    const ultimoDia = dailyStats[0]; // Más reciente (orden DESC)
+    
+    // Validación: si hay más de 31 registros, puede haber duplicados
+    if (dailyStats.length > 31) {
+      console.warn(`[InteractionService] Posibles datos duplicados para creator ${creatorId}: ${dailyStats.length} registros en el mes`);
+    }
 
-    return totales;
+    return {
+      dias: ultimoDia.dias_validos_live || 0,  // ✅ Ya es acumulado
+      horas: ultimoDia.duracion_live_horas || 0, // ✅ Ya es acumulado
+      diamantes: dailyStats.reduce((sum, day) => sum + (day.diamantes || 0), 0) // ✅ Suma diaria
+    };
   }
 
   /**
@@ -209,11 +212,13 @@ export class InteractionService {
     // Obtener estadísticas actualizadas del mes actual
     const stats = await InteractionService.getCurrentMonthStats(creator.id);
     
-    return `Hola soy ${userName} de SoulLatino, tus estadisticas al dia de ayer son:\n\n📅 ${
-      stats.dias
-    } Dias Live\n⏰ ${stats.horas.toFixed(1)} Horas Live\n💎 ${
-      stats.diamantes.toLocaleString()
-    } Diamantes\n\n¿Podemos hablar para ayudarte en como mejorar ese desempeño?`;
+    return `Hola soy ${userName} de SoulLatino, tus estadísticas del mes son:
+
+📅 ${stats.dias} Días Live
+⏰ ${stats.horas.toFixed(1)} Horas Live
+💎 ${stats.diamantes.toLocaleString()} Diamantes
+
+¿Podemos hablar para ayudarte a mejorar tu desempeño?`;
   }
 
   /**

@@ -13,15 +13,20 @@ interface CreatorKPIsProps {
 
 export function CreatorKPIs({ dailyStats, monthlyGrowth }: CreatorKPIsProps) {
   const totals = useMemo(() => {
-    return dailyStats.reduce(
-      (acc, stat) => ({
-        diamantes: acc.diamantes + (stat.diamantes || 0),
-        horas: acc.horas + (stat.duracion_live_horas || 0),
-        dias: acc.dias + (stat.dias_validos_live || 0),
-        seguidores: acc.seguidores + (stat.nuevos_seguidores || 0),
-      }),
-      { diamantes: 0, horas: 0, dias: 0, seguidores: 0 }
-    );
+    if (dailyStats.length === 0) {
+      return { diamantes: 0, horas: 0, dias: 0, seguidores: 0 };
+    }
+
+    // ✅ CORRECCIÓN: dias_validos_live y duracion_live_horas YA SON ACUMULADOS
+    // Tomar el más reciente para días/horas, sumar diamantes y seguidores diarios
+    const ultimoDia = dailyStats[0]; // Asumiendo orden DESC por fecha
+
+    return {
+      dias: ultimoDia.dias_validos_live || 0,  // ✅ Ya es acumulado del mes
+      horas: ultimoDia.duracion_live_horas || 0, // ✅ Ya es acumulado del mes
+      diamantes: dailyStats.reduce((sum, stat) => sum + (stat.diamantes || 0), 0), // ✅ Suma diaria
+      seguidores: dailyStats.reduce((sum, stat) => sum + (stat.nuevos_seguidores || 0), 0) // ✅ Suma diaria
+    };
   }, [dailyStats]);
 
   const getTrendIcon = (value: number) => {
