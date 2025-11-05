@@ -38,17 +38,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verificar autorización
-    const authHeader = req.headers.get("Authorization");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (!authHeader || !authHeader.includes(serviceKey!)) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
+    // Función pública para triggers - sin validación de auth
     const { batallaId } = await req.json();
 
     if (!batallaId) {
@@ -61,7 +51,8 @@ Deno.serve(async (req) => {
     console.log(`[send-batalla] Procesando batalla ${batallaId}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabase = createClient(supabaseUrl, serviceKey!);
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     // Obtener batalla con creator
     const { data: batalla, error: batallaError } = await supabase
@@ -124,8 +115,13 @@ Deno.serve(async (req) => {
     // Enviar vía Twilio
     const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-    const twilioFromNumber = Deno.env.get("TWILIO_WHATSAPP_FROM") || 
+    let twilioFromNumber = Deno.env.get("TWILIO_WHATSAPP_FROM") || 
                              Deno.env.get("TWILIO_WHATSAPP_NUMBER")!;
+    
+    // Asegurar que el número From también tenga el prefijo whatsapp:
+    if (!twilioFromNumber.startsWith("whatsapp:")) {
+      twilioFromNumber = `whatsapp:${twilioFromNumber}`;
+    }
 
     const basicAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
 
