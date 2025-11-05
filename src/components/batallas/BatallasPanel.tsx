@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2, Swords, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { OptInMasivoButton } from "./OptInMasivoButton";
+import { OptInMonitorPanel } from "./OptInMonitorPanel";
 
 interface Batalla {
   id: string;
@@ -233,6 +234,7 @@ export function BatallasPanel() {
   return (
     <div className="space-y-6 p-6">
       <OptInMasivoButton />
+      <OptInMonitorPanel />
       
       <Card className="neo-card">
         <CardHeader>
