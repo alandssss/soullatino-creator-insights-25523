@@ -48,6 +48,7 @@ export type Database = {
           hora: string
           id: string
           notas: string | null
+          notificacion_enviada: boolean | null
           oponente: string
           reto: string | null
           tipo: string | null
@@ -62,6 +63,7 @@ export type Database = {
           hora: string
           id?: string
           notas?: string | null
+          notificacion_enviada?: boolean | null
           oponente: string
           reto?: string | null
           tipo?: string | null
@@ -76,6 +78,7 @@ export type Database = {
           hora?: string
           id?: string
           notas?: string | null
+          notificacion_enviada?: boolean | null
           oponente?: string
           reto?: string | null
           tipo?: string | null
@@ -102,6 +105,51 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      battle_queue: {
+        Row: {
+          batalla_id: string
+          enqueued_at: string
+          id: string
+          intentos: number
+          last_error: string | null
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          batalla_id: string
+          enqueued_at?: string
+          id?: string
+          intentos?: number
+          last_error?: string | null
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          batalla_id?: string
+          enqueued_at?: string
+          id?: string
+          intentos?: number
+          last_error?: string | null
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_queue_batalla_id_fkey"
+            columns: ["batalla_id"]
+            isOneToOne: false
+            referencedRelation: "batallas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_batalla_id_fkey"
+            columns: ["batalla_id"]
+            isOneToOne: false
+            referencedRelation: "v_batallas_pendientes_notificacion"
+            referencedColumns: ["batalla_id"]
           },
         ]
       }
@@ -784,6 +832,42 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_whatsapp: {
+        Row: {
+          batalla_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          mensaje_enviado: string | null
+          respuesta: Json | null
+          telefono: string | null
+          twilio_message_sid: string | null
+          twilio_status: string | null
+        }
+        Insert: {
+          batalla_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          mensaje_enviado?: string | null
+          respuesta?: Json | null
+          telefono?: string | null
+          twilio_message_sid?: string | null
+          twilio_status?: string | null
+        }
+        Update: {
+          batalla_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          mensaje_enviado?: string | null
+          respuesta?: Json | null
+          telefono?: string | null
+          twilio_message_sid?: string | null
+          twilio_status?: string | null
+        }
+        Relationships: []
+      }
       prospectos_reclutamiento: {
         Row: {
           agente_asignado: string | null
@@ -1131,6 +1215,43 @@ export type Database = {
           tiktok_username: string | null
         }
         Relationships: []
+      }
+      v_battle_queue_monitor: {
+        Row: {
+          batalla_id: string | null
+          creator_nombre: string | null
+          creator_telefono: string | null
+          enqueued_at: string | null
+          estado: string | null
+          fecha: string | null
+          guantes: string | null
+          hora: string | null
+          id: string | null
+          intentos: number | null
+          last_error: string | null
+          notificacion_enviada: boolean | null
+          oponente: string | null
+          processed_at: string | null
+          reto: string | null
+          status: string | null
+          tipo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_queue_batalla_id_fkey"
+            columns: ["batalla_id"]
+            isOneToOne: false
+            referencedRelation: "batallas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_queue_batalla_id_fkey"
+            columns: ["batalla_id"]
+            isOneToOne: false
+            referencedRelation: "v_batallas_pendientes_notificacion"
+            referencedColumns: ["batalla_id"]
+          },
+        ]
       }
       v_creators_sin_telefono: {
         Row: {

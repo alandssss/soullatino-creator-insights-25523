@@ -1,234 +1,273 @@
-// deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
 
-interface TwilioWebhookBody {
-  From: string;
-  Body: string;
-  MessageSid?: string;
+const TIMEZONE = Deno.env.get("TIMEZONE") || "America/Chihuahua";
+
+// Normalizar teléfono: quitar whatsapp: y no-dígitos
+function normalizarTelefono(raw: string): string[] {
+  const limpio = raw.replace(/whatsapp:/gi, "").replace(/\D/g, "");
+  const variantes: string[] = [];
+  
+  // E.164 con +
+  if (limpio.length === 12 && limpio.startsWith("52")) {
+    variantes.push(`+${limpio}`);
+  } else if (limpio.length === 10) {
+    // Asumir México
+    variantes.push(`+52${limpio}`);
+  } else if (limpio.length > 10) {
+    variantes.push(`+${limpio}`);
+  }
+  
+  // Sin +
+  variantes.push(limpio);
+  
+  // Solo últimos 10 dígitos
+  if (limpio.length >= 10) {
+    variantes.push(limpio.slice(-10));
+  }
+  
+  return [...new Set(variantes)];
 }
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-function normalizePhone(from: string): string {
-  // deja solo dígitos (E.164 sin "+")
-  return (from || "").replace("whatsapp:", "").replace(/\D/g, "");
+// Formatear fecha larga en español
+function formatearFechaLarga(fecha: string): string {
+  try {
+    const d = new Date(fecha + "T00:00:00");
+    return d.toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: TIMEZONE
+    });
+  } catch {
+    return fecha;
+  }
 }
 
-function escapeXml(unsafe: string): string {
-  return (unsafe || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+// Formatear hora HH:mm
+function formatearHora(hora: string): string {
+  try {
+    const [hh, mm] = hora.split(":");
+    return `${hh}:${mm}`;
+  } catch {
+    return hora;
+  }
 }
 
 Deno.serve(async (req) => {
+  // CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      }
+    });
   }
 
   try {
     const contentType = req.headers.get("content-type") || "";
-    let body: TwilioWebhookBody;
+    let from = "";
+    let body = "";
 
+    // Parsear Twilio form data
     if (contentType.includes("application/x-www-form-urlencoded")) {
       const formData = await req.formData();
-      body = {
-        From: (formData.get("From") as string) || "",
-        Body: (formData.get("Body") as string) || "",
-        MessageSid: (formData.get("MessageSid") as string) || "",
-      };
+      from = formData.get("From")?.toString() || "";
+      body = (formData.get("Body")?.toString() || "").trim().toLowerCase();
     } else {
-      body = await req.json();
+      const json = await req.json();
+      from = json.From || "";
+      body = (json.Body || "").trim().toLowerCase();
     }
 
-    const phoneNumber = normalizePhone(body.From);
-    const mensaje = (body.Body || "").toLowerCase().trim();
+    console.log(`[whatsapp-webhook] From=${from}, Body=${body}`);
 
-    console.log(`[whatsapp-webhook] From=${phoneNumber} Msg="${mensaje}"`);
+    // Inicializar Supabase
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1) Intento por telefono_norm (solo dígitos)
-    let creator = null as null | { id: string; nombre: string; telefono: string };
-    {
-      const { data, error } = await supabase
-        .from("creators")
-        .select("id, nombre, telefono, telefono_norm")
-        .eq("telefono_norm", phoneNumber)
-        .maybeSingle();
+    // Normalizar teléfono
+    const variantes = normalizarTelefono(from);
+    console.log(`[whatsapp-webhook] Variantes teléfono:`, variantes);
 
-      if (error) console.error("[creators by telefono_norm] error:", error);
-      if (data) creator = data as any;
+    // Buscar creador
+    const { data: creators, error: creatorError } = await supabase
+      .from("creators")
+      .select("id, nombre, telefono")
+      .or(variantes.map(v => `telefono.eq.${v}`).join(","))
+      .limit(1);
+
+    if (creatorError) {
+      console.error("[whatsapp-webhook] Error buscando creador:", creatorError);
     }
 
-    // 2) Fallback por tus 3 variantes originales (si no hubo match)
-    if (!creator) {
-      const { data, error } = await supabase
-        .from("creators")
-        .select("id, nombre, telefono")
-        .or(`telefono.eq.${phoneNumber},telefono.eq.+${phoneNumber},telefono.eq.52${phoneNumber.slice(-10)}`)
-        .limit(1)
-        .maybeSingle();
+    const creator = creators?.[0];
+    console.log(`[whatsapp-webhook] Creador encontrado:`, creator?.nombre || "ninguno");
 
-      if (error) console.error("[creators by telefono variants] error:", error);
-      if (data) creator = data as any;
+    // Registrar actividad si existe whatsapp_activity
+    if (creator) {
+      try {
+        await supabase.from("whatsapp_activity").insert({
+          creator_id: creator.id,
+          user_email: "Twilio Inbound",
+          action_type: "mensaje_recibido",
+          message_preview: body.substring(0, 100),
+          creator_name: creator.nombre
+        });
+      } catch (waError) {
+        console.error("[whatsapp-webhook] Error registrando actividad:", waError);
+      }
     }
 
-    let respuesta = "";
+    let respuestaTwiML = "";
 
-    if (!creator) {
-      // no está registrado
-      respuesta =
-        `📞 No encontramos tu número en la agencia.\n` +
-        `Por favor escribe a tu manager para registrarte.\n\n— Agencia Soullatino`;
+    // Comandos
+    if (body.includes("ayuda") || body === "help") {
+      respuestaTwiML = `📲 Menú de comandos
 
-      // log de no registrado
-      await supabase.from("whatsapp_activity").insert({
-        creator_id: null,
-        user_email: "Sistema WhatsApp",
-        action_type: "numero_no_registrado",
-        message_preview: mensaje.substring(0, 100),
-        creator_name: null,
-        phone_from: phoneNumber,
-        raw_from: body.From,
-      });
-    } else {
-      // está registrado
-      const nombre = creator.nombre || "creador";
+• *consultar batallas* → ver tus próximas 3
+• *batalla* → tu próxima batalla
+• *quiero una batalla* → solicitar asignación
 
-      if (mensaje === "batalla") {
-        respuesta = await getBatalla(supabase, creator.id, nombre);
-      } else if (mensaje === "batallas") {
-        respuesta = await getBatallas(supabase, creator.id, nombre);
-      } else if (mensaje === "ayuda") {
-        respuesta = getAyuda();
+Tip: guarda este número como "Soullatino Recordatorios".
+— Agencia Soullatino`;
+
+    } else if (body.includes("consultar batallas") || body === "batallas") {
+      if (!creator) {
+        respuestaTwiML = `ℹ️ No te reconocemos en nuestro sistema. Contacta a tu manager.
+— Agencia Soullatino`;
       } else {
-        // mensaje por defecto
-        respuesta =
-          `👋 Hola ${nombre}\n\n` +
-          `Envía "batalla" para ver tu próxima batalla\n` +
-          `o "ayuda" para conocer los comandos.\n\n` +
-          `— Agencia Soullatino`;
+        // Buscar próximas 3 batallas
+        const { data: batallas } = await supabase
+          .from("batallas")
+          .select("fecha, hora, oponente")
+          .eq("creator_id", creator.id)
+          .eq("estado", "programada")
+          .gte("fecha", new Date().toISOString().split("T")[0])
+          .order("fecha", { ascending: true })
+          .order("hora", { ascending: true })
+          .limit(3);
+
+        if (!batallas || batallas.length === 0) {
+          respuestaTwiML = `ℹ️ Por ahora no tienes batallas programadas.
+Si esperas una asignación, contacta a tu manager.
+— Agencia Soullatino`;
+        } else {
+          let lista = "📋 Próximas batallas\n\n";
+          batallas.forEach((b, i) => {
+            const fechaCorta = new Date(b.fecha + "T00:00:00").toLocaleDateString("es-MX", {
+              day: "2-digit",
+              month: "short",
+              timeZone: TIMEZONE
+            });
+            lista += `${i + 1}) ${fechaCorta} ${formatearHora(b.hora)} — vs ${b.oponente}\n`;
+          });
+          lista += "\nSi alguna fecha no te corresponde, avisa a la agencia.\n— Agencia Soullatino";
+          respuestaTwiML = lista;
+        }
       }
 
-      // log si sí es un creador
-      await supabase.from("whatsapp_activity").insert({
-        creator_id: creator.id,
-        user_email: "Sistema WhatsApp",
-        action_type: "consulta_batalla",
-        message_preview: mensaje.substring(0, 100),
-        creator_name: creator.nombre,
-        phone_from: phoneNumber,
-        raw_from: body.From,
-      });
+    } else if (body === "batalla" || body.includes("próxima batalla")) {
+      if (!creator) {
+        respuestaTwiML = `ℹ️ No te reconocemos en nuestro sistema. Contacta a tu manager.
+— Agencia Soullatino`;
+      } else {
+        const { data: batallas } = await supabase
+          .from("batallas")
+          .select("*")
+          .eq("creator_id", creator.id)
+          .eq("estado", "programada")
+          .gte("fecha", new Date().toISOString().split("T")[0])
+          .order("fecha", { ascending: true })
+          .order("hora", { ascending: true })
+          .limit(1);
+
+        if (!batallas || batallas.length === 0) {
+          respuestaTwiML = `ℹ️ Por ahora no tienes batallas programadas.
+Si esperas una asignación, contacta a tu manager.
+— Agencia Soullatino`;
+        } else {
+          const b = batallas[0];
+          let msg = `📣 Próxima batalla\n\n`;
+          msg += `📅 Fecha: ${formatearFechaLarga(b.fecha)}\n`;
+          msg += `🕒 Hora: ${formatearHora(b.hora)}\n`;
+          msg += `🆚 Vs: ${b.oponente}\n`;
+          msg += `🧤 Guantes: ${b.guantes ? "Sí" : "No"}\n`;
+          if (b.reto) msg += `🎯 Reto: ${b.reto}\n`;
+          msg += `⚡ Tipo: ${b.tipo || "estándar"}\n\n`;
+          msg += `Conéctate 10 min antes. Si no puedes, avísanos 💬\n— Agencia Soullatino`;
+          respuestaTwiML = msg;
+        }
+      }
+
+    } else if (body.includes("quiero una batalla") || body.includes("solicitar batalla")) {
+      // Registrar solicitud
+      if (creator) {
+        try {
+          await supabase.from("whatsapp_activity").insert({
+            creator_id: creator.id,
+            user_email: "Twilio Inbound",
+            action_type: "solicitud_batalla",
+            message_preview: "Creador solicitó batalla vía WhatsApp",
+            creator_name: creator.nombre
+          });
+        } catch (waError) {
+          console.error("[whatsapp-webhook] Error registrando solicitud:", waError);
+        }
+      }
+
+      respuestaTwiML = `✅ ¡Solicitud registrada!
+Tu manager revisará disponibilidad y te confirmará por este medio.
+— Agencia Soullatino`;
+
+    } else if (body === "hola" || body === "hi" || body === "hello") {
+      respuestaTwiML = `👋 Hola
+Este canal te informa sobre tus batallas oficiales de Soullatino.
+
+Escribe *ayuda* para ver los comandos disponibles.
+— Agencia Soullatino`;
+
+    } else {
+      // Default
+      respuestaTwiML = `👋 Hola
+Este canal te informa sobre tus batallas oficiales de Soullatino.
+
+Escribe *ayuda* para ver los comandos disponibles.
+— Agencia Soullatino`;
     }
 
+    // Responder con TwiML
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message>${escapeXml(respuesta)}</Message>
+  <Message>${respuestaTwiML.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message>
 </Response>`;
 
     return new Response(twiml, {
       status: 200,
-      headers: { "Content-Type": "text/xml", ...corsHeaders },
+      headers: {
+        "Content-Type": "text/xml",
+        "Access-Control-Allow-Origin": "*"
+      }
     });
-  } catch (error) {
+
+  } catch (error: any) {
     console.error("[whatsapp-webhook] Error:", error);
+    
     const errorTwiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message>⚠️ Hubo un error procesando tu solicitud. Intenta de nuevo más tarde.
+  <Message>❌ Error procesando tu mensaje. Intenta más tarde o contacta a tu manager.
 — Agencia Soullatino</Message>
 </Response>`;
-    // DEVOLVEMOS 200 PARA EVITAR Error 11200 EN TWILIO
+
     return new Response(errorTwiml, {
       status: 200,
-      headers: { "Content-Type": "text/xml", ...corsHeaders },
+      headers: {
+        "Content-Type": "text/xml",
+        "Access-Control-Allow-Origin": "*"
+      }
     });
   }
 });
-
-// ====== helpers de mensajes ======
-
-async function getBatalla(supabase: any, creatorId: string, nombre: string): Promise<string> {
-  const hoy = new Date().toISOString().split("T")[0];
-
-  const { data: batalla, error } = await supabase
-    .from("batallas")
-    .select("fecha, hora, oponente, guantes, reto, tipo")
-    .eq("creator_id", creatorId)
-    .eq("estado", "programada")
-    .gte("fecha", hoy)
-    .order("fecha", { ascending: true })
-    .order("hora", { ascending: true })
-    .maybeSingle();
-
-  if (error) {
-    console.error("[getBatalla] error:", error);
-    return `⚠️ Ocurrió un error al consultar tu batalla. Informa al administrador.\n— Agencia Soullatino`;
-  }
-
-  if (!batalla) {
-    return (
-      `ℹ️ Hola ${nombre}\n\nNo tienes batallas programadas en este momento.\n` +
-      `Si esperas una asignación, contacta a tu manager.\n\n— Agencia Soullatino`
-    );
-  }
-
-  return `📣 Próxima batalla
-
-📅 Fecha: ${batalla.fecha}
-🕒 Hora: ${batalla.hora}
-🆚 Contrincante: ${batalla.oponente}
-🧤 Potenciadores/guantes: ${batalla.guantes ?? "sin especificar"}
-🎯 Reto: ${batalla.reto && batalla.reto.trim() !== "" ? batalla.reto : "sin especificar"}
-⚡ Modalidad: ${batalla.tipo || "estándar"}
-
-Conéctate 10 minutos antes.
-— Agencia Soullatino`;
-}
-
-async function getBatallas(supabase: any, creatorId: string, nombre: string): Promise<string> {
-  const hoy = new Date().toISOString().split("T")[0];
-
-  const { data: batallas, error } = await supabase
-    .from("batallas")
-    .select("fecha, hora, oponente")
-    .eq("creator_id", creatorId)
-    .eq("estado", "programada")
-    .gte("fecha", hoy)
-    .order("fecha", { ascending: true })
-    .order("hora", { ascending: true })
-    .limit(3);
-
-  if (error) {
-    console.error("[getBatallas] error:", error);
-    return `⚠️ Ocurrió un error al consultar tus batallas. Informa al administrador.\n— Agencia Soullatino`;
-  }
-
-  if (!batallas || batallas.length === 0) {
-    return (
-      `ℹ️ Hola ${nombre}\n\nNo tienes batallas programadas en este momento.\n` +
-      `Si esperas una asignación, contacta a tu manager.\n\n— Agencia Soullatino`
-    );
-  }
-
-  let msg = `📋 Próximas batallas asignadas:\n\n`;
-  batallas.forEach((b: any, i: number) => {
-    msg += `${i + 1}) ${b.fecha} ${b.hora} — vs ${b.oponente}\n`;
-  });
-  msg += `\nSi alguna fecha no te corresponde, avisa a la agencia.\n— Agencia Soullatino`;
-  return msg;
-}
-
-function getAyuda(): string {
-  return `📲 Comandos disponibles:
-
-• batalla → muestra tu próxima batalla
-• batallas → muestra tus próximas 3
-• ayuda → muestra este menú
-
-— Agencia Soullatino`;
-}
