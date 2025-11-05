@@ -382,6 +382,10 @@ serve(async (req) => {
       }
     }
 
+    // Sanitizar username para usar como creator_id
+    const sanitizeUsername = (u: string): string => 
+      u.trim().toLowerCase().replace(/[^a-z0-9_\.]/g, '_').substring(0, 50);
+
     // Detectar faltantes y crear creadores mínimos
     const missing: Array<{ username: string; phone: string | null; }>= [];
     for (const r of mapped) {
@@ -391,20 +395,26 @@ serve(async (req) => {
     }
 
     if (missing.length) {
+      console.log(`[upload-excel-recommendations] Creando/actualizando ${missing.length} creadores faltantes`);
+      
       const toCreate = missing.map(m => ({
         nombre: m.username,
         tiktok_username: m.username,
         telefono: m.phone,
-        creator_id: m.username // campo requerido (texto)
+        creator_id: sanitizeUsername(m.username) // campo requerido (texto sanitizado)
       }));
 
+      // Usar UPSERT para evitar errores de duplicados
       const { data: created, error: createErr } = await supabase
         .from('creators')
-        .insert(toCreate)
+        .upsert(toCreate, { 
+          onConflict: 'creator_id',
+          ignoreDuplicates: false 
+        })
         .select('id, tiktok_username, telefono');
 
       if (createErr) {
-        console.error('[upload-excel-recommendations] Error creating creators:', createErr);
+        console.error('[upload-excel-recommendations] Error creating/updating creators:', createErr);
         return withCORS(
           new Response(
             JSON.stringify({ error: createErr.message }),
@@ -414,6 +424,8 @@ serve(async (req) => {
         );
       }
 
+      console.log(`[upload-excel-recommendations] Procesados ${created?.length || 0} creadores exitosamente`);
+      
       (created || []).forEach(c => {
         if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
         if (c.telefono) byPhone.set(String(c.telefono), c.id);
