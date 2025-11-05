@@ -23,7 +23,8 @@ import { CreatorBasicInfo } from "./creator-detail/CreatorBasicInfo";
 import { CreatorInteractions } from "./creator-detail/CreatorInteractions";
 import { CreatorAlerts } from "./creator-detail/CreatorAlerts";
 import { FeedbackGuide } from "./FeedbackGuide";
-import { AlertCircle, Lightbulb } from "lucide-react";
+import { AlertCircle, Lightbulb, Swords } from "lucide-react";
+import { AddBattleDialog } from "./creator-detail/AddBattleDialog";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -45,6 +46,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   const [whatsappPreview, setWhatsappPreview] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [dailyStats, setDailyStats] = useState<any>(null);
+  const [addBattleDialogOpen, setAddBattleDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -374,6 +376,17 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   message={buildWaMessage(creator)}
                   className="col-span-3"
                 />
+
+                {/* Botón Agregar Batalla Oficial */}
+                <Button 
+                  variant="default"
+                  onClick={() => setAddBattleDialogOpen(true)}
+                  className="col-span-3 gap-2"
+                  size="sm"
+                >
+                  <Swords className="h-4 w-4" />
+                  Agregar Batalla Oficial
+                </Button>
                 
                 {/* Botón Vista Previa del Mensaje existente */}
                 <div className="col-span-3">
@@ -682,6 +695,20 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           toast({
             title: "Meta asignada correctamente",
             description: `Se ha asignado una nueva meta a ${creator.nombre}`,
+          });
+        }}
+      />
+
+      {/* Dialog para agregar batalla oficial */}
+      <AddBattleDialog
+        open={addBattleDialogOpen}
+        onOpenChange={setAddBattleDialogOpen}
+        creatorId={creator.id}
+        creatorName={creator.nombre}
+        onBattleCreated={() => {
+          toast({
+            title: "✅ Batalla creada",
+            description: `Batalla oficial programada para ${creator.nombre}`,
           });
         }}
       />

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Swords, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { OptInMasivoButton } from "./OptInMasivoButton";
+import { OptInWaMe } from "./OptInWaMe";
 import { OptInMonitorPanel } from "./OptInMonitorPanel";
 import { BatallasMonitorPanel } from "./BatallasMonitorPanel";
 
@@ -234,7 +234,7 @@ export function BatallasPanel() {
 
   return (
     <div className="space-y-6 p-6">
-      <OptInMasivoButton />
+      <OptInWaMe />
       <OptInMonitorPanel />
       
       <BatallasMonitorPanel />

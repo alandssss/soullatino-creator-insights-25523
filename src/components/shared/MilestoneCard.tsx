@@ -13,20 +13,27 @@ interface MilestoneCardProps {
 type MilestoneStatus = "ALCANZADO" | "EN PROCESO" | "LEJOS";
 
 function ProgressBar({ label, pct, current, total, tipo }: { label: string; pct: number; current: number; total: number; tipo: 'dias' | 'horas' }) {
+  const displayPct = Math.min(100, pct);
   const barColor = pct >= 100 ? "bg-emerald-400" : pct >= 60 ? "bg-amber-400" : "bg-rose-400";
+  const extra = current - total;
   
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center text-xs">
         <span className="text-zinc-400">{label}</span>
-        <span className="font-semibold text-white">{pct}%</span>
+        <span className="font-semibold text-white">{displayPct}%</span>
       </div>
       <div className="h-2 bg-zinc-800/60 rounded-full overflow-hidden">
         <div 
           className={cn("h-full transition-all duration-500", barColor)}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${displayPct}%` }}
         />
       </div>
+      {pct > 100 && (
+        <div className="text-[10px] text-emerald-400 font-semibold">
+          ¡{pct.toFixed(0)}% logrado! (+{extra} {tipo === 'dias' ? 'días' : 'h'} extra)
+        </div>
+      )}
     </div>
   );
 }

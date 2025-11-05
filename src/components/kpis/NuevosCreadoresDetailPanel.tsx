@@ -54,7 +54,11 @@ export function NuevosCreadoresDetailPanel() {
 
   const filteredCreadores = creadores.filter(c => {
     if (filter === 'graduados') return c.graduado;
-    if (filter === 'cerca') return c.progreso_100k_pct >= 70 && !c.graduado;
+    if (filter === 'cerca') {
+      const cercaDias = c.dias_live_mes >= 20 && c.dias_live_mes < 30;
+      const cercaProgreso = c.progreso_100k_pct >= 70 && c.progreso_100k_pct < 100;
+      return (cercaDias || cercaProgreso) && !c.graduado;
+    }
     return true;
   });
 
@@ -96,7 +100,11 @@ export function NuevosCreadoresDetailPanel() {
               variant={filter === 'cerca' ? 'default' : 'outline'}
               onClick={() => setFilter('cerca')}
             >
-              Cerca (≥70%) ({creadores.filter(c => c.progreso_100k_pct >= 70 && !c.graduado).length})
+              Cerca ({creadores.filter(c => {
+                const cercaDias = c.dias_live_mes >= 20 && c.dias_live_mes < 30;
+                const cercaProgreso = c.progreso_100k_pct >= 70 && c.progreso_100k_pct < 100;
+                return (cercaDias || cercaProgreso) && !c.graduado;
+              }).length})
             </Button>
           </div>
         </div>

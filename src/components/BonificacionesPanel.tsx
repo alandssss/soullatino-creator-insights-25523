@@ -9,6 +9,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { MilestoneCard } from "@/components/shared/MilestoneCard";
 import { RootCausePanel } from "@/components/bonificaciones/RootCausePanel";
 import WhatsappButton from "@/components/WhatsappButton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BonificacionesPanelProps {
   creatorId: string;
@@ -20,7 +21,25 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
   const [bonificacion, setBonificacion] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    setUserRole(rolesData?.role || null);
+  };
 
   useEffect(() => {
     loadBonificacion();
@@ -168,36 +187,68 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               </div>
             </div>
 
-            {/* Meta Recomendada */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Meta Recomendada
-              </h3>
-              <div className="p-4 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-lg">{bonificacion?.meta_recomendada || bonificacion?.proximo_objetivo_valor || "Sin meta"}</p>
+            {/* Meta y Progreso */}
+            <Card className="border-primary/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Target className="h-5 w-5" />
+                  Meta Recomendada
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-xl sm:text-2xl">{bonificacion?.meta_recomendada || bonificacion?.proximo_objetivo_valor || "Sin meta"}</p>
                   {bonificacion?.cerca_de_objetivo && (
-                    <Badge variant="default">¡Cerca!</Badge>
+                    <Badge variant="default" className="shrink-0">
+                      ¡Cerca de {bonificacion?.proximo_objetivo_valor}!
+                    </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {bonificacion?.texto_creador || `Objetivo: ${bonificacion?.proximo_objetivo_valor || 'Sin definir'}. Progreso calculando...`}
-                </p>
-                {bonificacion?.texto_manager && (
-                  <p className="text-xs text-muted-foreground/80 italic border-t border-border/30 pt-2">
-                    📋 Manager: {bonificacion.texto_manager}
-                  </p>
-                )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+
+            {/* Mensaje para el Creador */}
+            {bonificacion?.texto_creador && (
+              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    💬 Mensaje para ti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm sm:text-base">{bonificacion.texto_creador}</p>
+                  {creatorPhone && (
+                    <WhatsappButton
+                      phone={creatorPhone}
+                      country="MX"
+                      message={bonificacion.texto_creador}
+                      className="w-full"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notas para el Manager */}
+            {bonificacion?.texto_manager && (userRole === 'admin' || userRole === 'manager') && (
+              <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    📋 Notas de Manager
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm sm:text-base">{bonificacion.texto_manager}</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Semáforos de Metas */}
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                 Estado de Metas Diamantes
               </h3>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                 {[
                   { key: 'semaforo_50k', label: '50K', faltan: bonificacion?.faltan_50k, req: bonificacion?.req_diam_por_dia_50k, fecha: bonificacion?.fecha_estimada_50k },
                   { key: 'semaforo_100k', label: '100K', faltan: bonificacion?.faltan_100k, req: bonificacion?.req_diam_por_dia_100k, fecha: bonificacion?.fecha_estimada_100k },
