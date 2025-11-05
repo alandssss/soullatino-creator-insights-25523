@@ -15,6 +15,7 @@ import { Plus, Pencil, Trash2, Swords, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { OptInMasivoButton } from "./OptInMasivoButton";
 import { OptInMonitorPanel } from "./OptInMonitorPanel";
+import { BatallasMonitorPanel } from "./BatallasMonitorPanel";
 
 interface Batalla {
   id: string;
@@ -235,6 +236,8 @@ export function BatallasPanel() {
     <div className="space-y-6 p-6">
       <OptInMasivoButton />
       <OptInMonitorPanel />
+      
+      <BatallasMonitorPanel />
       
       <Card className="neo-card">
         <CardHeader>
