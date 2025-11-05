@@ -127,11 +127,36 @@ Deno.serve(async (req) => {
 
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
 
-    const twilioBody = new URLSearchParams({
-      From: twilioFromNumber,
-      To: toWhatsApp,
-      Body: mensaje
-    });
+    // Usar Message Template si está configurado (para ventana cerrada de 24h)
+    const templateSid = Deno.env.get("TWILIO_BATALLA_TEMPLATE_SID");
+    
+    let twilioBody: URLSearchParams;
+    
+    if (templateSid) {
+      // Usar template aprobado con variables
+      console.log(`[send-batalla] Usando template ${templateSid}`);
+      twilioBody = new URLSearchParams({
+        From: twilioFromNumber,
+        To: toWhatsApp,
+        ContentSid: templateSid,
+        ContentVariables: JSON.stringify({
+          "1": creator.nombre,
+          "2": formatearFechaLarga(batalla.fecha),
+          "3": formatearHora(batalla.hora),
+          "4": batalla.oponente || "A definir",
+          "5": batalla.tipo || "PK",
+          "6": portalUrl
+        })
+      });
+    } else {
+      // Fallback: mensaje freeform (solo funciona dentro de ventana de 24h)
+      console.log(`[send-batalla] Usando mensaje freeform (sin template)`);
+      twilioBody = new URLSearchParams({
+        From: twilioFromNumber,
+        To: toWhatsApp,
+        Body: mensaje
+      });
+    }
 
     console.log(`[send-batalla] Enviando a ${toWhatsApp}`);
 
