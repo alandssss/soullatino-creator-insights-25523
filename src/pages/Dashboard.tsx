@@ -4,20 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Users, TrendingUp, Eye, Zap, LogOut, MessageCircle } from "lucide-react";
+import { TrendingUp, LogOut, MessageCircle } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { CreatorDetailDialog } from "@/components/CreatorDetailDialog";
 // Admin components moved to /admin page
 import { LowActivityPanel } from "@/components/LowActivityPanel";
-import { WorkTimeTracker } from "@/components/WorkTimeTracker";
-import { StatCard } from "@/components/shared/StatCard";
 import DiamondsBars3D from "@/components/dashboard/DiamondsBars3D";
 import TopPerformersCards from "@/components/dashboard/TopPerformersCards";
 
 import { Suspense, lazy } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
 import { KPIGraduacionNuevos } from "@/components/kpis/KPIGraduacionNuevos";
 import { GraduacionAlert } from "@/components/kpis/GraduacionAlert";
@@ -177,11 +173,6 @@ const Dashboard = () => {
     navigate("/login");
   };
 
-  const totalCreators = creators.length;
-  const totalDiamonds = creators.reduce((sum, c) => sum + (c.diamantes || 0), 0);
-  const totalViews = creators.reduce((sum, c) => sum + (c.views || 0), 0);
-  const avgHito = creators.reduce((sum, c) => sum + (c.hito_diamantes || 0), 0) / (creators.length || 1);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -261,14 +252,9 @@ const Dashboard = () => {
         {/* KPI Panels - Strategic metrics */}
         <GraduacionAlert />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <KPIGraduacionNuevos />
-          <OnboardingChecklist />
-        </div>
+        <KPIGraduacionNuevos />
 
         <LowActivityPanel />
-        
-        <WorkTimeTracker userEmail={user?.email} />
 
         <Card className="rounded-2xl border-2 border-border/50">
           <CardHeader className="pb-4">
