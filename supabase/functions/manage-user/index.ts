@@ -77,9 +77,9 @@ Deno.serve(async (req) => {
     })
 
     const result = await validate(req, schema)
-    if (!result.ok) return result.response
+    if (!result.ok) return result.response!
 
-    const { action, email, password, role } = result.data
+    const { action, email, password, role } = result.data!
 
     if (action === 'create') {
       // Crear nuevo usuario

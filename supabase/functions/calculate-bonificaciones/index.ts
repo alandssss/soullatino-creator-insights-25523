@@ -20,9 +20,9 @@ serve(async (req) => {
     });
 
     const result = await validate(req, schema);
-    if (!result.ok) return result.response;
+    if (!result.ok) return result.response!;
 
-    const { creatorId } = result.data;
+    const { creatorId } = result.data!;
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

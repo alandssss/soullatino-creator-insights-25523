@@ -32,7 +32,7 @@ serve(async (req) => {
     const result = await validate(req, schema);
     if (!result.ok) return withCORS(result.response!, origin);
 
-    const { creator_id, creator_username, phone_e164, channel } = result.data;
+    const { creator_id, creator_username, phone_e164, channel } = result.data!;
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

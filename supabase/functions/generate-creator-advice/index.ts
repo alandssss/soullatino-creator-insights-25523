@@ -254,7 +254,7 @@ serve(async (req) => {
     const result = await validate(req, schema);
     if (!result.ok) return withCORS(result.response!, origin);
 
-    const { creator_id } = result.data;
+    const { creator_id } = result.data!;
 
     const hoyTZ = nowInTZ(TZ);
     const inicioMes = firstDayOfMonth(hoyTZ);
