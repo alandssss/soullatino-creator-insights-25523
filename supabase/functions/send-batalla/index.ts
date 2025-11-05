@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       .from("batallas")
       .select(`
         *,
-        creators!inner(id, nombre, telefono)
+        creators!inner(id, nombre, telefono, tiktok_username)
       `)
       .eq("id", batallaId)
       .single();
@@ -91,6 +91,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Construir URL del portal
+    const FRONTEND_URL = Deno.env.get("VITE_SUPABASE_URL")?.replace('/rest/v1', '').replace('/functions/v1', '') || 
+                         'https://mpseoscrzpnequwvzokn.supabase.co';
+    const portalUrl = `${FRONTEND_URL}/portal/${creator.tiktok_username}`;
+
     // Construir mensaje
     let mensaje = `Hola ${creator.nombre} 👋\n`;
     mensaje += `Se programó una *batalla* para ti:\n\n`;
@@ -102,6 +107,7 @@ Deno.serve(async (req) => {
       mensaje += `🎯 *Reto:* ${batalla.reto}\n`;
     }
     mensaje += `⚡ *Tipo:* ${batalla.tipo || "estándar"}\n\n`;
+    mensaje += `📱 Revisa todas tus batallas en:\n${portalUrl}\n\n`;
     mensaje += `Conéctate 10 min antes. Si no puedes, avísanos 💬\n`;
     mensaje += `— Agencia Soullatino`;
 
