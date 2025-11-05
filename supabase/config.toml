@@ -120,3 +120,7 @@ verify_jwt = false
 # CRON processor - procesamiento de cola de batallas (requiere service role key)
 [functions.process-battle-queue]
 verify_jwt = true
+
+# API - envío masivo de opt-in WhatsApp
+[functions.send-optin-masivo]
+verify_jwt = true

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Swords, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { OptInMasivoButton } from "./OptInMasivoButton";
 
 interface Batalla {
   id: string;
@@ -231,6 +232,8 @@ export function BatallasPanel() {
 
   return (
     <div className="space-y-6 p-6">
+      <OptInMasivoButton />
+      
       <Card className="neo-card">
         <CardHeader>
           <div className="flex items-center justify-between">
