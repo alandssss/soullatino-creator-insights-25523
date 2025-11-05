@@ -74,9 +74,7 @@ Tu manager revisará disponibilidad y te confirmará por este medio.
 — Agencia Soullatino`;
 
     } else if (body.includes("portal") || body.includes("link")) {
-      const FRONTEND_URL = Deno.env.get('VITE_SUPABASE_URL')?.replace('/rest/v1', '').replace('/functions/v1', '') || 
-                           'https://mpseoscrzpnequwvzokn.supabase.co';
-      const portalUrl = `${FRONTEND_URL}/portal/usuario_ejemplo`;
+      const portalUrl = `https://pkosoullatino.neuron.lat/portal/usuario_ejemplo`;
       respuesta = `📱 *Accede a tu portal personalizado aquí:*
 ${portalUrl}
 

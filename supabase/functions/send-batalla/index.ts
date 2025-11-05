@@ -91,10 +91,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Construir URL del portal
-    const FRONTEND_URL = Deno.env.get("VITE_SUPABASE_URL")?.replace('/rest/v1', '').replace('/functions/v1', '') || 
-                         'https://mpseoscrzpnequwvzokn.supabase.co';
-    const portalUrl = `${FRONTEND_URL}/portal/${creator.tiktok_username}`;
+    // Construir URL del portal (dominio específico para creadores)
+    const portalUrl = `https://pkosoullatino.neuron.lat/portal/${creator.tiktok_username}`;
 
     // Construir mensaje
     let mensaje = `Hola ${creator.nombre} 👋\n`;

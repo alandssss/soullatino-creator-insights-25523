@@ -21,16 +21,61 @@ const queryClient = new QueryClient({
 
 function App() {
   const [mounted, setMounted] = useState(false);
+  
+  // Detectar si estamos en el dominio del portal de creadores
+  const isCreatorPortal = typeof window !== 'undefined' && 
+    window.location.hostname === 'pkosoullatino.neuron.lat';
+  
   useEffect(() => { setMounted(true); }, []);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         {mounted && (
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/portal/:username" element={<CreatorPortal />} />
-              <Route path="/*" element={<AppLayout />} />
+              {isCreatorPortal ? (
+                // SOLO rutas del portal de creadores
+                <>
+                  <Route path="/portal/:username" element={<CreatorPortal />} />
+                  <Route path="/portal" element={
+                    <div className="flex items-center justify-center min-h-screen">
+                      <div className="text-center">
+                        <h1 className="text-2xl font-bold mb-4">Portal de Creadores</h1>
+                        <p className="text-muted-foreground">
+                          Accede con tu username: /portal/tu-username
+                        </p>
+                      </div>
+                    </div>
+                  } />
+                  <Route path="/" element={
+                    <div className="flex items-center justify-center min-h-screen">
+                      <div className="text-center">
+                        <h1 className="text-2xl font-bold mb-4">Portal de Creadores</h1>
+                        <p className="text-muted-foreground">
+                          Accede con tu username: /portal/tu-username
+                        </p>
+                      </div>
+                    </div>
+                  } />
+                  <Route path="*" element={
+                    <div className="flex items-center justify-center min-h-screen">
+                      <div className="text-center">
+                        <h1 className="text-2xl font-bold mb-4">Portal de Creadores</h1>
+                        <p className="text-muted-foreground">
+                          Accede con tu username: /portal/tu-username
+                        </p>
+                      </div>
+                    </div>
+                  } />
+                </>
+              ) : (
+                // Rutas completas del panel administrativo
+                <>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/*" element={<AppLayout />} />
+                </>
+              )}
             </Routes>
             {mounted && <Toaster />}
             {mounted && <Sonner />}
