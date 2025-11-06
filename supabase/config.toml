@@ -103,24 +103,6 @@ verify_jwt = true
 [functions.manage-user]
 verify_jwt = true
 
-[functions.whatsapp-webhook]
-verify_jwt = false
-
-[functions.battle-created]
-verify_jwt = false
-
-# Endpoint público para pruebas manuales de WhatsApp (solo desarrollo)
+# Endpoint público para pruebas manuales
 [functions.rapid-endpoint]
 verify_jwt = false
-
-# API interna - envío individual de batallas (público para triggers)
-[functions.send-batalla]
-verify_jwt = false
-
-# CRON processor - procesamiento de cola de batallas (requiere service role key)
-[functions.process-battle-queue]
-verify_jwt = true
-
-# API - envío masivo de opt-in WhatsApp
-[functions.send-optin-masivo]
-verify_jwt = true
