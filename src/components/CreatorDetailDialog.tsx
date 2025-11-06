@@ -8,6 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { NeoButton } from "@/components/neo/NeoButton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,9 @@ import { AlertCircle, Lightbulb, Swords } from "lucide-react";
 import { CreatorRiskPanel } from "./creator-detail/CreatorRiskPanel";
 import { CreatorBattlesPanel } from "./creator-detail/CreatorBattlesPanel";
 import { CreatorSupervisionHistory } from "./creator-detail/CreatorSupervisionHistory";
+import { CreatorMetricsPanel } from "./creator-detail/CreatorMetricsPanel";
+import { WhatsAppPreviewModal } from "./creator-detail/WhatsAppPreviewModal";
+import { creatorMetricsService } from "@/services/creatorMetricsService";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -47,6 +51,8 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   const [whatsappPreview, setWhatsappPreview] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [dailyStats, setDailyStats] = useState<any>(null);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [dailyMessage, setDailyMessage] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -244,6 +250,28 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     }
   };
 
+  const generateDailyMessage = async () => {
+    if (!creator) return;
+    
+    try {
+      const userName = user?.email?.split('@')[0] || 'el equipo';
+      const message = await creatorMetricsService.generateDailyMessage(
+        creator.id,
+        creator.nombre,
+        userName
+      );
+      setDailyMessage(message);
+      setWhatsappModalOpen(true);
+    } catch (error) {
+      console.error('Error generando mensaje diario:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el mensaje diario",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getMonthlyGrowth = () => {
     if (!creator) return { diamantes: 0, views: 0, engagement: 0 };
     
@@ -432,11 +460,16 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           </Card>
 
           <Tabs defaultValue="bonificaciones" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-2">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-2">
               <TabsTrigger value="bonificaciones" className="gap-2">
                 <Award className="h-4 w-4" />
                 <span className="hidden sm:inline">Bonificaciones</span>
                 <span className="sm:hidden">💎</span>
+              </TabsTrigger>
+              <TabsTrigger value="metricas" className="gap-2">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">Métricas</span>
+                <span className="sm:hidden">📈</span>
               </TabsTrigger>
               <TabsTrigger value="alertas" className="gap-2">
                 <AlertCircle className="h-4 w-4" />
@@ -461,6 +494,25 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                 creatorName={creator.nombre}
                 creatorPhone={creator.telefono}
               />
+            </TabsContent>
+
+            <TabsContent value="metricas" className="space-y-4 mt-6">
+              <CreatorMetricsPanel 
+                creatorId={creator.id} 
+                creatorName={creator.nombre}
+              />
+              
+              {/* Botón para mensaje diario */}
+              <div className="mt-4">
+                <NeoButton
+                  variant="primary"
+                  onClick={generateDailyMessage}
+                  className="w-full"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Generar Mensaje Diario para WhatsApp
+                </NeoButton>
+              </div>
             </TabsContent>
 
             <TabsContent value="alertas" className="space-y-4 mt-6">
@@ -582,6 +634,14 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             description: `Se ha asignado una nueva meta a ${creator.nombre}`,
           });
         }}
+      />
+
+      <WhatsAppPreviewModal
+        open={whatsappModalOpen}
+        onOpenChange={setWhatsappModalOpen}
+        defaultMessage={dailyMessage}
+        defaultPhone={creator?.telefono}
+        creatorName={creator?.nombre || ''}
       />
     </Drawer>
   );
