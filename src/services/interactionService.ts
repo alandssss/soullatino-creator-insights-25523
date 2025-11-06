@@ -189,9 +189,16 @@ export class InteractionService {
       return { dias: 0, horas: 0, diamantes: 0 };
     }
 
-    // ✅ CORRECCIÓN: dias_validos_live y duracion_live_horas YA SON ACUMULADOS
-    // Tomar el registro más reciente para días/horas, sumar diamantes diarios
-    const ultimoDia = dailyStats[0]; // Más reciente (orden DESC)
+    // ✅ CORRECCIÓN: Contar días ÚNICOS del mes actual con actividad
+    // Un día cuenta si tiene diamantes > 0 o duración >= 1.0 horas
+    const diasReales = dailyStats.filter(day => 
+      (day.diamantes || 0) > 0 || (day.duracion_live_horas || 0) >= 1.0
+    ).length;
+    
+    // Sumar horas de todos los registros del mes
+    const horasTotales = dailyStats.reduce((sum, day) => 
+      sum + (day.duracion_live_horas || 0), 0
+    );
     
     // Validación: si hay más de 31 registros, puede haber duplicados
     if (dailyStats.length > 31) {
@@ -199,8 +206,8 @@ export class InteractionService {
     }
 
     return {
-      dias: ultimoDia.dias_validos_live || 0,  // ✅ Ya es acumulado
-      horas: ultimoDia.duracion_live_horas || 0, // ✅ Ya es acumulado
+      dias: diasReales,  // ✅ Días únicos con actividad del mes
+      horas: horasTotales, // ✅ Suma de horas del mes
       diamantes: dailyStats.reduce((sum, day) => sum + (day.diamantes || 0), 0) // ✅ Suma diaria
     };
   }

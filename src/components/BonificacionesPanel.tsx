@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Award, Calendar, Target, Zap, Loader2 } from "lucide-react";
+import { Award, Calendar, Target, Zap, Loader2, Gem, Clock, MessageSquare, Clipboard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { creatorAnalytics } from "@/services/creatorAnalytics";
-import { MetricCard } from "@/components/MetricCard";
 import { MilestoneCard } from "@/components/shared/MilestoneCard";
 import { RootCausePanel } from "@/components/bonificaciones/RootCausePanel";
 import WhatsappButton from "@/components/WhatsappButton";
 import { supabase } from "@/integrations/supabase/client";
+import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from "@/components/neo/NeoCard";
+import { NeoKPICard } from "@/components/neo/NeoKPICard";
+import { cn } from "@/lib/utils";
 
 interface BonificacionesPanelProps {
   creatorId: string;
@@ -168,21 +170,31 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
                 <Calendar className="h-4 w-4" />
                 LIVE del Mes (hasta ayer)
               </h3>
-              <div className="grid grid-cols-3 gap-3">
-                <MetricCard 
-                  label="Días" 
-                  value={bonificacion.dias_live_mes} 
-                  variant="primary"
+              <div className="grid grid-cols-3 gap-6">
+                <NeoKPICard
+                  label="Días Live"
+                  value={bonificacion.dias_live_mes || 0}
+                  insight="Necesitas 22 días para bonificación completa"
+                  icon={Calendar}
+                  variant="default"
                 />
-                <MetricCard 
-                  label="Horas" 
-                  value={bonificacion.horas_live_mes?.toFixed(1)} 
-                  variant="primary"
+                <NeoKPICard
+                  label="Horas Live"
+                  value={`${bonificacion.horas_live_mes?.toFixed(1) || 0}h`}
+                  insight={bonificacion.dias_live_mes > 0 
+                    ? `Promedio ${(bonificacion.horas_live_mes / bonificacion.dias_live_mes).toFixed(1)}h/día`
+                    : 'Sin actividad aún'}
+                  icon={Clock}
+                  variant="default"
                 />
-                <MetricCard 
-                  label="Diamantes" 
-                  value={bonificacion.diam_live_mes?.toLocaleString()} 
-                  variant="accent"
+                <NeoKPICard
+                  label="Diamantes"
+                  value={bonificacion.diam_live_mes?.toLocaleString() || '0'}
+                  insight={bonificacion.proximo_objetivo_valor 
+                    ? `Meta: ${bonificacion.proximo_objetivo_valor}`
+                    : 'Trabaja hacia tu primera meta'}
+                  icon={Gem}
+                  variant="primary"
                 />
               </div>
             </div>
@@ -208,41 +220,39 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
             </Card>
 
             {/* Mensaje para el Creador - SIEMPRE visible */}
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  💬 Mensaje Personalizado
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm sm:text-base">
-                  {bonificacion?.texto_creador || 
-                   `¡Hola ${creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
-                </p>
-                {creatorPhone && (
-                  <WhatsappButton
-                    phone={creatorPhone}
-                    country="MX"
-                    message={bonificacion?.texto_creador || 
-                             `Hola ${creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
-                    className="w-full"
-                  />
-                )}
-              </CardContent>
-            </Card>
+            <NeoCard variant="elevated" padding="md">
+              <div className="flex items-start gap-3">
+                <MessageSquare className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-3">
+                  <h4 className="font-semibold text-sm">💬 Mensaje Personalizado</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {bonificacion?.texto_creador || 
+                     `¡Hola ${creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
+                  </p>
+                  {creatorPhone && (
+                    <WhatsappButton
+                      phone={creatorPhone}
+                      country="MX"
+                      message={bonificacion?.texto_creador || 
+                               `Hola ${creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
+                      className="w-full"
+                    />
+                  )}
+                </div>
+              </div>
+            </NeoCard>
 
             {/* Notas para el Manager */}
             {bonificacion?.texto_manager && (userRole === 'admin' || userRole === 'manager') && (
-              <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    📋 Notas de Manager
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm sm:text-base">{bonificacion.texto_manager}</p>
-                </CardContent>
-              </Card>
+              <NeoCard variant="elevated" padding="md">
+                <div className="flex items-start gap-3">
+                  <Clipboard className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-2">📋 Notas de Manager</h4>
+                    <p className="text-sm text-muted-foreground">{bonificacion.texto_manager}</p>
+                  </div>
+                </div>
+              </NeoCard>
             )}
 
             {/* Semáforos de Metas */}
@@ -252,25 +262,29 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               </h3>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                 {[
-                  { key: 'semaforo_50k', label: '50K', faltan: bonificacion?.faltan_50k, req: bonificacion?.req_diam_por_dia_50k, fecha: bonificacion?.fecha_estimada_50k },
-                  { key: 'semaforo_100k', label: '100K', faltan: bonificacion?.faltan_100k, req: bonificacion?.req_diam_por_dia_100k, fecha: bonificacion?.fecha_estimada_100k },
-                  { key: 'semaforo_300k', label: '300K', faltan: bonificacion?.faltan_300k, req: bonificacion?.req_diam_por_dia_300k, fecha: bonificacion?.fecha_estimada_300k },
-                  { key: 'semaforo_500k', label: '500K', faltan: bonificacion?.faltan_500k, req: bonificacion?.req_diam_por_dia_500k, fecha: bonificacion?.fecha_estimada_500k },
-                  { key: 'semaforo_1m', label: '1M', faltan: bonificacion?.faltan_1m, req: bonificacion?.req_diam_por_dia_1m, fecha: bonificacion?.fecha_estimada_1m },
+                  { key: 'semaforo_50k', label: '50K', faltan: bonificacion?.faltan_50k, req: bonificacion?.req_diam_por_dia_50k },
+                  { key: 'semaforo_100k', label: '100K', faltan: bonificacion?.faltan_100k, req: bonificacion?.req_diam_por_dia_100k },
+                  { key: 'semaforo_300k', label: '300K', faltan: bonificacion?.faltan_300k, req: bonificacion?.req_diam_por_dia_300k },
+                  { key: 'semaforo_500k', label: '500K', faltan: bonificacion?.faltan_500k, req: bonificacion?.req_diam_por_dia_500k },
+                  { key: 'semaforo_1m', label: '1M', faltan: bonificacion?.faltan_1m, req: bonificacion?.req_diam_por_dia_1m },
                 ].map((meta) => {
                   const semaforo = bonificacion?.[meta.key] || 'rojo';
-                  const bgColor = semaforo === 'verde' ? 'bg-green-500/20 border-green-500/50' :
-                                 semaforo === 'amarillo' ? 'bg-yellow-500/20 border-yellow-500/50' :
-                                 'bg-red-500/20 border-red-500/50';
                   const icon = semaforo === 'verde' ? '🟢' : semaforo === 'amarillo' ? '🟡' : '🔴';
                   const faltan = meta.faltan ?? 0;
                   return (
-                    <div
+                    <NeoCard
                       key={meta.key}
-                      className={`p-2 rounded-lg text-center border ${bgColor}`}
+                      variant="flat"
+                      padding="sm"
+                      className={cn(
+                        "text-center transition-all",
+                        semaforo === 'verde' && "ring-1 ring-green-500/30",
+                        semaforo === 'amarillo' && "ring-1 ring-yellow-500/30",
+                        semaforo === 'rojo' && "ring-1 ring-red-500/30"
+                      )}
                       title={`Faltan: ${faltan.toLocaleString()} | Req/día: ${(meta.req ?? 0).toLocaleString()}`}
                     >
-                      <p className="text-xs font-medium">
+                      <p className="text-xs font-medium flex items-center justify-center gap-1">
                         {icon} {meta.label}
                       </p>
                       {faltan > 0 && (
@@ -278,7 +292,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
                           -{(faltan / 1000).toFixed(0)}k
                         </p>
                       )}
-                    </div>
+                    </NeoCard>
                   );
                 })}
               </div>
@@ -289,47 +303,52 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                 Hitos Días/Horas
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MilestoneCard
-                  label="12d/40h"
-                  daysRequired={12}
-                  hoursRequired={40}
-                  currentDays={bonificacion.dias_live_mes || 0}
-                  currentHours={bonificacion.horas_live_mes || 0}
-                  onOpenPlan={() => {
-                    // TODO: Implementar modal "Plan del Día"
-                    toast({
-                      title: "Plan del Día",
-                      description: "Funcionalidad en desarrollo",
-                    });
-                  }}
-                />
-                <MilestoneCard
-                  label="20d/60h"
-                  daysRequired={20}
-                  hoursRequired={60}
-                  currentDays={bonificacion.dias_live_mes || 0}
-                  currentHours={bonificacion.horas_live_mes || 0}
-                  onOpenPlan={() => {
-                    toast({
-                      title: "Plan del Día",
-                      description: "Funcionalidad en desarrollo",
-                    });
-                  }}
-                />
-                <MilestoneCard
-                  label="22d/80h"
-                  daysRequired={22}
-                  hoursRequired={80}
-                  currentDays={bonificacion.dias_live_mes || 0}
-                  currentHours={bonificacion.horas_live_mes || 0}
-                  onOpenPlan={() => {
-                    toast({
-                      title: "Plan del Día",
-                      description: "Funcionalidad en desarrollo",
-                    });
-                  }}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <NeoCard variant="elevated" padding="md">
+                  <MilestoneCard
+                    label="12d/40h"
+                    daysRequired={12}
+                    hoursRequired={40}
+                    currentDays={bonificacion.dias_live_mes || 0}
+                    currentHours={bonificacion.horas_live_mes || 0}
+                    onOpenPlan={() => {
+                      toast({
+                        title: "Plan del Día",
+                        description: "Funcionalidad en desarrollo",
+                      });
+                    }}
+                  />
+                </NeoCard>
+                <NeoCard variant="elevated" padding="md">
+                  <MilestoneCard
+                    label="20d/60h"
+                    daysRequired={20}
+                    hoursRequired={60}
+                    currentDays={bonificacion.dias_live_mes || 0}
+                    currentHours={bonificacion.horas_live_mes || 0}
+                    onOpenPlan={() => {
+                      toast({
+                        title: "Plan del Día",
+                        description: "Funcionalidad en desarrollo",
+                      });
+                    }}
+                  />
+                </NeoCard>
+                <NeoCard variant="elevated" padding="md">
+                  <MilestoneCard
+                    label="22d/80h"
+                    daysRequired={22}
+                    hoursRequired={80}
+                    currentDays={bonificacion.dias_live_mes || 0}
+                    currentHours={bonificacion.horas_live_mes || 0}
+                    onOpenPlan={() => {
+                      toast({
+                        title: "Plan del Día",
+                        description: "Funcionalidad en desarrollo",
+                      });
+                    }}
+                  />
+                </NeoCard>
               </div>
             </div>
 
