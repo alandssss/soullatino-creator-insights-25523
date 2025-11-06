@@ -3,6 +3,8 @@ import { NeoCard } from '@/components/neo/NeoCard';
 import { NeoKPICard } from '@/components/neo/NeoKPICard';
 import { creatorMetricsService } from '@/services/creatorMetricsService';
 import { CreatorMetrics } from '@/types/creatorMetrics';
+import { CreatorTrendsChart } from './CreatorTrendsChart';
+import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, Gem, TrendingUp, Target, Eye, Loader2 } from 'lucide-react';
 
 interface CreatorMetricsPanelProps {
@@ -14,9 +16,12 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
   const [metrics, setMetrics] = useState<CreatorMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentMonthData, setCurrentMonthData] = useState<any[]>([]);
+  const [previousMonthData, setPreviousMonthData] = useState<any[]>([]);
   
   useEffect(() => {
     loadMetrics();
+    loadDailyData();
   }, [creatorId]);
   
   const loadMetrics = async () => {
@@ -30,6 +35,45 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
       setError(err.message || 'Error desconocido');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDailyData = async () => {
+    try {
+      const today = new Date();
+      const currentMonth = today.toISOString().slice(0, 7);
+      const [year, month] = currentMonth.split('-').map(Number);
+      
+      // Mes actual
+      const firstDayCurrent = `${year}-${String(month).padStart(2, '0')}-01`;
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const { data: current } = await supabase
+        .from('creator_daily_stats')
+        .select('fecha, diamantes, duracion_live_horas')
+        .eq('creator_id', creatorId)
+        .gte('fecha', firstDayCurrent)
+        .lte('fecha', todayStr)
+        .order('fecha', { ascending: true });
+      
+      // Mes anterior
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+      const firstDayPrev = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+      const lastDayPrev = new Date(prevYear, prevMonth, 0).toISOString().split('T')[0];
+      
+      const { data: previous } = await supabase
+        .from('creator_daily_stats')
+        .select('fecha, diamantes, duracion_live_horas')
+        .eq('creator_id', creatorId)
+        .gte('fecha', firstDayPrev)
+        .lte('fecha', lastDayPrev)
+        .order('fecha', { ascending: true });
+      
+      setCurrentMonthData(current || []);
+      setPreviousMonthData(previous || []);
+    } catch (err) {
+      console.error('Error cargando datos diarios:', err);
     }
   };
   
@@ -174,6 +218,14 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
         </div>
       </NeoCard>
       
+      {/* Gráfico de Tendencias */}
+      {currentMonthData.length > 0 && (
+        <CreatorTrendsChart 
+          currentMonthData={currentMonthData}
+          previousMonthData={previousMonthData}
+        />
+      )}
+
       {/* Predicción */}
       <NeoCard variant="flat" padding="md">
         <div className="flex items-start gap-3">
