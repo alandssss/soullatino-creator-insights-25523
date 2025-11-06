@@ -46,15 +46,16 @@ export const AdminActivityPanel = () => {
 
   const fetchActivities = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("whatsapp_activity")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(50);
-
-    if (!error && data) {
-      setActivities(data);
-    }
+    // NOTE: whatsapp_activity table removed in Twilio cleanup
+    // const { data, error } = await supabase
+    //   .from("whatsapp_activity")
+    //   .select("*")
+    //   .order("timestamp", { ascending: false })
+    //   .limit(50);
+    // if (!error && data) {
+    //   setActivities(data as any);
+    // }
+    setActivities([]);
     setLoading(false);
   };
 

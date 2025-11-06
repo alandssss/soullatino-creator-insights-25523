@@ -71,16 +71,17 @@ export const openWhatsApp = async ({
 
   // Registrar actividad ANTES de abrir WhatsApp
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('whatsapp_activity').insert({
-        creator_id: creatorId,
-        user_email: user.email || 'Unknown',
-        action_type: actionType,
-        message_preview: message.substring(0, 200),
-        creator_name: creatorName
-      });
-    }
+    // NOTE: whatsapp_activity table removed in Twilio cleanup
+    // const { data: { user } } = await supabase.auth.getUser();
+    // if (user) {
+    //   await supabase.from('whatsapp_activity').insert({
+    //     creator_id: creatorId,
+    //     user_email: user.email || 'Unknown',
+    //     action_type: actionType,
+    //     message_preview: message.substring(0, 200),
+    //     creator_name: creatorName
+    //   });
+    // }
   } catch (error) {
     console.error('Error registrando actividad WhatsApp:', error);
     // No bloquear el flujo principal si falla el registro

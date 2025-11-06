@@ -212,16 +212,17 @@ export function CreatorPanel({
 
       if (error) throw error;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("whatsapp_activity").insert({
-          creator_id: creator.id,
-          user_email: user.email || "Unknown",
-          action_type: "supervision_log",
-          creator_name: creator.nombre,
-          message_preview: `Supervisión: ${Object.keys(selectedFlags).join(', ')}${notes ? ' - ' + notes.substring(0, 50) : ''}`,
-        });
-      }
+      // NOTE: whatsapp_activity table removed in Twilio cleanup
+      // const { data: { user } } = await supabase.auth.getUser();
+      // if (user) {
+      //   await supabase.from("whatsapp_activity").insert({
+      //     creator_id: creator.id,
+      //     user_email: user.email || "Unknown",
+      //     action_type: "supervision_log",
+      //     creator_name: creator.nombre,
+      //     message_preview: `Supervisión: ${Object.keys(selectedFlags).join(', ')}${notes ? ' - ' + notes.substring(0, 50) : ''}`,
+      //   });
+      // }
 
       toast({
         title: "Registro guardado",
