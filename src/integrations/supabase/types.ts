@@ -131,6 +131,7 @@ export type Database = {
           fecha_obtencion: string | null
           icono: string | null
           id: string
+          image_url: string | null
           metadata: Json | null
           titulo: string
         }
@@ -143,6 +144,7 @@ export type Database = {
           fecha_obtencion?: string | null
           icono?: string | null
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           titulo: string
         }
@@ -155,6 +157,7 @@ export type Database = {
           fecha_obtencion?: string | null
           icono?: string | null
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           titulo?: string
         }

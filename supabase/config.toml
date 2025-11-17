@@ -106,3 +106,11 @@ verify_jwt = true
 # Endpoint público para pruebas manuales
 [functions.rapid-endpoint]
 verify_jwt = false
+
+# Generación de imágenes para badges con Lovable AI
+[functions.generate-badge-image]
+verify_jwt = false
+
+# Cálculo de rankings y badges gamificados
+[functions.calculate-rankings]
+verify_jwt = false

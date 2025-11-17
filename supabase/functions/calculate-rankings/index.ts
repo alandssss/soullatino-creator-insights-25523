@@ -167,6 +167,31 @@ Deno.serve(async (req) => {
     for (const ranking of rankings) {
       for (const badgeDef of BADGE_DEFINITIONS) {
         if (badgeDef.condition(null, ranking)) {
+          console.log(`[calculate-rankings] Badge earned: ${badgeDef.titulo}`);
+          
+          // Generar imagen para el badge usando Lovable AI
+          let imageUrl = null;
+          try {
+            const { data: imageData, error: imageError } = await supabase.functions.invoke(
+              'generate-badge-image',
+              {
+                body: {
+                  badge_tipo: badgeDef.tipo,
+                  badge_nivel: badgeDef.nivel || null,
+                  titulo: badgeDef.titulo,
+                  descripcion: badgeDef.descripcion
+                }
+              }
+            );
+            
+            if (!imageError && imageData?.image_url) {
+              imageUrl = imageData.image_url;
+              console.log(`[calculate-rankings] Generated image for badge ${badgeDef.tipo}: ${imageUrl}`);
+            }
+          } catch (imgErr) {
+            console.warn(`[calculate-rankings] Could not generate image for badge ${badgeDef.tipo}:`, imgErr);
+          }
+          
           const { error: badgeError } = await supabase
             .from('creator_badges')
             .upsert({
@@ -176,6 +201,7 @@ Deno.serve(async (req) => {
               titulo: badgeDef.titulo,
               descripcion: badgeDef.descripcion,
               icono: badgeDef.icono,
+              image_url: imageUrl,
               metadata: { periodo: periodo, fecha: finStr, ranking_position: ranking.ranking_position }
             }, {
               onConflict: 'creator_id,badge_tipo,badge_nivel',
