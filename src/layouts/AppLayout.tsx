@@ -15,6 +15,7 @@ import NotFound from "@/pages/NotFound";
 import BrandingSettings from "@/pages/BrandingSettings";
 import ScoringConfig from "@/pages/ScoringConfig";
 import IAEffectiveness from "@/pages/IAEffectiveness";
+import Rankings from "@/pages/Rankings";
 import { BatallasPanel } from "@/components/batallas/BatallasPanel";
 import logo from "@/assets/logo-optimized.webp";
 import {
@@ -63,6 +64,7 @@ const AppLayout = () => {
     { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
     { to: "/alertas", label: "Alertas", roles: ['admin', 'manager', 'viewer'] },
     { to: "/batallas", label: "⚔️ Batallas", roles: ['admin', 'manager', 'supervisor'] },
+    { to: "/rankings", label: "🏆 Rankings", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
     { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
     { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
     { to: "/admin", label: "⚙️ Admin", roles: ['admin'] },
@@ -165,6 +167,7 @@ const AppLayout = () => {
             <Route path="/admin" element={<Admin />} />
             <Route path="/alertas" element={<AlertasSugerenciasPage />} />
             <Route path="/batallas" element={<BatallasPanel />} />
+            <Route path="/rankings" element={<Rankings />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
             <Route path="/branding" element={<BrandingSettings />} />
