@@ -13,6 +13,7 @@ interface BadgeData {
   titulo: string;
   descripcion: string;
   icono: string;
+  image_url: string | null;
   fecha_obtencion: string;
   metadata: any;
 }
@@ -99,7 +100,25 @@ export function BadgesPanel({ creatorId, showAll = false }: BadgesPanelProps) {
             >
               <CardContent className="p-4 text-white">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="text-4xl">{badge.icono}</div>
+                  {badge.image_url ? (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-lg">
+                      <img 
+                        src={badge.image_url} 
+                        alt={badge.titulo}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden text-4xl absolute inset-0 flex items-center justify-center">
+                        {badge.icono}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-4xl">{badge.icono}</div>
+                  )}
                   {badge.badge_nivel && (
                     <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                       {badge.badge_nivel}
