@@ -312,6 +312,8 @@ serve(async (req) => {
       fecha: string;
     }>;
 
+    console.log(`[upload-excel-recommendations] Mapped ${mapped.length} valid rows`);
+
     if (!mapped.length) {
       const sampleRow = rawData[0] || {};
       return withCORS(
@@ -331,8 +333,6 @@ serve(async (req) => {
         origin
       );
     }
-
-    console.log(`[upload-excel-recommendations] Mapped ${mapped.length} valid rows`);
 
     // Resolver creator_id reales desde tabla creators (por username o teléfono)
     const usernames = Array.from(new Set(mapped.map(r => r.creator_username.replace(/^@/, '').toLowerCase())));
@@ -460,7 +460,22 @@ serve(async (req) => {
       };
     }).filter(Boolean) as any[];
 
-    if (!dailyRows.length) {
+    // ✅ Deduplicar por (creator_id, fecha) - conservar última ocurrencia
+    const dailyRowsMap = new Map<string, any>();
+    for (const row of dailyRows) {
+      const key = `${row.creator_id}_${row.fecha}`;
+      dailyRowsMap.set(key, row); // Última ocurrencia sobreescribe anteriores
+    }
+    const dailyRowsDeduped = Array.from(dailyRowsMap.values());
+
+    // Log de deduplicación
+    const duplicatesCount = dailyRows.length - dailyRowsDeduped.length;
+    if (duplicatesCount > 0) {
+      console.warn(`[upload-excel-recommendations] ⚠️ Found ${duplicatesCount} duplicate rows in Excel - kept last occurrence`);
+    }
+    console.log(`[upload-excel-recommendations] Deduped from ${dailyRows.length} to ${dailyRowsDeduped.length} unique rows`);
+
+    if (!dailyRowsDeduped.length) {
       return withCORS(
         new Response(
           JSON.stringify({ error: 'No se pudieron resolver creadores para las filas cargadas' }),
@@ -480,10 +495,10 @@ serve(async (req) => {
       console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
     }
 
-    // @compat: Upsert para idempotencia - evita duplicados si se reprocesa el mismo día
+    // @compat: Upsert para idempotencia - ahora con filas deduplicadas
     const { error: insertErr } = await supabase
       .from('creator_daily_stats')
-      .upsert(dailyRows, { onConflict: 'creator_id,fecha' });
+      .upsert(dailyRowsDeduped, { onConflict: 'creator_id,fecha' });
 
     if (insertErr) {
       console.error('[upload-excel-recommendations] Insert error:', insertErr);
@@ -496,7 +511,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[upload-excel-recommendations] Upserted ${mapped.length} records`);
+    console.log(`[upload-excel-recommendations] Successfully upserted ${dailyRowsDeduped.length} unique records`);
 
     // Refrescar la vista materializada
     console.log('[upload-excel-recommendations] Refreshing materialized view...');
@@ -511,7 +526,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           records_processed: mapped.length,
-          inserted: dailyRows.length,
+          inserted: dailyRowsDeduped.length,
+          duplicates_removed: duplicatesCount,
           snapshot_date: today,
           no_match: noMatch  // ⭐ Return non-matching rows for manual review
         }),
