@@ -386,16 +386,36 @@ serve(async (req) => {
     const sanitizeUsername = (u: string): string => 
       u.trim().toLowerCase().replace(/[^a-z0-9_\.]/g, '_').substring(0, 50);
 
-    // Detectar faltantes y crear creadores mínimos
-    const missing: Array<{ username: string; phone: string | null; }>= [];
+    // Detectar faltantes y crear creadores mínimos (DEDUPLICAR por username)
+    const missingMap = new Map<string, { username: string; phone: string | null }>();
+    let totalMissingOccurrences = 0;
+    
     for (const r of mapped) {
       const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
       const foundId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
-      if (!foundId) missing.push({ username: keyU, phone: r.phone_e164 });
+      
+      if (!foundId) {
+        totalMissingOccurrences++;
+        // Solo agregar si no existe O si el teléfono actual es mejor (no vacío vs vacío)
+        const existing = missingMap.get(keyU);
+        if (!existing || (!existing.phone && r.phone_e164)) {
+          missingMap.set(keyU, { username: keyU, phone: r.phone_e164 });
+        }
+      }
     }
 
+    const missing = Array.from(missingMap.values());
+
+    // Log si hubo deduplicación
+    if (totalMissingOccurrences > missing.length) {
+      console.log(
+        `[upload-excel-recommendations] ⚠️ Deduplicados ${totalMissingOccurrences - missing.length} creadores repetidos en Excel (${totalMissingOccurrences} ocurrencias → ${missing.length} únicos)`
+      );
+    }
+
+    let creatorsCreated = 0;
     if (missing.length) {
-      console.log(`[upload-excel-recommendations] Creando/actualizando ${missing.length} creadores faltantes`);
+      console.log(`[upload-excel-recommendations] Creando/actualizando ${missing.length} creadores únicos faltantes`);
       
       const toCreate = missing.map(m => ({
         nombre: m.username,
@@ -424,7 +444,8 @@ serve(async (req) => {
         );
       }
 
-      console.log(`[upload-excel-recommendations] Procesados ${created?.length || 0} creadores exitosamente`);
+      creatorsCreated = created?.length || 0;
+      console.log(`[upload-excel-recommendations] Procesados ${creatorsCreated} creadores exitosamente`);
       
       (created || []).forEach(c => {
         if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
@@ -521,6 +542,8 @@ serve(async (req) => {
       console.error('[upload-excel-recommendations] Error refreshing view:', refreshError);
     }
 
+    const creatorsDeduplicatedCount = totalMissingOccurrences - missing.length;
+    
     return withCORS(
       new Response(
         JSON.stringify({
@@ -528,8 +551,13 @@ serve(async (req) => {
           records_processed: mapped.length,
           inserted: dailyRowsDeduped.length,
           duplicates_removed: duplicatesCount,
+          creators_created: creatorsCreated,
+          creators_deduplicated: creatorsDeduplicatedCount,
           snapshot_date: today,
-          no_match: noMatch  // ⭐ Return non-matching rows for manual review
+          no_match: noMatch,
+          message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente` +
+                   (duplicatesCount > 0 ? ` (${duplicatesCount} duplicados removidos en daily_stats)` : '') +
+                   (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : '')
         }),
         {
           headers: { 
