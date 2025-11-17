@@ -22,7 +22,7 @@ All colors MUST be HSL.
     --popover-foreground: 220 10% 15%;
 
     /* Azul brillante para elementos activos #4A90E2 */
-    --primary: 211 75% 59%;
+    --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
 
     /* Verde suave para botones */
@@ -97,7 +97,7 @@ All colors MUST be HSL.
     --muted-foreground: 220 8% 79%;
     
     /* Turquesa suave #45D6C9 */
-    --accent: 175 61% 56%;
+    --accent: 45 100% 51%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 63% 51%;
