@@ -102,11 +102,86 @@ export type Database = {
             foreignKeyName: "batallas_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "batallas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "batallas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_badges: {
+        Row: {
+          badge_nivel: string | null
+          badge_tipo: string
+          created_at: string | null
+          creator_id: string
+          descripcion: string | null
+          fecha_obtencion: string | null
+          icono: string | null
+          id: string
+          metadata: Json | null
+          titulo: string
+        }
+        Insert: {
+          badge_nivel?: string | null
+          badge_tipo: string
+          created_at?: string | null
+          creator_id: string
+          descripcion?: string | null
+          fecha_obtencion?: string | null
+          icono?: string | null
+          id?: string
+          metadata?: Json | null
+          titulo: string
+        }
+        Update: {
+          badge_nivel?: string | null
+          badge_tipo?: string
+          created_at?: string | null
+          creator_id?: string
+          descripcion?: string | null
+          fecha_obtencion?: string | null
+          icono?: string | null
+          id?: string
+          metadata?: Json | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_badges_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_badges_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_badges_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_badges_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
@@ -283,6 +358,13 @@ export type Database = {
             foreignKeyName: "creator_bonificaciones_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_bonificaciones_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
@@ -371,6 +453,13 @@ export type Database = {
             foreignKeyName: "creator_daily_stats_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
@@ -420,6 +509,13 @@ export type Database = {
             foreignKeyName: "creator_interactions_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_interactions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
@@ -464,6 +560,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_live_daily_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
           },
           {
             foreignKeyName: "creator_live_daily_creator_id_fkey"
@@ -519,6 +622,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_metas_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
           },
           {
             foreignKeyName: "creator_metas_creator_id_fkey"
@@ -600,11 +710,92 @@ export type Database = {
             foreignKeyName: "creator_monthly_stats_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_monthly_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "creator_monthly_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_rankings: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          creator_id: string
+          diamantes_periodo: number | null
+          dias_periodo: number | null
+          horas_periodo: number | null
+          id: string
+          periodo_fin: string
+          periodo_inicio: string
+          periodo_tipo: string
+          puntos_gamificacion: number | null
+          ranking_position: number
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          creator_id: string
+          diamantes_periodo?: number | null
+          dias_periodo?: number | null
+          horas_periodo?: number | null
+          id?: string
+          periodo_fin: string
+          periodo_inicio: string
+          periodo_tipo: string
+          puntos_gamificacion?: number | null
+          ranking_position: number
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          creator_id?: string
+          diamantes_periodo?: number | null
+          dias_periodo?: number | null
+          horas_periodo?: number | null
+          id?: string
+          periodo_fin?: string
+          periodo_inicio?: string
+          periodo_tipo?: string
+          puntos_gamificacion?: number | null
+          ranking_position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_rankings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_rankings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_rankings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_rankings_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "v_nuevos_creadores_detalle"
@@ -674,6 +865,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_recommendations_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
           },
           {
             foreignKeyName: "creator_recommendations_creator_id_fkey"
@@ -847,6 +1045,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_notifications: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          id: string
+          leida: boolean | null
+          mensaje: string
+          metadata: Json | null
+          tipo_notificacion: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          leida?: boolean | null
+          mensaje: string
+          metadata?: Json | null
+          tipo_notificacion: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          leida?: boolean | null
+          mensaje?: string
+          metadata?: Json | null
+          tipo_notificacion?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ranking_notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "ranking_notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ranking_notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scoring_weights: {
         Row: {
           bono_por_dia_extra: number | null
@@ -956,6 +1216,13 @@ export type Database = {
             foreignKeyName: "supervision_live_logs_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "supervision_live_logs_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "v_creators_sin_telefono"
             referencedColumns: ["id"]
           },
@@ -967,6 +1234,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_competitions: {
+        Row: {
+          created_at: string | null
+          descripcion: string | null
+          equipos: Json
+          estado: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          nombre: string
+          resultados: Json | null
+          tipo_competencia: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descripcion?: string | null
+          equipos: Json
+          estado?: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          nombre: string
+          resultados?: Json | null
+          tipo_competencia: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descripcion?: string | null
+          equipos?: Json
+          estado?: string | null
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          nombre?: string
+          resultados?: Json | null
+          tipo_competencia?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       tenant_branding: {
         Row: {
@@ -1030,6 +1339,22 @@ export type Database = {
       }
     }
     Views: {
+      mv_leaderboard_actual: {
+        Row: {
+          categoria: string | null
+          creator_id: string | null
+          diamantes_semana: number | null
+          dias_semana: number | null
+          grupo: string | null
+          horas_semana: number | null
+          manager: string | null
+          nombre: string | null
+          ranking_position: number | null
+          telefono: string | null
+          tiktok_username: string | null
+        }
+        Relationships: []
+      }
       recommendations_today: {
         Row: {
           creator_id: string | null
@@ -1053,6 +1378,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
           },
           {
             foreignKeyName: "creator_daily_stats_creator_id_fkey"
@@ -1177,6 +1509,7 @@ export type Database = {
           total_nuevos: number
         }[]
       }
+      refresh_leaderboard_actual: { Args: never; Returns: undefined }
       refresh_recommendations_today: { Args: never; Returns: undefined }
     }
     Enums: {
