@@ -5,18 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Loader2,
-  Eye,
-  Swords,
-  Lightbulb,
-  CheckCircle2,
-  AlertCircle,
-  Download,
-  Search,
-  Video,
-  Shield
-} from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Download, Search, Shield, Lightbulb } from "lucide-react";
 import { CreatorCard } from "@/components/supervision/CreatorCard";
 import { CreatorPanel } from "@/components/supervision/CreatorPanel";
 import { IncidentDialog } from "@/components/supervision/IncidentDialog";
@@ -27,7 +16,6 @@ interface Creator {
   nombre: string;
   telefono?: string;
   dias_en_agencia?: number;
-  last_month_diamantes?: number;
   diam_live_mes?: number;
   horas_live_mes?: number;
   dias_live_mes?: number;
@@ -42,14 +30,8 @@ interface SupervisionLog {
   fecha_evento: string;
   en_vivo: boolean;
   en_batalla: boolean;
-  buena_iluminacion: boolean;
-  cumple_normas?: boolean;
-  audio_claro: boolean;
-  set_profesional: boolean;
-  score: number;
   riesgo: string;
-  reporte?: string | null;
-  created_at?: string;
+  score: number;
 }
 
 export default function SupervisionLive() {
@@ -64,385 +46,119 @@ export default function SupervisionLive() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
 
-  // Detectar parámetro creatorId en URL para pre-filtrar
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const preSelectedCreatorId = params.get('creatorId');
-    
-    if (preSelectedCreatorId && creators.length > 0) {
-      const creator = creators.find(c => c.id === preSelectedCreatorId);
-      if (creator) {
-        setSelectedCreator(creator);
-        setDrawerOpen(true);
-      }
-    }
-  }, [creators]);
-
-  useEffect(() => {
-    checkAccess();
     loadData();
-    setupRealtime();
   }, []);
-
-  const checkAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    // Lectura robusta de rol
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('role, created_at')
-      .eq('user_id', user.id);
-    
-    // Priorizar roles: admin > manager > supervisor > reclutador > viewer
-    const priority: Record<string, number> = { admin: 5, manager: 4, supervisor: 3, reclutador: 2, viewer: 1 };
-    const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
-    const userRole = sortedRoles[0]?.role || null;
-
-    if (!userRole || !['admin', 'manager', 'supervisor', 'reclutador'].includes(userRole)) {
-      toast({
-        title: "Acceso denegado",
-        description: "No tienes permisos para acceder a este módulo",
-        variant: "destructive",
-      });
-      navigate('/');
-    }
-  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // @snapshot: Get latest snapshot date (most recent data)
-      const { data: latestSnapshot, error: snapErr } = await supabase
-        .from('creator_daily_stats')
-        .select('fecha')
-        .order('fecha', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (snapErr || !latestSnapshot) {
-        setCreators([]);
-        setLoading(false);
-        toast({
-          title: "Sin snapshot diario",
-          description: "No hay datos disponibles. Sube un archivo Excel para comenzar.",
-          variant: "default",
-        });
-        return;
-      }
-
-      const snapshotDate = latestSnapshot.fecha;
-      
-      // Get creator IDs from snapshot
-      const { data: snapshotStats, error: statsErr } = await supabase
-        .from('creator_daily_stats')
-        .select('creator_id')
-        .eq('fecha', snapshotDate);
-
-      if (statsErr) throw statsErr;
-
-      const snapshotIds = new Set((snapshotStats || []).map(s => s.creator_id));
-      
-      console.log(`[SupervisionLive] Snapshot date: ${snapshotDate}, Creators: ${snapshotIds.size}`);
-
-      if (snapshotIds.size === 0) {
-        setCreators([]);
-        setLoading(false);
-        toast({
-          title: "Snapshot vacío",
-          description: `No hay creadores en el snapshot de ${snapshotDate}.`,
-          variant: "default",
-        });
-        return;
-      }
-
-      // Load ONLY creators from snapshot
-      const { data: creatorsData, error: creatorsError } = await supabase
+      const { data: creatorsData, error } = await supabase
         .from('creators')
-        .select('id, nombre, telefono, dias_en_agencia, last_month_diamantes, tiktok_username, graduacion, manager')
-        .in('id', Array.from(snapshotIds))
-        .order('nombre');
+        .select('id, nombre, tiktok_username, telefono, dias_en_agencia, manager')
+        .eq('status', 'activo');
 
-      if (creatorsError) throw creatorsError;
+      if (error) throw error;
 
-      // Calcular mes de referencia (primer día del mes actual)
       const now = new Date();
-      const mesReferencia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const mesRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-      // Cargar métricas del mes actual desde creator_bonificaciones
-      const { data: bonificacionesData, error: bonificacionesError } = await supabase
+      const { data: bonif } = await supabase
         .from('creator_bonificaciones')
         .select('creator_id, diam_live_mes, horas_live_mes, dias_live_mes')
-        .eq('mes_referencia', mesReferencia);
+        .eq('mes_referencia', mesRef);
 
-      if (bonificacionesError) console.warn('Error cargando bonificaciones:', bonificacionesError);
+      const metricsMap = new Map((bonif || []).map(m => [m.creator_id, m]));
 
-      // Crear mapa de métricas por creator_id
-      const metricsMap = new Map(
-        (bonificacionesData || []).map(m => [m.creator_id, m])
-      );
-
-      // Mergear métricas en creadores
-      const enrichedCreators = (creatorsData || []).map(c => ({
+      setCreators((creatorsData || []).map(c => ({
         ...c,
+        tiktok_username: c.tiktok_username || c.nombre,
         diam_live_mes: metricsMap.get(c.id)?.diam_live_mes || 0,
         horas_live_mes: metricsMap.get(c.id)?.horas_live_mes || 0,
         dias_live_mes: metricsMap.get(c.id)?.dias_live_mes || 0,
-      }));
+      })));
 
-      setCreators(enrichedCreators);
-
-      // Cargar logs recientes (últimas 24h)
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: logsData, error: logsError } = await supabase
+      const { data: logsData } = await supabase
         .from('supervision_live_logs')
         .select('*')
-        .gte('fecha_evento', oneDayAgo)
-        .order('fecha_evento', { ascending: false });
+        .gte('fecha_evento', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      if (logsError) throw logsError;
-      // Asegurar que cumple_normas tenga un valor por defecto
-      setLogs((logsData || []).map((log: any) => ({ ...log, cumple_normas: log.cumple_normas ?? true })));
+      setLogs(logsData || []);
     } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos",
-        variant: "destructive",
-      });
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const setupRealtime = () => {
-    const channel = supabase
-      .channel('supervision-live-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'supervision_live_logs'
-        },
-        () => {
-          loadData();
-        }
-      )
-      .subscribe();
+  const creatorsWithLogs = creators.map(c => ({
+    creator: c,
+    latestLog: logs.filter(l => l.creator_id === c.id).sort((a, b) =>
+      new Date(b.fecha_evento).getTime() - new Date(a.fecha_evento).getTime()
+    )[0]
+  }));
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
+  const filteredCreators = creatorsWithLogs.filter(({ creator, latestLog }) =>
+    (creator.tiktok_username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     creator.nombre.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (filtroRiesgo === 'todos' || latestLog?.riesgo === filtroRiesgo)
+  );
 
-  const getLatestLogForCreator = (creatorId: string): SupervisionLog | undefined => {
-    return logs.find(log => log.creator_id === creatorId);
-  };
-
-  const creatorsFiltrados = creators.filter(c => {
-    const matchSearch = c.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchSearch) return false;
-
-    if (filtroRiesgo === "todos") return true;
-
-    const latestLog = getLatestLogForCreator(c.id);
-    return latestLog?.riesgo === filtroRiesgo;
-  });
-
-  const kpis = {
-    enVivoAhora: logs.filter(l => l.en_vivo && new Date(l.fecha_evento).getTime() > Date.now() - 15 * 60 * 1000).length,
-    enBatallaAhora: logs.filter(l => l.en_batalla && new Date(l.fecha_evento).getTime() > Date.now() - 15 * 60 * 1000).length,
-    alertasActivas: logs.filter(l => l.riesgo === 'rojo').length,
-    buenaIluminacion: logs.filter(l => l.buena_iluminacion).length,
-  };
-
-  const exportarCSV = () => {
-    const dataParaExcel = logs.map(log => {
-      const creator = creators.find(c => c.id === log.creator_id);
-      return {
-        'Creador': creator?.nombre || log.creator_id,
-        'Fecha/Hora': new Date(log.fecha_evento).toLocaleString(),
-        'En Vivo': log.en_vivo ? 'Sí' : 'No',
-        'En Batalla': log.en_batalla ? 'Sí' : 'No',
-        'Buena Iluminación': log.buena_iluminacion ? 'Sí' : 'No',
-        'Cumple Normas': log.cumple_normas !== false ? 'Sí' : 'No',
-        'Audio Claro': log.audio_claro ? 'Sí' : 'No',
-        'Set Profesional': log.set_profesional ? 'Sí' : 'No',
-        'Score': log.score,
-        'Riesgo': log.riesgo,
-        'Reporte': log.reporte || '',
-      };
-    });
-
-    const ws = XLSX.utils.json_to_sheet(dataParaExcel);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Supervisión");
-    XLSX.writeFile(wb, `supervision_live_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-    toast({
-      title: "Exportado",
-      description: "Archivo descargado correctamente",
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6 max-h-screen overflow-y-auto">
-      {/* Header compacto */}
-      <div className="neo-card p-4 md:p-6">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Supervisión Live
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">
-              Supervisando: <span className="font-semibold">{creators.length}</span> creadores
-            </p>
-          </div>
-          <Button onClick={exportarCSV} variant="outline" size="sm" className="neo-button">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
-
-        {/* KPIs compactos */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
-          <div className="neo-card-sm p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <Video className="h-3 w-3 text-green-500" />
-              <p className="text-xs text-muted-foreground">En Vivo</p>
-            </div>
-            <p className="text-lg md:text-xl font-bold text-green-500">{kpis.enVivoAhora}</p>
-          </div>
-          <div className="neo-card-sm p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <Swords className="h-3 w-3 text-purple-500" />
-              <p className="text-xs text-muted-foreground">En PK</p>
-            </div>
-            <p className="text-lg md:text-xl font-bold text-purple-500">{kpis.enBatallaAhora}</p>
-          </div>
-          <div className="neo-card-sm p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="h-3 w-3 text-red-500" />
-              <p className="text-xs text-muted-foreground">Alertas</p>
-            </div>
-            <p className="text-lg md:text-xl font-bold text-red-500">{kpis.alertasActivas}</p>
-          </div>
-          <div className="neo-card-sm p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <Lightbulb className="h-3 w-3 text-yellow-600" />
-              <p className="text-xs text-muted-foreground">Buena Luz</p>
-            </div>
-            <p className="text-lg md:text-xl font-bold text-yellow-600">{kpis.buenaIluminacion}</p>
-          </div>
-        </div>
-
-        {/* Filtros compactos */}
-        <div className="flex gap-2 flex-wrap">
-          <div className="flex-1 min-w-[150px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 neo-input h-9 text-sm"
-              />
-            </div>
-          </div>
-          <div className="flex gap-1.5">
-            <Button
-              variant={filtroRiesgo === "todos" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFiltroRiesgo("todos")}
-              className="neo-button text-xs px-3"
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filtroRiesgo === "verde" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFiltroRiesgo("verde")}
-              className={`neo-button text-xs px-3 ${filtroRiesgo === "verde" ? "bg-green-500 hover:bg-green-600 text-white" : ""}`}
-            >
-              🟢
-            </Button>
-            <Button
-              variant={filtroRiesgo === "amarillo" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFiltroRiesgo("amarillo")}
-              className={`neo-button text-xs px-3 ${filtroRiesgo === "amarillo" ? "bg-yellow-500 hover:bg-yellow-600 text-white" : ""}`}
-            >
-              🟡
-            </Button>
-            <Button
-              variant={filtroRiesgo === "rojo" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFiltroRiesgo("rojo")}
-              className={`neo-button text-xs px-3 ${filtroRiesgo === "rojo" ? "bg-red-500 hover:bg-red-600 text-white" : ""}`}
-            >
-              🔴
-            </Button>
-          </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">👁️ Supervisión en Vivo</h1>
+          <p className="text-muted-foreground">Monitoreo activo de creadores</p>
         </div>
       </div>
 
-      {/* Grid compacto de creadores */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {creatorsFiltrados.length === 0 ? (
-          <div className="col-span-full neo-card p-8 text-center">
-            <p className="text-muted-foreground text-sm">
-              No se encontraron creadores
-            </p>
-          </div>
-        ) : (
-          creatorsFiltrados.map((creator) => (
-            <CreatorCard
-              key={creator.id}
-              creator={creator}
-              latestLog={getLatestLogForCreator(creator.id)}
-              onClick={() => {
-                setSelectedCreator(creator);
-                setDrawerOpen(true);
-              }}
-            />
-          ))
-        )}
+      <div className="flex gap-4">
+        <Input
+          placeholder="Buscar por username..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1"
+        />
+        <Button variant={filtroRiesgo === 'todos' ? 'default' : 'outline'} onClick={() => setFiltroRiesgo('todos')}>Todos</Button>
+        <Button variant={filtroRiesgo === 'verde' ? 'default' : 'outline'} onClick={() => setFiltroRiesgo('verde')}>Verde</Button>
+        <Button variant={filtroRiesgo === 'amarillo' ? 'default' : 'outline'} onClick={() => setFiltroRiesgo('amarillo')}>Amarillo</Button>
+        <Button variant={filtroRiesgo === 'rojo' ? 'default' : 'outline'} onClick={() => setFiltroRiesgo('rojo')}>Rojo</Button>
       </div>
 
-      {/* Panel lateral/drawer con acciones */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredCreators.map(({ creator, latestLog }) => (
+          <CreatorCard
+            key={creator.id}
+            creator={creator}
+            latestLog={latestLog}
+            onClick={() => {
+              setSelectedCreator(creator);
+              setDrawerOpen(true);
+            }}
+          />
+        ))}
+      </div>
+
       <CreatorPanel
         creator={selectedCreator}
-        latestLog={selectedCreator ? getLatestLogForCreator(selectedCreator.id) : undefined}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
+        onOpenIncident={() => setIncidentDialogOpen(true)}
         onReload={loadData}
-        onOpenIncident={() => {
-          setIncidentDialogOpen(true);
-        }}
       />
 
-      {/* Dialog de incidente */}
-      {selectedCreator && (
-        <IncidentDialog
-          open={incidentDialogOpen}
-          onOpenChange={setIncidentDialogOpen}
-          creator={selectedCreator}
-          onSuccess={loadData}
-        />
-      )}
+      <IncidentDialog
+        open={incidentDialogOpen}
+        onOpenChange={setIncidentDialogOpen}
+        creator={selectedCreator}
+        onSuccess={() => {
+          loadData();
+          setIncidentDialogOpen(false);
+        }}
+      />
     </div>
   );
 }
