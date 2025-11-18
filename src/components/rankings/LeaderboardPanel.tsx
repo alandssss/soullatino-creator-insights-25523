@@ -18,6 +18,11 @@ interface RankingData {
   dias_periodo: number;
   puntos_gamificacion: number;
   categoria: string;
+  creators?: {
+    nombre: string;
+    tiktok_username: string;
+    manager: string;
+  };
 }
 
 const POSITION_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32', '#3b82f6', '#8b5cf6'];
@@ -44,10 +49,17 @@ export function LeaderboardPanel() {
   const { data: rankings, isLoading, refetch } = useQuery({
     queryKey: ['rankings', periodo],
     queryFn: async () => {
-      // Obtener el ranking más reciente del periodo seleccionado
+      // Obtener el ranking con JOIN a creators para usernames reales
       const { data, error } = await supabase
         .from('creator_rankings')
-        .select('*')
+        .select(`
+          *,
+          creators!inner(
+            nombre,
+            tiktok_username,
+            manager
+          )
+        `)
         .eq('periodo_tipo', periodo)
         .order('periodo_inicio', { ascending: false })
         .limit(100);
@@ -71,7 +83,13 @@ export function LeaderboardPanel() {
       
       const rankingsRecientes = rankingsByPeriodo.get(periodoReciente) || [];
       
-      return rankingsRecientes.sort((a, b) => a.ranking_position - b.ranking_position);
+      // Mapear para usar usernames reales de creators
+      return rankingsRecientes.map(r => ({
+        ...r,
+        nombre: r.creators?.nombre || r.nombre,
+        tiktok_username: r.creators?.tiktok_username || r.tiktok_username,
+        manager: r.creators?.manager || r.manager,
+      } as any)).sort((a, b) => a.ranking_position - b.ranking_position);
     }
   });
 
