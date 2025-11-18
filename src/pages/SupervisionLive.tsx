@@ -30,8 +30,12 @@ interface SupervisionLog {
   fecha_evento: string;
   en_vivo: boolean;
   en_batalla: boolean;
-  riesgo: string;
+  buena_iluminacion: boolean;
+  cumple_normas?: boolean;
+  audio_claro: boolean;
+  set_profesional: boolean;
   score: number;
+  riesgo: string;
 }
 
 export default function SupervisionLive() {
