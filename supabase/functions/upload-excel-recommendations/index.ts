@@ -187,7 +187,8 @@ serve(async (req) => {
       'tiktok username': 'creator_username',
       'nombre de usuario del creador': 'creator_username',
       'creators username': 'creator_username',
-      'creator username': 'creator_username',
+      'id del creador': 'creator_username',
+      'creator id': 'creator_username',
       
       // Teléfonos
       'telefono': 'phone_e164',

@@ -1,29 +1,33 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
+import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
+import CreatorsList from "@/pages/CreatorsList";
 import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
 import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
 import BrandingSettings from "@/pages/BrandingSettings";
 import ScoringConfig from "@/pages/ScoringConfig";
 import IAEffectiveness from "@/pages/IAEffectiveness";
-import CommandCenter from "@/pages/CommandCenter";
-import CreatorsCRM from "@/pages/CreatorsCRM";
-import Campanas from "@/pages/Campanas";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import Rankings from "@/pages/Rankings";
+import { BatallasPanel } from "@/components/batallas/BatallasPanel";
 import logo from "@/assets/logo-optimized.webp";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const AppLayout = () => {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     checkUserRole();
@@ -32,8 +36,6 @@ const AppLayout = () => {
   const checkUserRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
-    setUserName(user.email?.split('@')[0] || 'Usuario');
 
     // Lectura robusta de rol
     const { data: rolesData } = await supabase
@@ -53,68 +55,130 @@ const AppLayout = () => {
     navigate("/login");
   };
 
+  const isAdmin = userRole === 'admin';
+  const isManager = userRole === 'manager';
+  const isSupervisor = userRole === 'supervisor';
+  const isViewer = userRole === 'viewer';
+
+  const navLinks = [
+    { to: "/", label: "Dashboard", roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
+    { to: "/alertas", label: "Alertas", roles: ['admin', 'manager', 'viewer'] },
+    { to: "/batallas", label: "⚔️ Batallas", roles: ['admin', 'manager', 'supervisor'] },
+    { to: "/rankings", label: "🏆 Rankings", roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+    { to: "/supervision", label: "Supervisión", roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
+    { to: "/reclutamiento", label: "Reclutamiento", roles: ['admin', 'manager', 'reclutador'] },
+    { to: "/admin", label: "⚙️ Admin", roles: ['admin'] },
+    { to: "/ia-effectiveness", label: "IA Stats", roles: ['admin', 'manager'] },
+  ].filter(link => userRole && link.roles.includes(userRole));
+
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-[hsl(220,15%,11%)]">
-        <AppSidebar userRole={userRole} />
-        
-        <main className="flex-1 overflow-y-auto">
-          {/* Top Bar Global */}
-          <header className="h-16 border-b border-[hsl(220,15%,22%)] bg-[hsl(220,15%,11%)]/95 backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center justify-between px-6 h-full">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-gradient-dark w-full overflow-x-hidden">
+      <header className="border-b border-border/50 neo-card-sm sticky top-0 z-50">
+        <div className="container mx-auto px-3 md:px-6 py-2 md:py-4 max-w-full">
+          <div className="flex items-center justify-between gap-2">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-2 md:gap-6 min-w-0 flex-1">
+              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                <div className="relative group flex-shrink-0">
+                  <div className="absolute inset-0 bg-gradient-premium rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
                   <img 
                     src={logo} 
                     alt="Soullatino" 
-                    className="h-8 w-8 object-contain" 
+                    className="relative h-7 w-7 md:h-10 md:w-10 object-contain" 
+                    width="40" 
+                    height="40" 
+                    loading="eager" 
                   />
-                  <span className="text-lg font-semibold text-white hidden md:block">
-                    Soullatino Command Center
-                  </span>
                 </div>
+                <h1 className="text-sm md:text-2xl font-bold bg-gradient-premium bg-clip-text text-transparent animate-fade-in truncate">
+                  Soullatino Analytics
+                </h1>
               </div>
               
-              {/* Usuario + Logout */}
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground hidden md:block">{userName}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Salir
-                </Button>
-              </div>
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center gap-2">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={({ isActive }) =>
+                      `px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                        isActive
+                          ? "neo-card-sm border border-primary/30 text-primary shadow-glow-primary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </nav>
             </div>
-          </header>
-          
-          {/* Content Area */}
-          <div className="min-h-[calc(100vh-4rem)]">
-            <Routes>
-              <Route path="/" element={<CommandCenter />} />
-              <Route path="/creadores" element={<CreatorsCRM />} />
-              <Route path="/creadores/:id" element={<div className="p-6">Creator Profile (Coming soon)</div>} />
-              <Route path="/campanas" element={<Navigate to="/campanas/batallas" replace />} />
-              <Route path="/campanas/*" element={<Campanas />} />
-              <Route path="/analitica/performance" element={<div className="p-6">Performance (Coming soon)</div>} />
-              <Route path="/analitica/ia" element={<IAEffectiveness />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/supervision" element={<SupervisionLive />} />
-              <Route path="/reclutamiento" element={<Reclutamiento />} />
-              <Route path="/alertas" element={<AlertasSugerenciasPage />} />
-              <Route path="/branding" element={<BrandingSettings />} />
-              <Route path="/scoring" element={<ScoringConfig />} />
-              <Route path="/debug" element={<DebugTools />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Mobile Menu */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="lg:hidden neo-button flex-shrink-0">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="neo-card border-r border-border/50 w-[280px] max-w-[80vw]">
+                  <nav className="flex flex-col gap-3 mt-8">
+                    {navLinks.map((link) => (
+                      <NavLink
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                            isActive
+                              ? "neo-card-sm border border-primary/30 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                          }`
+                        }
+                      >
+                        {link.label}
+                      </NavLink>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="neo-button hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 flex-shrink-0"
+              >
+                <LogOut className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Salir</span>
+              </Button>
+            </div>
           </div>
-        </main>
-      </div>
-    </SidebarProvider>
+        </div>
+      </header>
+
+      <main className="flex-1 w-full overflow-x-hidden">
+        <div className="container mx-auto px-3 md:px-6 py-4 md:py-6 max-w-full">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/alertas" element={<AlertasSugerenciasPage />} />
+            <Route path="/batallas" element={<BatallasPanel />} />
+            <Route path="/rankings" element={<Rankings />} />
+            <Route path="/reclutamiento" element={<Reclutamiento />} />
+            <Route path="/supervision" element={<SupervisionLive />} />
+            <Route path="/branding" element={<BrandingSettings />} />
+            <Route path="/scoring" element={<ScoringConfig />} />
+            <Route path="/ia-effectiveness" element={<IAEffectiveness />} />
+            <Route path="/debug" element={<DebugTools />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </main>
+    </div>
   );
 };
 

@@ -61,11 +61,9 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
           </span>
         </div>
         
-        {/* Username e info */}
+        {/* Nombre e info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm truncate">
-            @{creator.tiktok_username || creator.nombre}
-          </h3>
+          <h3 className="font-semibold text-sm truncate">{creator.nombre}</h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {latestLog && (
               <>

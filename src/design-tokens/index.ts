@@ -1,50 +1,19 @@
 /**
- * Design Tokens - Sistema de Diseño Premium "Command Center"
+ * Design Tokens - Sistema de Diseño Neoformista Premium
  * 
- * Theme: Obsidiana & Azul Eléctrico - Professional B2B SaaS
+ * Todos los valores de diseño centralizados para garantizar consistencia.
+ * Estos tokens se usan en conjunto con las variables CSS definidas en index.css
  */
 
 export const colors = {
-  // Fondos Obsidiana (Oscuros Premium)
-  background: {
-    primary: 'hsl(220, 15%, 11%)',      // #1A1D24 - Fondo principal
-    card: 'hsl(220, 15%, 16%)',         // #252932 - Tarjetas
-    elevated: 'hsl(220, 15%, 19%)',     // #2D3139 - Elementos elevados
-    hover: 'hsl(220, 15%, 22%)',        // Hover states
+  // Base neomórfica - gris muy claro para light mode
+  neo: {
+    base: 'hsl(220, 18%, 92%)',      // Fondo principal #dfe4ed
+    elevated: 'hsl(220, 18%, 95%)',  // Tarjetas elevadas
+    pressed: 'hsl(220, 15%, 88%)',   // Estado pressed
   },
   
-  // Acentos Premium
-  accent: {
-    primary: 'hsl(211, 100%, 50%)',     // #007AFF - Azul eléctrico
-    primaryHover: 'hsl(211, 100%, 43%)', // #0066DD - Hover
-    gold: 'hsl(45, 100%, 51%)',         // #FFC107 - Dorado (logros, dinero)
-    goldGlow: 'hsl(45, 100%, 65%)',     // Glow effect
-  },
-  
-  // Semántica de Estado
-  semantic: {
-    error: 'hsl(4, 76%, 57%)',          // #E53935 - Alertas críticas
-    warning: 'hsl(36, 100%, 50%)',      // #FF9800 - Advertencias
-    success: 'hsl(122, 39%, 49%)',      // #4CAF50 - Éxito
-    info: 'hsl(207, 90%, 54%)',         // #2196F3 - Info
-  },
-  
-  // Textos
-  text: {
-    primary: 'hsl(0, 0%, 100%)',        // #FFFFFF - Texto principal
-    secondary: 'hsl(0, 0%, 63%)',       // #A0A0A0 - Texto secundario
-    tertiary: 'hsl(0, 0%, 44%)',        // #707070 - Texto terciario
-    muted: 'hsl(0, 0%, 35%)',           // #595959 - Muy muted
-  },
-  
-  // Bordes
-  border: {
-    default: 'hsl(220, 15%, 22%)',      // #3A3F47 - Bordes normales
-    hover: 'hsl(211, 100%, 50%)',       // #007AFF - Bordes en hover
-    muted: 'hsl(220, 15%, 18%)',        // Bordes sutiles
-  },
-  
-  // Sombras Neoformistas (mantenidas para compatibilidad)
+  // Sombras duales (light + dark) - definidas en CSS vars
   shadows: {
     neo: {
       light: 'var(--neo-shadow-light)',
@@ -54,70 +23,92 @@ export const colors = {
       light: 'var(--neo-shadow-light)',
       dark: 'var(--neo-shadow-dark)',
     },
+    pressed: {
+      light: 'var(--neo-shadow-pressed-light)',
+      dark: 'var(--neo-shadow-pressed-dark)',
+    },
+    sm: {
+      light: 'var(--neo-shadow-sm-light)',
+      dark: 'var(--neo-shadow-sm-dark)',
+    },
+  },
+  
+  // Colores funcionales
+  primary: {
+    base: 'hsl(211, 75%, 59%)',     // Azul brillante #4A90E2
+    glow: 'hsl(211, 80%, 64%)',     // Azul vibrante #5B9FED
+    contrast: 'hsl(0, 0%, 100%)',
+  },
+  
+  secondary: {
+    base: 'hsl(119, 38%, 66%)',     // Verde suave
+    contrast: 'hsl(0, 0%, 11%)',
+  },
+  
+  accent: {
+    base: 'hsl(175, 61%, 56%)',     // Turquesa #45D6C9
+    glow: '0 0 24px rgba(69, 214, 201, 0.5)',
   },
 } as const;
 
 /**
- * Espaciado basado en escala de 4px (más compacto para dashboards)
+ * Espaciado basado en escala de 8px
  */
 export const spacing = {
-  micro: '2px',   // 0.5
-  tiny: '4px',    // 1
-  xs: '8px',      // 2
-  sm: '12px',     // 3
-  base: '16px',   // 4
-  md: '24px',     // 6
-  lg: '32px',     // 8
-  xl: '48px',     // 12
-  xxl: '64px',    // 16
+  micro: '2px',   // 0.5 - badges, separadores
+  tiny: '4px',    // 1 - padding interno
+  xs: '8px',      // 2 - separación íconos
+  sm: '12px',     // 3 - elementos relacionados
+  base: '16px',   // 4 - secciones menores
+  md: '24px',     // 6 - tarjetas principales
+  lg: '32px',     // 8 - secciones mayores
+  xl: '48px',     // 12 - estados vacíos
+  xxl: '64px',    // 16 - hero sections
 } as const;
 
 /**
- * Border Radius - Más pronunciado para diseño premium
+ * Border Radius con jerarquía clara
  */
 export const borderRadius = {
-  sm: '6px',      // Pequeños elementos
-  md: '10px',     // Botones, inputs
-  lg: '14px',     // Tarjetas secundarias
-  xl: '18px',     // Tarjetas principales
-  xxl: '24px',    // Elementos hero
+  sm: '8px',      // Botones pequeños
+  md: '12px',     // Botones y elementos internos
+  lg: '16px',     // Tarjetas secundarias
+  xl: '24px',     // Tarjetas principales (marca distintiva)
   full: '9999px', // Pills, badges, avatars
 } as const;
 
 /**
- * Tipografía - Inter como fuente principal
+ * Tipografía con escala modular
  */
 export const typography = {
   font: {
-    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    family: "'Inter', 'SF Pro Display', system-ui, sans-serif",
     weights: {
       regular: 400,
       medium: 500,
       semibold: 600,
       bold: 700,
-      extrabold: 800,
     },
   },
   sizes: {
-    xs: '11px',    // Captions, metadata
-    sm: '13px',    // Body pequeño, labels
-    base: '15px',  // Body principal
-    lg: '17px',    // Lead text
-    xl: '19px',    // H4, subtítulos
-    '2xl': '24px', // H3, card titles
-    '3xl': '30px', // H2, section titles
-    '4xl': '36px', // H1, page titles
-    '5xl': '48px', // Hero titles
+    xs: '12px',    // Captions, metadatos
+    sm: '14px',    // Body, labels
+    base: '16px',  // Body principal
+    lg: '18px',    // Lead text
+    xl: '20px',    // H3, card titles
+    '2xl': '24px', // H2, section titles
+    '3xl': '28px', // H1, page titles
+    '4xl': '36px', // Hero titles
   },
   lineHeight: {
-    tight: 1.25,   // Títulos
+    tight: 1.2,    // Títulos
     normal: 1.5,   // Body
-    relaxed: 1.75, // Long-form
+    relaxed: 1.7,  // Long-form content
   },
 } as const;
 
 /**
- * Motion & Transitions - Suaves y profesionales
+ * Motion & Transitions
  */
 export const motion = {
   duration: {
@@ -125,13 +116,12 @@ export const motion = {
     fast: '150ms',
     normal: '200ms',
     slow: '300ms',
-    slower: '500ms',
   },
   easing: {
-    smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',      // Ease-in-out
-    spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Bounce
-    enter: 'cubic-bezier(0, 0, 0.2, 1)',         // Ease-out
-    exit: 'cubic-bezier(0.4, 0, 1, 1)',          // Ease-in
+    smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',      // Suave y natural
+    spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Efecto rebote sutil
+    enter: 'cubic-bezier(0, 0, 0.2, 1)',         // Entrada
+    exit: 'cubic-bezier(0.4, 0, 1, 1)',          // Salida
   },
 } as const;
 
@@ -146,15 +136,4 @@ export const elevation = {
   modal: 1040,
   popover: 1050,
   tooltip: 1060,
-} as const;
-
-/**
- * Breakpoints para responsive design
- */
-export const breakpoints = {
-  sm: '640px',
-  md: '768px',
-  lg: '1024px',
-  xl: '1280px',
-  '2xl': '1536px',
 } as const;

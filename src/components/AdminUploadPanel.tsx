@@ -24,7 +24,6 @@ const ExcelPayloadSchema = z.array(z.object({
 export const AdminUploadPanel = () => {
   const [uploading, setUploading] = useState(false);
   const [seeding, setSeeding] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [importingPhones, setImportingPhones] = useState(false);
   const [phoneText, setPhoneText] = useState("");
@@ -340,42 +339,6 @@ export const AdminUploadPanel = () => {
     }
   };
 
-  const handleSyncCreators = async () => {
-    if (!file) {
-      toast({
-        title: "Sin archivo",
-        description: "Debes seleccionar un archivo Excel primero",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSyncing(true);
-    try {
-      const excelData = await processExcelFile(file) as any[];
-      
-      const { data, error } = await supabase.functions.invoke('sync-creators-from-excel', {
-        body: { excelData }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Sincronización completada",
-        description: `Actualizados: ${data.stats.creators_actualizados} | Creados: ${data.stats.creators_creados}`,
-      });
-    } catch (error) {
-      console.error('Error sincronizando:', error);
-      toast({
-        title: "Error",
-        description: String(error),
-        variant: "destructive",
-      });
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const seedDemoData = async () => {
     setSeeding(true);
     try {
@@ -449,43 +412,23 @@ export const AdminUploadPanel = () => {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleUpload}
-            disabled={!file || uploading}
-            className="flex-1"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Cargar Stats
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleSyncCreators}
-            disabled={!file || syncing}
-            variant="outline"
-            className="flex-1"
-          >
-            {syncing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <Database className="h-4 w-4 mr-2" />
-                Sincronizar Creadores
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={handleUpload}
+          disabled={!file || uploading}
+          className="w-full"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Procesando...
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-2" />
+              Cargar Datos de Creadores
+            </>
+          )}
+        </Button>
         <div className="text-xs text-muted-foreground space-y-1">
           <p>• El archivo debe ser Excel (.xlsx o .xls)</p>
           <p>• Columnas reconocidas: Nombre, Diamantes, Horas, Días en Live, Estado de Graduación, Manager, Grupo</p>

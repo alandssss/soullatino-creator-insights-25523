@@ -111,10 +111,6 @@ verify_jwt = false
 [functions.generate-badge-image]
 verify_jwt = false
 
-# Regenerar imágenes para badges existentes sin image_url
-[functions.regenerate-badge-images]
-verify_jwt = true
-
 # Cálculo de rankings y badges gamificados
 [functions.calculate-rankings]
 verify_jwt = false
