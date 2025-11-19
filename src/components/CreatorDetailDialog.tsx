@@ -492,6 +492,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
               <BonificacionesPanel 
                 creatorId={creator.id} 
                 creatorName={creator.nombre}
+                tiktok_username={creator.tiktok_username || undefined}
                 creatorPhone={creator.telefono}
               />
             </TabsContent>

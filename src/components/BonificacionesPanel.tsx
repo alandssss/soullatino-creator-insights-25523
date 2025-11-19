@@ -16,10 +16,11 @@ import { cn } from "@/lib/utils";
 interface BonificacionesPanelProps {
   creatorId: string;
   creatorName: string;
+  tiktok_username?: string;
   creatorPhone?: string | null;
 }
 
-export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: BonificacionesPanelProps) => {
+export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, creatorPhone }: BonificacionesPanelProps) => {
   const [bonificacion, setBonificacion] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -227,14 +228,14 @@ export const BonificacionesPanel = ({ creatorId, creatorName, creatorPhone }: Bo
                   <h4 className="font-semibold text-sm">💬 Mensaje Personalizado</h4>
                   <p className="text-sm text-muted-foreground">
                     {bonificacion?.texto_creador || 
-                     `¡Hola ${creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
+                     `¡Hola @${tiktok_username || creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
                   </p>
                   {creatorPhone && (
                     <WhatsappButton
                       phone={creatorPhone}
                       country="MX"
                       message={bonificacion?.texto_creador || 
-                               `Hola ${creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
+                               `Hola @${tiktok_username || creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
                       className="w-full"
                     />
                   )}

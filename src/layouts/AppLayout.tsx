@@ -9,6 +9,7 @@ import Admin from "@/pages/Admin";
 import Reclutamiento from "@/pages/Reclutamiento";
 import SupervisionLive from "@/pages/SupervisionLive";
 import CreatorsList from "@/pages/CreatorsList";
+import CreatorProfile from "@/pages/CreatorProfile";
 import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
 import DebugTools from "@/pages/DebugTools";
 import NotFound from "@/pages/NotFound";
@@ -170,6 +171,7 @@ const AppLayout = () => {
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/reclutamiento" element={<Reclutamiento />} />
             <Route path="/supervision" element={<SupervisionLive />} />
+            <Route path="/supervision/:id" element={<CreatorProfile />} />
             <Route path="/branding" element={<BrandingSettings />} />
             <Route path="/scoring" element={<ScoringConfig />} />
             <Route path="/ia-effectiveness" element={<IAEffectiveness />} />

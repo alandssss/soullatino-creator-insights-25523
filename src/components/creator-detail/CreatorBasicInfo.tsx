@@ -24,7 +24,7 @@ export const CreatorBasicInfo = ({ creator, dailyStats }: CreatorBasicInfoProps)
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <InfoBox 
           label="Usuario TikTok" 
-          value={`@${creator.tiktok_username || "No especificado"}`}
+          value={creator.tiktok_username ? `@${creator.tiktok_username}` : "No especificado"}
         />
         <InfoBox 
           label="Teléfono" 
