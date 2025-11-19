@@ -6,6 +6,7 @@ interface CreatorHeaderProps {
   creator: {
     id: string;
     nombre: string;
+    tiktok_username?: string;
     engagement_rate?: number;
   };
   onWhatsApp: () => void;
@@ -23,7 +24,8 @@ export function CreatorHeader({
   loadingAI,
   userRole,
 }: CreatorHeaderProps) {
-  const initials = creator.nombre
+  const username = creator.tiktok_username || creator.nombre;
+  const initials = username
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -39,7 +41,10 @@ export function CreatorHeader({
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-2xl font-bold">{creator.nombre}</h2>
+          <h2 className="text-2xl font-bold">@{username}</h2>
+          {creator.tiktok_username && creator.nombre !== creator.tiktok_username && (
+            <p className="text-sm text-muted-foreground">{creator.nombre}</p>
+          )}
           {creator.engagement_rate !== undefined && (
             <p className="text-sm text-muted-foreground">
               Engagement: {creator.engagement_rate.toFixed(2)}%
