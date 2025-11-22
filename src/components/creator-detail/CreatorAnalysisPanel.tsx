@@ -283,23 +283,23 @@ export const CreatorAnalysisPanel = ({ creatorId, creatorName }: CreatorAnalysis
           {causes.map((cause, index) => (
             <div
               key={index}
-              className="p-4 rounded-lg bg-muted/10 border border-border/30 space-y-3"
+              className="p-4 rounded-lg bg-muted/10 border border-border/30 space-y-3 text-wrap-safe"
             >
               <div className="flex items-start gap-3">
                 {getCauseIcon(cause.tipo)}
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-semibold text-sm">{cause.titulo}</h4>
+                    <h4 className="font-semibold text-sm break-words">{cause.titulo}</h4>
                     <Badge className={`${getSeverityColor(cause.severidad)} text-xs`}>
                       {cause.severidad}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{cause.descripcion}</p>
+                  <p className="text-sm text-muted-foreground break-words">{cause.descripcion}</p>
                   <div className="space-y-1">
                     <p className="text-xs font-medium">Evidencia:</p>
                     <ul className="text-xs text-muted-foreground space-y-1 pl-4">
                       {cause.evidencia.map((ev, i) => (
-                        <li key={i} className="list-disc">{ev}</li>
+                        <li key={i} className="list-disc break-words">{ev}</li>
                       ))}
                     </ul>
                   </div>
@@ -318,17 +318,17 @@ export const CreatorAnalysisPanel = ({ creatorId, creatorName }: CreatorAnalysis
           {actionPlan.map((action, index) => (
             <div
               key={index}
-              className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2"
+              className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2 text-wrap-safe"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       #{action.prioridad}
                     </Badge>
-                    <span className="text-sm font-medium">{action.accion}</span>
+                    <span className="text-sm font-medium break-words">{action.accion}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
+                  <div className="text-xs text-muted-foreground space-y-0.5 break-words">
                     <p>👤 Responsable: {action.responsable}</p>
                     <p>⏰ Plazo: {action.plazo}</p>
                   </div>
