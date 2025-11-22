@@ -892,6 +892,62 @@ export type Database = {
           },
         ]
       }
+      creator_tags: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          creator_id: string
+          id: string
+          notes: string | null
+          tag: Database["public"]["Enums"]["tag_type"]
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          creator_id: string
+          id?: string
+          notes?: string | null
+          tag: Database["public"]["Enums"]["tag_type"]
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          creator_id?: string
+          id?: string
+          notes?: string | null
+          tag?: Database["public"]["Enums"]["tag_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_tags_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_tags_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_tags_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_tags_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_tasks: {
         Row: {
           asignado_a: string | null
@@ -899,6 +955,7 @@ export type Database = {
           creator_id: string
           descripcion: string
           estado: string
+          fecha_completado: string | null
           fecha_limite: string | null
           id: string
           notas: string | null
@@ -912,6 +969,7 @@ export type Database = {
           creator_id: string
           descripcion: string
           estado?: string
+          fecha_completado?: string | null
           fecha_limite?: string | null
           id?: string
           notas?: string | null
@@ -925,6 +983,7 @@ export type Database = {
           creator_id?: string
           descripcion?: string
           estado?: string
+          fecha_completado?: string | null
           fecha_limite?: string | null
           id?: string
           notas?: string | null
@@ -1072,12 +1131,17 @@ export type Database = {
           diamantes_estimados: number | null
           email: string | null
           estado: string
+          etapa: string | null
           fecha_contacto: string | null
+          fecha_proximo_contacto: string | null
           fecha_ultima_actualizacion: string | null
           id: string
           instagram: string | null
           nombre: string
           notas: string | null
+          origen: string | null
+          proxima_accion: string | null
+          responsable: string | null
           seguidores_estimados: number | null
           telefono: string | null
           tiktok_username: string | null
@@ -1089,12 +1153,17 @@ export type Database = {
           diamantes_estimados?: number | null
           email?: string | null
           estado?: string
+          etapa?: string | null
           fecha_contacto?: string | null
+          fecha_proximo_contacto?: string | null
           fecha_ultima_actualizacion?: string | null
           id?: string
           instagram?: string | null
           nombre: string
           notas?: string | null
+          origen?: string | null
+          proxima_accion?: string | null
+          responsable?: string | null
           seguidores_estimados?: number | null
           telefono?: string | null
           tiktok_username?: string | null
@@ -1106,12 +1175,17 @@ export type Database = {
           diamantes_estimados?: number | null
           email?: string | null
           estado?: string
+          etapa?: string | null
           fecha_contacto?: string | null
+          fecha_proximo_contacto?: string | null
           fecha_ultima_actualizacion?: string | null
           id?: string
           instagram?: string | null
           nombre?: string
           notas?: string | null
+          origen?: string | null
+          proxima_accion?: string | null
+          responsable?: string | null
           seguidores_estimados?: number | null
           telefono?: string | null
           tiktok_username?: string | null
@@ -1544,6 +1618,16 @@ export type Database = {
         Args: { p_email: string; p_ip: string }
         Returns: boolean
       }
+      get_manager_kpis: {
+        Args: never
+        Returns: {
+          creator_count: number
+          last_interaction: string
+          manager_name: string
+          potential_bonuses_saved: number
+          tasks_completed_week: number
+        }[]
+      }
       get_recommendations_today: {
         Args: never
         Returns: {
@@ -1588,6 +1672,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "viewer" | "supervisor" | "reclutador"
+      tag_type:
+        | "VIP"
+        | "Nuevo"
+        | "Riesgo Alto"
+        | "Potencial 300K"
+        | "Graduado"
+        | "Inactivo"
+        | "Prioritario"
+        | "En Observación"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1716,6 +1809,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "viewer", "supervisor", "reclutador"],
+      tag_type: [
+        "VIP",
+        "Nuevo",
+        "Riesgo Alto",
+        "Potencial 300K",
+        "Graduado",
+        "Inactivo",
+        "Prioritario",
+        "En Observación",
+      ],
     },
   },
 } as const
