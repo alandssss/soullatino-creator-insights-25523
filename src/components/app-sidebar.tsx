@@ -29,7 +29,7 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="hidden md:flex md:w-64 flex-col border-r border-border/50 bg-card/30 backdrop-blur-sm">
+    <div className="hidden md:flex md:w-64 flex-col border-r border-border/50 glass-card">
       {/* Logo/Header */}
       <div className="flex items-center gap-3 p-6 border-b border-border/50">
         <div className="relative group">

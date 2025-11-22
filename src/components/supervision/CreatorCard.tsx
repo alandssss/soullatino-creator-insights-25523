@@ -1,5 +1,6 @@
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   id: string;
@@ -63,7 +64,7 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
         
         {/* Nombre e info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm truncate">{creator.nombre}</h3>
+          <h3 className="font-semibold text-sm truncate">{getCreatorDisplayName(creator)}</h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {latestLog && (
               <>
