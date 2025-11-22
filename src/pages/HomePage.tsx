@@ -184,8 +184,8 @@ const HomePage = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {kpi.title}
             </CardTitle>
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 group-hover:from-primary/30 group-hover:to-accent/30 transition-all">
-              <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
+          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 group-hover:from-blue-500/30 group-hover:to-indigo-500/30 transition-all">
+            <kpi.icon className="h-5 w-5 text-blue-400" />
             </div>
           </CardHeader>
           <CardContent>
