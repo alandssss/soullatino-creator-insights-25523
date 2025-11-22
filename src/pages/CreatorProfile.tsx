@@ -208,7 +208,7 @@ export default function CreatorProfile() {
         <TabsContent value="bonificaciones" className="mt-6">
           <CreatorBonuses
             creatorId={creator.id}
-            creatorName={creator.nombre}
+            creatorName={getCreatorDisplayName(creator)}
             tiktok_username={creator.tiktok_username || undefined}
           />
         </TabsContent>
