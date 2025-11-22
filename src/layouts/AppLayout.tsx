@@ -52,7 +52,7 @@ const AppLayout = () => {
           <Button 
             variant="outline" 
             size="icon" 
-            className="md:hidden fixed top-4 left-4 z-50 neo-button bg-slate-950/80 backdrop-blur-md border-white/10"
+            className="md:hidden fixed top-4 left-4 z-50 neo-button bg-slate-950/90 backdrop-blur-md border-white/20 shadow-lg hover:bg-slate-900 hover:border-white/30 transition-all"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -61,7 +61,7 @@ const AppLayout = () => {
           side="left" 
           className="bg-slate-950/95 backdrop-blur-xl border-r border-white/10 w-[260px] max-w-[80vw] p-0"
         >
-          <AppSidebar userRole={userRole} />
+          <AppSidebar userRole={userRole} isMobile={true} />
         </SheetContent>
       </Sheet>
 

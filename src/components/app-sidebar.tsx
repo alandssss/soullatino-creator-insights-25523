@@ -33,9 +33,10 @@ const sidebarNav: SidebarNavItem[] = [
 
 interface AppSidebarProps {
   userRole: string | null;
+  isMobile?: boolean;
 }
 
-export function AppSidebar({ userRole }: AppSidebarProps) {
+export function AppSidebar({ userRole, isMobile = false }: AppSidebarProps) {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -50,7 +51,10 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   );
 
   return (
-    <div className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white relative">
+    <div className={cn(
+      "flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white relative",
+      isMobile ? "flex w-full" : "hidden md:flex md:w-64"
+    )}>
       {/* Gradient overlay sutil en el fondo */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent pointer-events-none" />
       

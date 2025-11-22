@@ -163,7 +163,7 @@ export default function CreatorProfile() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 p-6">
+    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6 container-safe">
       <Button variant="outline" onClick={() => navigate('/supervision')}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver a Creadores

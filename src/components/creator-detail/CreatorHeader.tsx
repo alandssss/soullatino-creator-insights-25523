@@ -43,9 +43,9 @@ export function CreatorHeader({
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-2xl font-bold">{displayName}</h2>
+          <h2 className="text-2xl font-bold break-words">{displayName}</h2>
           {creator.nombre && !creator.nombre.match(/^\d+$/) && (
-            <p className="text-sm text-muted-foreground">{creator.nombre}</p>
+            <p className="text-sm text-muted-foreground break-words">{creator.nombre}</p>
           )}
           {creator.engagement_rate !== undefined && (
             <p className="text-sm text-muted-foreground">

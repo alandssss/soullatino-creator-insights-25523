@@ -509,3 +509,44 @@ button, .clickable {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ========================================
+   TEXT OVERFLOW FIXES
+   ======================================== */
+
+/* Prevenir overflow de texto largo */
+.text-wrap-safe {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Contenedores que necesitan contener texto */
+.container-safe {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Cards que deben contener contenido */
+.card-contained {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.card-contained > * {
+  max-width: 100%;
+}
+
+/* Textos que pueden ser muy largos (URLs, IDs, etc.) */
+.text-breakable {
+  word-break: break-all;
+}
+
+/* Código o datos técnicos */
+pre, code {
+  max-width: 100%;
+  overflow-x: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
