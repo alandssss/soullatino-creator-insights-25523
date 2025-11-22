@@ -27,10 +27,12 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   id: string;
   nombre: string;
+  tiktok_username?: string;
   telefono?: string;
   dias_en_agencia?: number;
   diam_live_mes?: number;
@@ -134,15 +136,15 @@ export function CreatorDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh] neo-card">
         <DrawerHeader className="border-b border-border/50">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full neo-card-sm flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                <span className="text-lg font-bold text-primary">
-                  {creator.nombre.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <DrawerTitle className="text-xl">{creator.nombre}</DrawerTitle>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full neo-card-sm flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                  <span className="text-lg font-bold text-primary">
+                    {getCreatorDisplayName(creator).charAt(1)?.toUpperCase() || 'C'}
+                  </span>
+                </div>
+                <div>
+                  <DrawerTitle className="text-xl">{getCreatorDisplayName(creator)}</DrawerTitle>
                 <DrawerDescription className="flex items-center gap-2 mt-1">
                   <div className={`w-3 h-3 rounded-full ${getRiesgoColor(latestLog?.riesgo)}`} />
                   {latestLog?.riesgo === 'verde' && 'Excelente'}

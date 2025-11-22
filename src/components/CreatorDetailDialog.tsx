@@ -30,6 +30,7 @@ import { CreatorSupervisionHistory } from "./creator-detail/CreatorSupervisionHi
 import { CreatorMetricsPanel } from "./creator-detail/CreatorMetricsPanel";
 import { WhatsAppPreviewModal } from "./creator-detail/WhatsAppPreviewModal";
 import { creatorMetricsService } from "@/services/creatorMetricsService";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -368,7 +369,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
         <DrawerHeader className="pb-4 border-b border-border/50 space-y-3 flex-shrink-0 px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <DrawerTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent flex flex-wrap items-center gap-2 sm:gap-3">
-              {creator.nombre}
+              {getCreatorDisplayName(creator)}
             </DrawerTitle>
             
             {/* Botón de IA prominente en header */}

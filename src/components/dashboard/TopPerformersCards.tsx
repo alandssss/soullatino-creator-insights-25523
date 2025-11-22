@@ -2,10 +2,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   id: string;
   nombre: string;
+  tiktok_username?: string;
   diamantes: number;
   views: number;
   hito_diamantes: number;
@@ -66,7 +68,7 @@ export default function TopPerformersCards({ creators }: TopPerformersCardsProps
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{medals[index]}</span>
-                  <h3 className="font-bold text-lg truncate">{creator.nombre}</h3>
+                  <h3 className="font-bold text-lg truncate">{getCreatorDisplayName(creator)}</h3>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

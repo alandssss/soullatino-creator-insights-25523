@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sparkles, MessageCircle, Target } from "lucide-react";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface CreatorHeaderProps {
   creator: {
@@ -24,8 +25,9 @@ export function CreatorHeader({
   loadingAI,
   userRole,
 }: CreatorHeaderProps) {
-  const username = creator.tiktok_username || creator.nombre;
-  const initials = username
+  const displayName = getCreatorDisplayName(creator);
+  const initials = displayName
+    .replace('@', '')
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -41,8 +43,8 @@ export function CreatorHeader({
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-2xl font-bold">@{username}</h2>
-          {creator.tiktok_username && creator.nombre !== creator.tiktok_username && (
+          <h2 className="text-2xl font-bold">{displayName}</h2>
+          {creator.nombre && !creator.nombre.match(/^\d+$/) && (
             <p className="text-sm text-muted-foreground">{creator.nombre}</p>
           )}
           {creator.engagement_rate !== undefined && (

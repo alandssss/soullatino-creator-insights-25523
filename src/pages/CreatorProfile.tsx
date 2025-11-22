@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { getCreatorDisplayName } from '@/utils/creator-display';
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -97,7 +98,7 @@ export default function CreatorProfile() {
 
   const handleWhatsApp = () => {
     if (creator?.telefono) {
-      const message = `Hola @${creator.tiktok_username || creator.nombre}! Tu manager de Soullatino aquí.`;
+      const message = `Hola ${getCreatorDisplayName(creator)}! Tu manager de Soullatino aquí.`;
       window.open(`https://wa.me/${creator.telefono}?text=${encodeURIComponent(message)}`, '_blank');
     }
   };
