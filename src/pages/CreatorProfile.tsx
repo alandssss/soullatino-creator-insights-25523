@@ -13,6 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCreatorDisplayName } from '@/utils/creator-display';
+import { WhatsAppPreviewModal } from '@/components/creator-detail/WhatsAppPreviewModal';
+import { creatorMetricsService } from '@/services/creatorMetricsService';
+import { MessageSquare } from 'lucide-react';
 
 type Creator = Tables<"creators">;
 type Interaction = Tables<"creator_interactions">;
@@ -25,6 +28,9 @@ export default function CreatorProfile() {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [dailyMessage, setDailyMessage] = useState<string>('');
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [loadingDailyMessage, setLoadingDailyMessage] = useState(false);
 
   useEffect(() => {
     checkUserRole();
@@ -96,18 +102,32 @@ export default function CreatorProfile() {
     }
   };
 
-  const handleWhatsApp = () => {
-    if (creator?.telefono) {
-      const message = `Hola ${getCreatorDisplayName(creator)}! Tu manager de Soullatino aquí.`;
-      window.open(`https://wa.me/${creator.telefono}?text=${encodeURIComponent(message)}`, '_blank');
+  const handleGenerateAI = async () => {
+    if (!creator) return;
+    
+    setLoadingDailyMessage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userName = user?.email?.split('@')[0] || 'el equipo';
+      
+      const message = await creatorMetricsService.generateDailyMessage(
+        creator.id,
+        getCreatorDisplayName(creator),
+        userName
+      );
+      
+      setDailyMessage(message);
+      setWhatsappModalOpen(true);
+    } catch (error) {
+      console.error('Error generando mensaje diario:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el mensaje diario",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingDailyMessage(false);
     }
-  };
-
-  const handleGenerateAI = () => {
-    toast({
-      title: "Generando consejos",
-      description: "Esta funcionalidad estará disponible pronto",
-    });
   };
 
   const handleAssignGoal = () => {
@@ -149,12 +169,33 @@ export default function CreatorProfile() {
       {/* Header del Perfil */}
       <CreatorHeader 
         creator={creator} 
-        onWhatsApp={handleWhatsApp}
+        onWhatsApp={() => {
+          if (creator?.telefono) {
+            handleGenerateAI(); // Genera mensaje y abre modal de preview
+          } else {
+            toast({
+              title: "Sin teléfono",
+              description: "Este creador no tiene número de WhatsApp registrado",
+              variant: "destructive",
+            });
+          }
+        }}
         onGenerateAI={handleGenerateAI}
         onAssignGoal={handleAssignGoal}
-        loadingAI={false}
+        loadingAI={loadingDailyMessage}
         userRole={userRole}
       />
+
+      {/* WhatsApp Preview Modal */}
+      {creator && (
+        <WhatsAppPreviewModal
+          open={whatsappModalOpen}
+          onOpenChange={setWhatsappModalOpen}
+          defaultMessage={dailyMessage}
+          defaultPhone={creator.telefono || ''}
+          creatorName={getCreatorDisplayName(creator)}
+        />
+      )}
 
       {/* Tabs de Contenido */}
       <Tabs defaultValue="bonificaciones" className="w-full">
@@ -174,7 +215,24 @@ export default function CreatorProfile() {
         
         <TabsContent value="metricas" className="mt-6 space-y-6">
           <CreatorBasicInfo creator={creator} dailyStats={null} />
-          <CreatorMetricsPanel creatorId={creator.id} creatorName={creator.nombre} />
+          <CreatorMetricsPanel creatorId={creator.id} creatorName={getCreatorDisplayName(creator)} />
+          
+          {/* Botón de Mensaje Diario IA */}
+          <Button 
+            onClick={handleGenerateAI}
+            disabled={loadingDailyMessage}
+            className="w-full"
+            size="lg"
+          >
+            {loadingDailyMessage ? (
+              <>Generando mensaje...</>
+            ) : (
+              <>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Generar Mensaje Diario con IA
+              </>
+            )}
+          </Button>
         </TabsContent>
         
         <TabsContent value="historial" className="mt-6">
