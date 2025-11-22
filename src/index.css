@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,114 +16,133 @@ All colors MUST be HSL.
     /* Dark Premium Background */
     --app-bg-start: 222 47% 11%;
     --app-bg-end: 215 28% 17%;
-    
+
     /* Dark Glassmorphism */
     --glass-bg: 255 255 255 / 0.05;
     --glass-border: 255 255 255 / 0.1;
     --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.4);
-    
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
 
-    --radius: 1.2rem;
+    --background: 0 0% 96%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 89%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 161 93% 30%;
+    --primary-foreground: 151 80% 95%;
+    --secondary: 0 0% 32%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 63%;
+    --muted-foreground: 0 0% 9%;
+    --accent: 166 76% 96%;
+    --accent-foreground: 173 80% 40%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 85% 97%;
+    --border: 0 0% 83%;
+    --input: 0 0% 83%;
+    --ring: 161 93% 30%;
+
+    --radius: 0.75rem;
 
     /* Sombras neomórficas suaves como en la imagen de referencia */
     --neo-shadow-light: -8px -8px 16px rgba(255, 255, 255, 0.8);
     --neo-shadow-dark: 8px 8px 16px rgba(163, 177, 198, 0.6);
     --neo-shadow-inset-light: inset -4px -4px 8px rgba(255, 255, 255, 0.8);
     --neo-shadow-inset-dark: inset 4px 4px 8px rgba(163, 177, 198, 0.6);
-    
+
     --neo-shadow-sm-light: -4px -4px 8px rgba(255, 255, 255, 0.8);
     --neo-shadow-sm-dark: 4px 4px 8px rgba(163, 177, 198, 0.6);
-    
+
     --neo-shadow-pressed-light: inset -3px -3px 6px rgba(255, 255, 255, 0.8);
     --neo-shadow-pressed-dark: inset 3px 3px 6px rgba(163, 177, 198, 0.6);
 
     --neo-glow-primary: 0 0 24px rgba(74, 144, 226, 0.4);
     --neo-glow-accent: 0 0 24px rgba(91, 159, 237, 0.4);
-    
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 225 13% 96%;
-    --sidebar-foreground: 0 0% 11%;
-    --sidebar-primary: 48 100% 64%;
-    --sidebar-primary-foreground: 0 0% 11%;
-    --sidebar-accent: 220 13% 94%;
-    --sidebar-accent-foreground: 0 0% 11%;
-    --sidebar-border: 220 13% 88%;
-    --sidebar-ring: 48 100% 64%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 161 93% 30%;
+    --sidebar-primary-foreground: 151 80% 95%;
+    --sidebar-accent: 0 0% 32%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 83%;
+    --sidebar-ring: 161 93% 30%;
+    --chart-1: 158 64% 51%;
+    --chart-2: 141 69% 58%;
+    --chart-3: 172 66% 50%;
+    --chart-4: 82 77% 55%;
+    --chart-5: 0 0% 45%;
+    --sidebar: 0 0% 98%;
+    --font-sans: 'Work Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
   }
 
   .dark {
     /* App Background - Dark mode con profundidad */
     --app-bg-start: 222 47% 11%;
     --app-bg-end: 215 28% 17%;
-    
+
     /* Glassmorphism Effects - Dark mode */
     --glass-bg: 30 41 59 / 0.6;
     --glass-border: 255 255 255 / 0.1;
     --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.4);
-    
+
     /* Fondo oscuro suave #1E1F23 en lugar de negro puro */
-    --background: 220 8% 13%;
-    --foreground: 0 0% 93%;
-    
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+
     /* Tarjetas en modo oscuro con tono gris profundo #2A2C31 */
-    --card: 220 7% 18%;
-    --card-foreground: 0 0% 93%;
-    
-    --popover: 220 7% 18%;
-    --popover-foreground: 0 0% 93%;
-    
+    --card: 0 0% 14%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 25%;
+    --popover-foreground: 0 0% 98%;
+
     /* Amarillo suave */
-    --primary: 48 100% 64%;
-    --primary-foreground: 220 8% 13%;
-    
+    --primary: 158 64% 51%;
+    --primary-foreground: 165 91% 9%;
+
     /* Verde suave para botones */
-    --secondary: 119 38% 66%;
-    --secondary-foreground: 0 0% 11%;
-    
-    --muted: 220 7% 23%;
-    --muted-foreground: 220 8% 79%;
-    
+    --secondary: 0 0% 45%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 45%;
+    --muted-foreground: 0 0% 98%;
+
     /* Turquesa suave #45D6C9 */
-    --accent: 175 61% 56%;
-    --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 63% 51%;
-    --destructive-foreground: 0 0% 100%;
-    
-    --border: 220 7% 25%;
-    --input: 220 7% 23%;
-    --ring: 48 100% 64%;
-    
+    --accent: 178 84% 10%;
+    --accent-foreground: 172 66% 50%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 85% 97%;
+
+    --border: 0 0% 32%;
+    --input: 0 0% 32%;
+    --ring: 158 64% 51%;
+
     /* Sombras neomórficas suavizadas para modo oscuro */
     --neo-shadow-light: -6px -6px 12px rgba(255, 255, 255, 0.08);
     --neo-shadow-dark: 6px 6px 12px rgba(0, 0, 0, 0.4);
     --neo-shadow-inset-light: inset -3px -3px 6px rgba(255, 255, 255, 0.08);
     --neo-shadow-inset-dark: inset 3px 3px 6px rgba(0, 0, 0, 0.4);
-    
+
     --neo-shadow-sm-light: -3px -3px 6px rgba(255, 255, 255, 0.08);
     --neo-shadow-sm-dark: 3px 3px 6px rgba(0, 0, 0, 0.4);
-    
+
     --neo-shadow-pressed-light: inset -2px -2px 4px rgba(255, 255, 255, 0.08);
     --neo-shadow-pressed-dark: inset 2px 2px 4px rgba(0, 0, 0, 0.4);
 
@@ -128,13 +150,27 @@ All colors MUST be HSL.
     --neo-glow-accent: 0 0 20px rgba(69, 214, 201, 0.5);
 
     --sidebar-background: 220 7% 18%;
-    --sidebar-foreground: 0 0% 93%;
-    --sidebar-primary: 48 100% 64%;
-    --sidebar-primary-foreground: 220 8% 13%;
-    --sidebar-accent: 220 7% 23%;
-    --sidebar-accent-foreground: 0 0% 93%;
-    --sidebar-border: 220 7% 25%;
-    --sidebar-ring: 48 100% 64%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 158 64% 51%;
+    --sidebar-primary-foreground: 165 91% 9%;
+    --sidebar-accent: 172 66% 50%;
+    --sidebar-accent-foreground: 178 84% 10%;
+    --sidebar-border: 0 0% 32%;
+    --sidebar-ring: 158 64% 51%;
+    --chart-1: 156 71% 66%;
+    --chart-2: 141 76% 73%;
+    --chart-3: 170 76% 64%;
+    --chart-4: 81 84% 67%;
+    --chart-5: 0 0% 45%;
+    --sidebar: 0 0% 14%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   }
 }
 
@@ -245,5 +281,17 @@ All colors MUST be HSL.
   #chat-widget-container,
   [id*="chat-widget"] {
     display: none !important;
+  }
+}
+
+/* ---break---
+*/
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
