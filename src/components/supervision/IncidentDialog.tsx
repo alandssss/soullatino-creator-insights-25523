@@ -21,10 +21,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { SupervisionLogSchema } from "@/core/validation/schemas/supervision";
 import { z } from "zod";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   id: string;
   nombre: string;
+  tiktok_username?: string;
 }
 
 interface IncidentDialogProps {
@@ -89,7 +91,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
 
       toast({
         title: "Incidente reportado",
-        description: `Reporte guardado para ${creator.nombre}`,
+        description: `Reporte guardado para ${getCreatorDisplayName(creator)}`,
       });
 
       onOpenChange(false);
@@ -120,7 +122,7 @@ export function IncidentDialog({ open, onOpenChange, creator, onSuccess }: Incid
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] sm:w-full max-w-lg">
         <DialogHeader>
-          <DialogTitle>Reportar Incidente - {creator.nombre}</DialogTitle>
+          <DialogTitle>Reportar Incidente - {getCreatorDisplayName(creator)}</DialogTitle>
           <DialogDescription>
             Documenta cualquier situación que requiera atención o seguimiento
           </DialogDescription>

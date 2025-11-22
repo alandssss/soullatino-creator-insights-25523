@@ -29,18 +29,18 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="hidden md:flex md:w-64 flex-col border-r border-border/50 glass-card">
+    <div className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white">
       {/* Logo/Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-border/50">
+      <div className="flex items-center gap-3 p-6 border-b border-white/10">
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-premium rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
           <img 
             src={logo} 
             alt="Soullatino" 
             className="relative h-10 w-10 object-contain" 
           />
         </div>
-        <span className="text-xl font-bold bg-gradient-premium bg-clip-text text-transparent">
+        <span className="text-xl font-bold text-white">
           Soullatino
         </span>
       </div>
@@ -53,10 +53,10 @@ export function AppSidebar() {
             asChild
             variant="ghost"
             className={cn(
-              'w-full justify-start',
+              'w-full justify-start text-slate-200 hover:text-white transition-colors',
               isActive(item.path)
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
-                : 'hover:bg-accent hover:text-accent-foreground'
+                ? 'bg-blue-600 text-white hover:bg-blue-500'
+                : 'hover:bg-white/10'
             )}
           >
             <Link to={item.path}>

@@ -4,10 +4,12 @@ import { OrbitControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WebGLFallback } from "./WebGLFallback";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   id: string;
   nombre: string;
+  tiktok_username?: string;
   diamantes: number;
   views: number;
   hito_diamantes: number;
@@ -109,7 +111,7 @@ function Scene({ creators, onCreatorClick }: { creators: Creator[], onCreatorCli
             position={[xPos, height / 2, 0]}
             height={height}
             color={getColor(creator.hito_diamantes)}
-            label={creator.nombre.substring(0, 8)}
+            label={getCreatorDisplayName(creator).substring(0, 8)}
             value={creator.diamantes || 0}
             onClick={() => onCreatorClick(creator.id)}
           />

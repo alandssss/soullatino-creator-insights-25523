@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Calendar, TrendingUp, Clock, Award } from "lucide-react";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface CreatorBriefSummaryProps {
   creator: {
@@ -23,14 +24,12 @@ export function CreatorBriefSummary({ creator, compact = false }: CreatorBriefSu
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full neo-card-sm flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
             <span className="text-sm font-bold text-primary">
-              {creator.nombre.charAt(0).toUpperCase()}
+              {getCreatorDisplayName(creator).charAt(1)?.toUpperCase() || 'C'}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate">{creator.nombre}</h3>
-            {creator.tiktok_username && (
-              <p className="text-xs text-muted-foreground truncate">@{creator.tiktok_username}</p>
-            )}
+            <h3 className="font-semibold truncate">{getCreatorDisplayName(creator)}</h3>
+            <p className="text-xs text-muted-foreground truncate">{creator.nombre}</p>
           </div>
           {creator.graduacion && (
             <div className="flex items-center gap-1 text-xs neo-card-sm px-2 py-1 rounded-full">

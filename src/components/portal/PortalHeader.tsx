@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Creator {
   nombre: string;
-  tiktok_username: string;
+  tiktok_username?: string;
   status: string;
 }
 
@@ -19,9 +20,11 @@ export default function PortalHeader({ creator }: PortalHeaderProps) {
             Portal de Batallas
           </h1>
           <p className="text-lg mt-2">
-            👋 Hola, <span className="font-semibold text-foreground">{creator.nombre}</span>
+            👋 Hola, <span className="font-semibold text-foreground">{getCreatorDisplayName(creator)}</span>
           </p>
-          <p className="text-sm text-muted-foreground">@{creator.tiktok_username}</p>
+          {creator.nombre && !creator.nombre.match(/^\d+$/) && (
+            <p className="text-sm text-muted-foreground">{creator.nombre}</p>
+          )}
         </div>
         <Badge 
           variant={creator.status === 'activo' ? 'default' : 'secondary'}

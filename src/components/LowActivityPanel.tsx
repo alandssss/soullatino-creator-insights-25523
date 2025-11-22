@@ -5,6 +5,7 @@ import { AlertCircle, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 type Creator = Tables<"creators">;
 
@@ -144,7 +145,7 @@ export const LowActivityPanel = () => {
                         className={`flex items-center justify-between p-3 rounded-lg bg-background/50 border ${colors.border.replace('hover:', '')} hover:${colors.border.split('hover:')[1]} transition-all`}
                       >
                         <div>
-                          <h3 className="font-semibold text-foreground">{creator.nombre}</h3>
+                          <h3 className="font-semibold text-foreground">{getCreatorDisplayName(creator)}</h3>
                           <p className="text-sm text-muted-foreground">
                             {creator.categoria || "Sin categoría"} • {creator.manager || "Sin manager"}
                           </p>

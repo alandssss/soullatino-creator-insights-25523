@@ -29,6 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CreatorBriefSummary } from "@/components/CreatorBriefSummary";
 import { openWhatsApp } from "@/utils/whatsapp";
 import { Badge } from "@/components/ui/badge";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 // Component for displaying creator's battles
 function BatallasCreatorSection({ creator }: { creator: Creator }) {
@@ -100,9 +101,9 @@ function BatallasCreatorSection({ creator }: { creator: Creator }) {
                 if (creator.telefono) {
                   await openWhatsApp({
                     phone: creator.telefono,
-                    message: `Hola ${creator.nombre}, ¿tienes alguna batalla oficial programada próximamente?`,
+                    message: `Hola ${getCreatorDisplayName(creator)}, ¿tienes alguna batalla oficial programada próximamente?`,
                     creatorId: creator.id,
-                    creatorName: creator.nombre,
+                    creatorName: getCreatorDisplayName(creator),
                     actionType: 'seguimiento'
                   });
                 } else {
@@ -127,6 +128,7 @@ function BatallasCreatorSection({ creator }: { creator: Creator }) {
 interface Creator {
   id: string;
   nombre: string;
+  tiktok_username?: string;
   telefono?: string;
   dias_en_agencia?: number;
   last_month_diamantes?: number;
@@ -226,7 +228,7 @@ export function CreatorPanel({
 
       toast({
         title: "Registro guardado",
-        description: `Evento registrado para ${creator.nombre}`,
+        description: `Evento registrado para ${getCreatorDisplayName(creator)}`,
       });
 
       // Limpiar selección y notas
