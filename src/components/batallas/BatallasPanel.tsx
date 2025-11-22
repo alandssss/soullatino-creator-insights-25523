@@ -279,9 +279,13 @@ export function BatallasPanel() {
                             );
                             const hasDuplicateName = duplicatesByName.length > 1;
                             
-                            // Generar label distinguible
+                            // Generar label distinguible usando username o teléfono, NO ID
                             const label = hasDuplicateName
-                              ? `${creator.nombre} · ${(creator as any).phoneNorm ? `+${(creator as any).phoneNorm.slice(-4)}` : `ID ${creator.id.slice(-4)}`}`
+                              ? `${creator.nombre} · ${creator.tiktok_username 
+                                  ? `@${creator.tiktok_username}` 
+                                  : (creator as any).phoneNorm 
+                                    ? `+${(creator as any).phoneNorm.slice(-4)}`
+                                    : ''}`
                               : creator.nombre;
                             
                             return (

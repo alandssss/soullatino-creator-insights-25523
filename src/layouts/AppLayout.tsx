@@ -73,8 +73,8 @@ const AppLayout = () => {
   ].filter(link => userRole && link.roles.includes(userRole));
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
-      <header className="border-b border-border/50 glass-card sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="min-h-screen w-full overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+      <header className="border-b border-border/50 glass-card sticky top-0 z-50">
         <div className="container mx-auto px-3 md:px-6 py-2 md:py-4 max-w-full">
           <div className="flex items-center justify-between gap-2">
             {/* Logo & Title */}

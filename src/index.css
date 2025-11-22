@@ -10,47 +10,34 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* App Background - Sutil gradiente premium */
-    --app-bg-start: 240 10% 98%;
-    --app-bg-end: 220 14% 96%;
+    /* Dark Premium Background */
+    --app-bg-start: 222 47% 11%;
+    --app-bg-end: 215 28% 17%;
     
-    /* Glassmorphism Effects */
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 100% / 0.2;
-    --glass-shadow: 0 8px 32px 0 rgb(31 38 135 / 0.15);
+    /* Dark Glassmorphism */
+    --glass-bg: 255 255 255 / 0.05;
+    --glass-border: 255 255 255 / 0.1;
+    --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.4);
     
-    /* Fondo gris azulado claro neomórfico similar a la imagen #dfe4ed */
-    --background: 220 18% 92%;
-    --foreground: 220 10% 15%;
-
-    /* Tarjetas con fondo similar al background para efecto neomórfico */
-    --card: 220 18% 92%;
-    --card-foreground: 220 10% 15%;
-
-    --popover: 220 18% 92%;
-    --popover-foreground: 220 10% 15%;
-
-    /* Azul brillante para elementos activos #4A90E2 */
-    --primary: 211 75% 59%;
-    --primary-foreground: 0 0% 100%;
-
-    /* Verde suave para botones */
-    --secondary: 119 38% 66%;
-    --secondary-foreground: 0 0% 11%;
-
-    --muted: 220 15% 88%;
-    --muted-foreground: 220 10% 40%;
-
-    /* Azul vibrante para acentos #5B9FED */
-    --accent: 211 80% 64%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 51%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 15% 85%;
-    --input: 220 18% 92%;
-    --ring: 211 75% 59%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
 
     --radius: 1.2rem;
 
@@ -158,10 +145,7 @@ All colors MUST be HSL.
 
   body {
     @apply text-foreground font-sans antialiased;
-    background: linear-gradient(135deg, 
-      hsl(var(--app-bg-start)) 0%, 
-      hsl(var(--app-bg-end)) 100%
-    );
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     background-attachment: fixed;
     min-height: 100vh;
     overflow-x: hidden;
@@ -240,24 +224,21 @@ All colors MUST be HSL.
     transform: translateY(-1px);
   }
 
-  /* Glassmorphism Card Styles */
+  /* Glassmorphism Card Styles - Dark Premium */
   .glass-card {
-    background: hsl(var(--glass-bg));
-    border: 1px solid hsl(var(--glass-border));
-    box-shadow: var(--glass-shadow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 24px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
-  }
-
-  .dark .glass-card:hover {
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
   }
 
   /* Oculta el chat-widget genérico si estorba */
