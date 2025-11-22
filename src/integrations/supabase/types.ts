@@ -892,6 +892,77 @@ export type Database = {
           },
         ]
       }
+      creator_tasks: {
+        Row: {
+          asignado_a: string | null
+          created_at: string
+          creator_id: string
+          descripcion: string
+          estado: string
+          fecha_limite: string | null
+          id: string
+          notas: string | null
+          prioridad: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          asignado_a?: string | null
+          created_at?: string
+          creator_id: string
+          descripcion: string
+          estado?: string
+          fecha_limite?: string | null
+          id?: string
+          notas?: string | null
+          prioridad: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          asignado_a?: string | null
+          created_at?: string
+          creator_id?: string
+          descripcion?: string
+          estado?: string
+          fecha_limite?: string | null
+          id?: string
+          notas?: string | null
+          prioridad?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_tasks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_tasks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard_actual"
+            referencedColumns: ["creator_id"]
+          },
+          {
+            foreignKeyName: "creator_tasks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_creators_sin_telefono"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_tasks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_nuevos_creadores_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           agente: string | null
