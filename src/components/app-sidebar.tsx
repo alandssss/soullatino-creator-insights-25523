@@ -3,22 +3,39 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
-  Users,
+  AlertTriangle,
   Swords,
-  BarChart3,
+  Trophy,
+  Users,
+  UserPlus,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 import logo from '@/assets/logo-optimized.webp';
 
-const sidebarNav = [
-  { name: 'Home', path: '/', icon: LayoutDashboard },
-  { name: 'Creadores', path: '/supervision', icon: Users },
-  { name: 'Campañas', path: '/batallas', icon: Swords },
-  { name: 'Analítica', path: '/ia-effectiveness', icon: BarChart3 },
-  { name: 'Admin', path: '/admin', icon: Settings },
+interface SidebarNavItem {
+  name: string;
+  path: string;
+  icon: any;
+  roles: string[];
+}
+
+const sidebarNav: SidebarNavItem[] = [
+  { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['admin', 'manager', 'viewer', 'supervisor', 'reclutador'] },
+  { name: 'Alertas', path: '/alertas', icon: AlertTriangle, roles: ['admin', 'manager', 'viewer'] },
+  { name: 'Batallas', path: '/batallas', icon: Swords, roles: ['admin', 'manager', 'supervisor'] },
+  { name: 'Rankings', path: '/rankings', icon: Trophy, roles: ['admin', 'manager', 'viewer', 'supervisor'] },
+  { name: 'Supervisión', path: '/supervision', icon: Users, roles: ['admin', 'manager', 'supervisor', 'reclutador'] },
+  { name: 'Reclutamiento', path: '/reclutamiento', icon: UserPlus, roles: ['admin', 'manager', 'reclutador'] },
+  { name: 'Admin', path: '/admin', icon: Settings, roles: ['admin'] },
+  { name: 'IA Stats', path: '/ia-effectiveness', icon: BarChart3, roles: ['admin', 'manager'] },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  userRole: string | null;
+}
+
+export function AppSidebar({ userRole }: AppSidebarProps) {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -27,6 +44,10 @@ export function AppSidebar() {
     }
     return location.pathname.startsWith(path);
   };
+
+  const filteredNav = sidebarNav.filter(item => 
+    userRole && item.roles.includes(userRole)
+  );
 
   return (
     <div className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white">
@@ -40,27 +61,28 @@ export function AppSidebar() {
             className="relative h-10 w-10 object-contain" 
           />
         </div>
-        <span className="text-xl font-bold text-white">
-          Soullatino
-        </span>
+        <div>
+          <span className="text-xl font-bold text-white block">Soullatino</span>
+          <span className="text-xs text-slate-400">Panel de Control</span>
+        </div>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {sidebarNav.map((item) => (
+      <nav className="flex-1 p-4 space-y-2" aria-label="Navegación principal">
+        {filteredNav.map((item) => (
           <Button
             key={item.name}
             asChild
             variant="ghost"
             className={cn(
-              'w-full justify-start text-slate-200 hover:text-white transition-colors',
+              'w-full justify-start text-slate-200 hover:text-white transition-all',
               isActive(item.path)
-                ? 'bg-blue-600 text-white hover:bg-blue-500'
+                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
                 : 'hover:bg-white/10'
             )}
           >
             <Link to={item.path}>
-              <item.icon className="mr-2 h-4 w-4" />
+              <item.icon className="mr-3 h-4 w-4" />
               {item.name}
             </Link>
           </Button>
