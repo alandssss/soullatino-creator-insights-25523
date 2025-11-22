@@ -10,6 +10,7 @@ import { KpiCard } from "./alertas/KpiCard";
 import { FilterChips, FilterType } from "./alertas/FilterChips";
 import { RiskTable } from "./alertas/RiskTable";
 import { EmptyState } from "./alertas/EmptyState";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface Recommendation {
   creator_id: string;
@@ -114,7 +115,8 @@ export default function AlertasSugerencias() {
   };
 
   const generarMensajeWhatsApp = (rec: Recommendation): string => {
-    return `Hola ${rec.creator_username} 👋
+    const displayName = rec.creator_username || 'Creador';
+    return `Hola ${displayName} 👋
 Quedan ${rec.dias_restantes} días del mes.
 
 Para ${rec.proximo_objetivo}:

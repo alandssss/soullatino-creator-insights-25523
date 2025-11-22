@@ -16,6 +16,7 @@ import { UserManagement } from "@/components/UserManagement";
 import { LowActivityPanel } from "@/components/LowActivityPanel";
 import { WorkTimeTracker } from "@/components/WorkTimeTracker";
 import { CreatorPhoneUpdate } from "@/components/CreatorPhoneUpdate";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 type Creator = Tables<"creators">;
 
@@ -220,7 +221,7 @@ const CreatorsList = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <h3 className="font-display font-semibold text-foreground truncate">{creator.nombre}</h3>
+                        <h3 className="font-display font-semibold text-foreground truncate">{getCreatorDisplayName(creator)}</h3>
                         {creator.telefono && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 font-display">

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, TrendingUp, Medal, Crown, Award, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface RankingData {
   creator_id: string;
@@ -94,7 +95,7 @@ export function LeaderboardPanel() {
 
   const top10 = rankings?.slice(0, 10) || [];
   const chartData = top10.map(r => ({
-    nombre: r.tiktok_username || r.nombre,
+    nombre: getCreatorDisplayName({ tiktok_username: r.tiktok_username, nombre: r.nombre, creator_id: r.creator_id }),
     diamantes: r.diamantes_periodo,
     position: r.ranking_position
   }));
@@ -205,10 +206,7 @@ export function LeaderboardPanel() {
                             {/* Info del creador */}
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-lg">{ranking.nombre}</h4>
-                                {ranking.tiktok_username && (
-                                  <span className="text-sm text-muted-foreground">@{ranking.tiktok_username}</span>
-                                )}
+                                <h4 className="font-semibold text-lg">{getCreatorDisplayName({ tiktok_username: ranking.tiktok_username, nombre: ranking.nombre, creator_id: ranking.creator_id })}</h4>
                               </div>
                               <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                                 <span>👥 {ranking.manager}</span>

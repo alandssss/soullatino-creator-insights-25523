@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { getCreatorDisplayName } from "@/utils/creator-display";
 
 interface AsignarMetaDialogProps {
   open: boolean;
@@ -82,7 +83,7 @@ export const AsignarMetaDialog = ({
 
       toast({
         title: "✅ Meta asignada",
-        description: `Meta de ${getMetricaLabel(metricaTipo)} asignada a ${creatorName}`,
+        description: `Meta de ${getMetricaLabel(metricaTipo)} asignada a ${getCreatorDisplayName({ nombre: creatorName })}`,
       });
 
       // Limpiar formulario
@@ -136,7 +137,7 @@ export const AsignarMetaDialog = ({
             Asignar Nueva Meta
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Asigna un objetivo a {creatorName}
+            Asigna un objetivo a {getCreatorDisplayName({ nombre: creatorName })}
           </p>
         </DialogHeader>
 
