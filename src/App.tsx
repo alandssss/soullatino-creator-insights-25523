@@ -9,6 +9,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import AppLayout from "./layouts/AppLayout";
 import Login from "./pages/Login";
 import CreatorPortal from "./pages/CreatorPortal";
+import HomePage from "./pages/HomePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,7 @@ function App() {
                 // Rutas completas del panel administrativo
                 <>
                   <Route path="/login" element={<Login />} />
+                  <Route path="/home" element={<HomePage />} />
                   <Route path="/*" element={<AppLayout />} />
                 </>
               )}
