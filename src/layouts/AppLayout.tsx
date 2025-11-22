@@ -1,22 +1,8 @@
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import Dashboard from "@/pages/Dashboard";
-import Admin from "@/pages/Admin";
-import Reclutamiento from "@/pages/Reclutamiento";
-import SupervisionLive from "@/pages/SupervisionLive";
-import CreatorProfile from "@/pages/CreatorProfile";
-import AlertasSugerenciasPage from "@/pages/AlertasSugerencias";
-import DebugTools from "@/pages/DebugTools";
-import NotFound from "@/pages/NotFound";
-import BrandingSettings from "@/pages/BrandingSettings";
-import ScoringConfig from "@/pages/ScoringConfig";
-import IAEffectiveness from "@/pages/IAEffectiveness";
-import Rankings from "@/pages/Rankings";
-import { BatallasPanel } from "@/components/batallas/BatallasPanel";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Sheet,
@@ -73,7 +59,7 @@ const AppLayout = () => {
         </SheetTrigger>
         <SheetContent 
           side="left" 
-          className="bg-slate-950/95 backdrop-blur-xl border-r border-white/10 w-[280px] max-w-[80vw] p-0"
+          className="bg-slate-950/95 backdrop-blur-xl border-r border-white/10 w-[260px] max-w-[80vw] p-0"
         >
           <AppSidebar userRole={userRole} />
         </SheetContent>
@@ -99,21 +85,7 @@ const AppLayout = () => {
         {/* Page Content */}
         <main className="flex-1 overflow-x-hidden">
           <div className="px-4 md:px-6 py-4 md:py-6">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/alertas" element={<AlertasSugerenciasPage />} />
-              <Route path="/batallas" element={<BatallasPanel />} />
-              <Route path="/rankings" element={<Rankings />} />
-              <Route path="/reclutamiento" element={<Reclutamiento />} />
-              <Route path="/supervision" element={<SupervisionLive />} />
-              <Route path="/supervision/:id" element={<CreatorProfile />} />
-              <Route path="/branding" element={<BrandingSettings />} />
-              <Route path="/scoring" element={<ScoringConfig />} />
-              <Route path="/ia-effectiveness" element={<IAEffectiveness />} />
-              <Route path="/debug" element={<DebugTools />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Outlet />
           </div>
         </main>
       </div>

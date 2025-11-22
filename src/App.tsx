@@ -75,6 +75,8 @@ function App() {
                 <>
                   <Route path="/login" element={<Login />} />
                   <Route path="/home" element={<HomePage />} />
+                  <Route path="/portal/:username" element={<CreatorPortal />} />
+                  <Route path="/portal" element={<CreatorPortal />} />
                   <Route path="/*" element={<AppLayout />} />
                 </>
               )}

@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, LogOut, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Tables } from "@/integrations/supabase/types";
 import { CreatorDetailDialog } from "@/components/CreatorDetailDialog";
 // Admin components moved to /admin page
 import { LowActivityPanel } from "@/components/LowActivityPanel";
 import DiamondsBars3D from "@/components/dashboard/DiamondsBars3D";
 import TopPerformersCards from "@/components/dashboard/TopPerformersCards";
+import { ManagerKPIsPanel } from "@/components/dashboard/ManagerKPIsPanel";
+import { PriorityContactsPanel } from "@/components/dashboard/PriorityContactsPanel";
+import { AlertTriangle, Users } from "lucide-react";
 
 import { Suspense, lazy } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -32,6 +35,7 @@ const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [webGLSupported] = useState(isWebGLAvailable());
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -168,11 +172,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -185,38 +184,33 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2">
-              <TrendingUp className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Soullatino Analytics
-              </h1>
-              <p className="text-xs text-muted-foreground">Panel de Control</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 rounded-xl min-h-[40px] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Salir</span>
-          </Button>
-        </div>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        title="Dashboard Operativo"
+        description="Visualización interactiva y métricas de alto impacto"
+        sticky={false}
+      />
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        <PageHeader
-          title="Dashboard Operativo"
-          description="Visualización interactiva y métricas de alto impacto"
-          sticky={false}
-        />
+      {/* Contactos Prioritarios */}
+      <Card className="glass-card-elevated border-2 border-yellow-500/30 shadow-lg shadow-yellow-500/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <AlertTriangle className="h-6 w-6 text-yellow-500" />
+              ⚡ A Quién Contactar HOY
+            </CardTitle>
+            <Badge variant="destructive" className="text-sm px-3 py-1">
+              Urgente
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Creadores con mayor riesgo de perder bonificaciones este mes
+          </p>
+        </CardHeader>
+        <CardContent>
+          <PriorityContactsPanel />
+        </CardContent>
+      </Card>
 
 
         {/* Top Performers - Visual impact */}
@@ -235,7 +229,9 @@ const Dashboard = () => {
         </div>
 
         {/* 3D Diamonds Chart - Interactive visualization with fallback */}
-        {webGLSupported ? (
+        {isMobile ? (
+          <SimpleBarChart creators={creators} />
+        ) : webGLSupported ? (
           <WebGL3DErrorBoundary>
             <Suspense fallback={
               <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
@@ -255,6 +251,24 @@ const Dashboard = () => {
         <KPIGraduacionNuevos />
 
         <LowActivityPanel />
+
+        {/* KPIs por Manager */}
+        {(userRole === 'admin' || userRole === 'manager') && (
+          <Card className="glass-card-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Productividad de Managers
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Desempeño de los managers del equipo este mes
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ManagerKPIsPanel />
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="rounded-2xl border-2 border-border/50">
           <CardHeader className="pb-4">
@@ -308,7 +322,6 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
 
       <CreatorDetailDialog
         creator={selectedCreator}

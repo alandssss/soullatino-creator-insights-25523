@@ -50,11 +50,14 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   );
 
   return (
-    <div className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white">
+    <div className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white relative">
+      {/* Gradient overlay sutil en el fondo */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+      
       {/* Logo/Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-white/10">
+      <div className="relative flex items-center gap-3 p-6 border-b border-white/10">
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+          <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-lg opacity-30 group-hover:opacity-60 transition-opacity duration-500"></div>
           <img 
             src={logo} 
             alt="Soullatino" 
@@ -63,30 +66,59 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
         </div>
         <div>
           <span className="text-xl font-bold text-white block">Soullatino</span>
-          <span className="text-xs text-slate-400">Panel de Control</span>
+          <span className="text-xs text-slate-400">Analytics CRM</span>
         </div>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2" aria-label="Navegación principal">
-        {filteredNav.map((item) => (
-          <Button
-            key={item.name}
-            asChild
-            variant="ghost"
-            className={cn(
-              'w-full justify-start text-slate-200 hover:text-white transition-all',
-              isActive(item.path)
-                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
-                : 'hover:bg-white/10'
-            )}
-          >
-            <Link to={item.path}>
-              <item.icon className="mr-3 h-4 w-4" />
-              {item.name}
-            </Link>
-          </Button>
-        ))}
+      <nav className="relative flex-1 p-4 space-y-2" aria-label="Navegación principal">
+        {filteredNav.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          
+          return (
+            <Button
+              key={item.name}
+              asChild
+              variant="ghost"
+              className={cn(
+                'w-full justify-start relative overflow-hidden',
+                'min-h-[48px] text-base',
+                'touch-manipulation',
+                'active:scale-95',
+                'transition-all duration-200',
+                active && [
+                  'bg-gradient-to-r from-blue-500/20 to-indigo-500/20',
+                  'border border-blue-500/30',
+                  'text-white font-semibold',
+                  'shadow-lg shadow-blue-500/20',
+                ],
+                !active && [
+                  'text-slate-200 hover:text-white',
+                  'hover:bg-white/10',
+                  'border border-transparent hover:border-white/10',
+                ]
+              )}
+            >
+              <Link to={item.path} className="flex items-center gap-3 w-full">
+                <div className={cn(
+                  'p-2 rounded-lg transition-all duration-300',
+                  active && 'bg-blue-500/20 shadow-lg shadow-blue-500/30',
+                  !active && 'bg-white/5'
+                )}>
+                  <Icon className={cn(
+                    'h-5 w-5 transition-transform duration-300',
+                    active && 'scale-110'
+                  )} />
+                </div>
+                <span className="flex-1">{item.name}</span>
+                {active && (
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </Link>
+            </Button>
+          );
+        })}
       </nav>
     </div>
   );
