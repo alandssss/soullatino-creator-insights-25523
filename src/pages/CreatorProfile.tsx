@@ -8,6 +8,9 @@ import { CreatorBasicInfo } from '@/components/creator-detail/CreatorBasicInfo';
 import { CreatorBonuses } from '@/components/creator-detail/CreatorBonuses';
 import { CreatorMetricsPanel } from '@/components/creator-detail/CreatorMetricsPanel';
 import { CreatorInteractions } from '@/components/creator-detail/CreatorInteractions';
+import { CreatorTasksPanel } from '@/components/creator-detail/CreatorTasksPanel';
+import { CreatorAlertsPanel } from '@/components/creator-detail/CreatorAlertsPanel';
+import { CreatorAnalysisPanel } from '@/components/creator-detail/CreatorAnalysisPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tables } from '@/integrations/supabase/types';
@@ -197,11 +200,14 @@ export default function CreatorProfile() {
         />
       )}
 
-      {/* Tabs de Contenido */}
+      {/* Tabs de Contenido CRM */}
       <Tabs defaultValue="bonificaciones" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="bonificaciones">Bonificaciones</TabsTrigger>
           <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="analisis">Análisis</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
         
@@ -233,6 +239,27 @@ export default function CreatorProfile() {
               </>
             )}
           </Button>
+        </TabsContent>
+
+        <TabsContent value="alertas" className="mt-6">
+          <CreatorAlertsPanel 
+            creatorId={creator.id}
+            creatorName={getCreatorDisplayName(creator)}
+          />
+        </TabsContent>
+
+        <TabsContent value="agenda" className="mt-6">
+          <CreatorTasksPanel 
+            creatorId={creator.id}
+            creatorName={getCreatorDisplayName(creator)}
+          />
+        </TabsContent>
+
+        <TabsContent value="analisis" className="mt-6">
+          <CreatorAnalysisPanel 
+            creatorId={creator.id}
+            creatorName={getCreatorDisplayName(creator)}
+          />
         </TabsContent>
         
         <TabsContent value="historial" className="mt-6">
