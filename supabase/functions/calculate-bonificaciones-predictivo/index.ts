@@ -70,18 +70,28 @@ serve(async (req) => {
 
     console.log(`Datos live obtenidos: ${liveData?.length || 0} registros`);
 
-    // Agrupar por creator_id usando Map (creator_daily_stats puede tener múltiples filas por mes si hay cargas parciales)
-    const statsMap = new Map<string, { dias_live_mes: number; horas_live_mes: number; diam_live_mes: number }>();
+    // Agrupar por creator_id usando Map (creator_daily_stats contiene datos DIARIOS, necesitamos SUMAR)
+    const statsMap = new Map<string, { dias_live_mes: number; horas_live_mes: number; diam_live_mes: number; fechas_vistas: Set<string> }>();
     
     liveData?.forEach(stat => {
       if (!statsMap.has(stat.creator_id)) {
-        statsMap.set(stat.creator_id, { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0 });
+        statsMap.set(stat.creator_id, { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0, fechas_vistas: new Set() });
       }
       const current = statsMap.get(stat.creator_id)!;
-      // @compat: Excel viene con datos MTD acumulados - usar máximo para evitar duplicación al recargar
-      current.dias_live_mes = Math.max(current.dias_live_mes, stat.dias_validos_live || 0);
-      current.horas_live_mes = Math.max(current.horas_live_mes, stat.duracion_live_horas || 0);
-      current.diam_live_mes = Math.max(current.diam_live_mes, stat.diamantes || 0);
+      
+      // ✅ SUMAR valores diarios (no usar máximo - datos son diarios, no acumulados MTD)
+      current.horas_live_mes += stat.duracion_live_horas || 0;
+      current.diam_live_mes += stat.diamantes || 0;
+      
+      // ✅ Contar días únicos (un día válido = tiene diamantes O ≥1h de live)
+      if ((stat.diamantes || 0) > 0 || (stat.duracion_live_horas || 0) >= 1.0) {
+        current.fechas_vistas.add(stat.fecha);
+      }
+    });
+
+    // ✅ Convertir Set de fechas a conteo de días
+    statsMap.forEach((stats) => {
+      stats.dias_live_mes = stats.fechas_vistas.size;
     });
 
     console.log(`Creadores con datos en statsMap: ${statsMap.size}`);
