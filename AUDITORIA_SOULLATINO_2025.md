@@ -12,10 +12,10 @@
 
 **Archivos creados:**
 - `src/services/milestonesService.ts` - Servicio centralizado de hitos (diamantes, días, horas) ✅ CORREGIDO
-- `src/services/predictiveAnalysis.ts` - Servicio de análisis predictivo EOM
+- `src/services/predictiveAnalysis.ts` - Servicio de análisis predictivo EOM ✅ CORREGIDO
 
 **Archivos actualizados:**
-- `src/components/creator-detail/CreatorMetricsPanel.tsx` - Migrado a nuevos servicios, formateo consistente
+- `src/components/creator-detail/CreatorMetricsPanel.tsx` - Migrado a nuevos servicios, formateo consistente ✅ FIX CRÍTICO APLICADO
 - `TRANSFORMACION_CRM_2025.md` - Plan de transformación CRM detallado
 
 **Mejoras implementadas:**
@@ -25,11 +25,17 @@
 4. Separación de responsabilidades en servicios reutilizables
 5. Manejo explícito de casos sin datos suficientes
 
-**🔧 FIX CRÍTICO - Cálculo de tasas diarias:**
+**🔧 FIX CRÍTICO #1 - Cálculo de tasas diarias:**
 - **PROBLEMA:** NaN en hitos de días y horas por cálculo incorrecto de tasas
-- **CAUSA:** `daysDailyRate = currentDays / daysElapsed` no tiene sentido lógico (0.65 días/día?)
-- **SOLUCIÓN:** Implementado `liveDayFrequency` (días live / días calendario) para medir probabilidad de hacer live
-- **RESULTADO:** ETAs ahora se calculan correctamente basados en frecuencia real de actividad
+- **CAUSA:** División por 0 y falta de validación de inputs
+- **SOLUCIÓN:** Sanitización completa de inputs, validación isFinite, límite máximo de 365 días en ETA
+- **RESULTADO:** ETAs calculados correctamente, sin NaN en la UI
+
+**🔧 FIX CRÍTICO #2 - Días live duplicados:**
+- **PROBLEMA:** Días live mostraban valores duplicados (contaba filas en vez de sumar valores)
+- **CAUSA:** `.filter().length` en vez de `.reduce((sum, s) => sum + s.dias_validos_live)`
+- **SOLUCIÓN:** Cambiar de contar filas a SUMAR el campo dias_validos_live
+- **IMPACTO:** MTD de días live ahora muestra valores reales, no días calendario con actividad
 
 ---
 

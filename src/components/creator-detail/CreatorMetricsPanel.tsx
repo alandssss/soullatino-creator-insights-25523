@@ -73,12 +73,12 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
       // Calcular MTD
       const currentDiamonds = (currentStats || []).reduce((sum, s) => sum + (s.diamantes || 0), 0);
       const currentHours = (currentStats || []).reduce((sum, s) => sum + (s.duracion_live_horas || 0), 0);
-      const currentDays = (currentStats || []).filter(s => (s.dias_validos_live || 0) > 0).length;
+      const currentDays = (currentStats || []).reduce((sum, s) => sum + (s.dias_validos_live || 0), 0); // SUMAR, no contar
 
       // Calcular mes anterior completo
       const prevDiamonds = (previousStats || []).reduce((sum, s) => sum + (s.diamantes || 0), 0);
       const prevHours = (previousStats || []).reduce((sum, s) => sum + (s.duracion_live_horas || 0), 0);
-      const prevDays = (previousStats || []).filter(s => (s.dias_validos_live || 0) > 0).length;
+      const prevDays = (previousStats || []).reduce((sum, s) => sum + (s.dias_validos_live || 0), 0); // SUMAR, no contar
 
       setLiveDaysMTD(currentDays);
       setLiveHoursMTD(currentHours);
