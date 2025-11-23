@@ -9,6 +9,7 @@ import { MessageSquare, Eye, Calendar, TrendingDown, CheckCircle } from 'lucide-
 import { openWhatsApp } from '@/utils/whatsapp';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatMetrics } from '@/utils/formatMetrics';
 
 interface PriorityContact {
   creator_id: string;
@@ -62,13 +63,13 @@ export function PriorityContactsPanel() {
 
 Quedan solo ${contact.dias_restantes} días del mes y te queremos apoyar para alcanzar tu meta de ${contact.proximo_objetivo}.
 
-• Te faltan ${contact.faltan_dias} día(s) en vivo
-• Te faltan ${contact.faltan_horas.toFixed(1)} horas
-• Recomiendo ${contact.horas_min_dia_sugeridas.toFixed(1)} horas/día
+• Te faltan ${formatMetrics.days(contact.faltan_dias)} día(s) en vivo
+• Te faltan ${formatMetrics.hours(contact.faltan_horas)}
+• Recomiendo ${formatMetrics.hours(contact.horas_min_dia_sugeridas)} por día
 
 ⚠️ Si saltas 1 día, podrías perder la bonificación.
 
-¿Puedes confirmar ${contact.horas_min_dia_sugeridas.toFixed(1)}h hoy y 5 PKO de 5 min?`;
+¿Puedes confirmar ${formatMetrics.hours(contact.horas_min_dia_sugeridas)} hoy y 5 PKO de 5 min?`;
 
     try {
       await openWhatsApp({
