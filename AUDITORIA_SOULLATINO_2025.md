@@ -43,6 +43,13 @@
 - **SOLUCIÓN:** Usar `Math.max(...stats.map(s => s.field), 0)` para tomar el snapshot más reciente
 - **IMPACTO:** TODAS las métricas MTD ahora muestran valores correctos sin duplicación
 
+**🔧 FIX CRÍTICO #4 - Corrección en creatorAnalytics.ts:**
+- **ARCHIVO:** `src/services/creatorAnalytics.ts` (líneas 177-179)
+- **PROBLEMA:** `horasTotales` usando `reduce()` sumaba valores acumulados duplicándolos
+- **CAUSA:** Mismo patrón incorrecto de sumar snapshots mensuales acumulados
+- **SOLUCIÓN:** Cambiar a `Math.max(...data.map(d => d.duracion_live_horas || 0), 0)`
+- **IMPACTO:** BonificacionesPanel y otros componentes que usan `getDiasRealesMes()` ahora muestran horas correctas
+
 ---
 
 ## 📋 RESUMEN EJECUTIVO
