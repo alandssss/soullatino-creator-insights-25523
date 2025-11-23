@@ -70,15 +70,15 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
         .gte('fecha', previousMonthStart.toISOString().split('T')[0])
         .lte('fecha', previousMonthEnd.toISOString().split('T')[0]);
 
-      // Calcular MTD
-      const currentDiamonds = (currentStats || []).reduce((sum, s) => sum + (s.diamantes || 0), 0);
-      const currentHours = (currentStats || []).reduce((sum, s) => sum + (s.duracion_live_horas || 0), 0);
-      const currentDays = (currentStats || []).reduce((sum, s) => sum + (s.dias_validos_live || 0), 0); // SUMAR, no contar
+      // Calcular MTD (usar Math.max porque son valores acumulados, no diarios)
+      const currentDiamonds = Math.max(...(currentStats || []).map(s => s.diamantes || 0), 0);
+      const currentHours = Math.max(...(currentStats || []).map(s => s.duracion_live_horas || 0), 0);
+      const currentDays = Math.max(...(currentStats || []).map(s => s.dias_validos_live || 0), 0);
 
-      // Calcular mes anterior completo
-      const prevDiamonds = (previousStats || []).reduce((sum, s) => sum + (s.diamantes || 0), 0);
-      const prevHours = (previousStats || []).reduce((sum, s) => sum + (s.duracion_live_horas || 0), 0);
-      const prevDays = (previousStats || []).reduce((sum, s) => sum + (s.dias_validos_live || 0), 0); // SUMAR, no contar
+      // Calcular mes anterior completo (también con Math.max)
+      const prevDiamonds = Math.max(...(previousStats || []).map(s => s.diamantes || 0), 0);
+      const prevHours = Math.max(...(previousStats || []).map(s => s.duracion_live_horas || 0), 0);
+      const prevDays = Math.max(...(previousStats || []).map(s => s.dias_validos_live || 0), 0);
 
       setLiveDaysMTD(currentDays);
       setLiveHoursMTD(currentHours);
