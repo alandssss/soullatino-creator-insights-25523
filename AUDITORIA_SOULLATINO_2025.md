@@ -11,7 +11,7 @@
 ### ✅ **SESIÓN 23/11/2025 - FASE 1: SERVICIOS CORE**
 
 **Archivos creados:**
-- `src/services/milestonesService.ts` - Servicio centralizado de hitos (diamantes, días, horas)
+- `src/services/milestonesService.ts` - Servicio centralizado de hitos (diamantes, días, horas) ✅ CORREGIDO
 - `src/services/predictiveAnalysis.ts` - Servicio de análisis predictivo EOM
 
 **Archivos actualizados:**
@@ -24,6 +24,12 @@
 3. Formateo consistente de métricas (días, horas, diamantes, %)
 4. Separación de responsabilidades en servicios reutilizables
 5. Manejo explícito de casos sin datos suficientes
+
+**🔧 FIX CRÍTICO - Cálculo de tasas diarias:**
+- **PROBLEMA:** NaN en hitos de días y horas por cálculo incorrecto de tasas
+- **CAUSA:** `daysDailyRate = currentDays / daysElapsed` no tiene sentido lógico (0.65 días/día?)
+- **SOLUCIÓN:** Implementado `liveDayFrequency` (días live / días calendario) para medir probabilidad de hacer live
+- **RESULTADO:** ETAs ahora se calculan correctamente basados en frecuencia real de actividad
 
 ---
 

@@ -76,10 +76,17 @@ export function calculateAllMilestones(
   daysInMonth: number,
   daysRemaining: number
 ): AllMilestones {
-  // Calcular tasas diarias
   const daysElapsed = daysInMonth - daysRemaining;
+  
+  // Para diamantes: tasa diaria promedio
   const diamondsDailyRate = daysElapsed > 0 ? currentDiamonds / daysElapsed : 0;
-  const daysDailyRate = daysElapsed > 0 ? currentDays / daysElapsed : 0;
+  
+  // Para días live: frecuencia de hacer live (días live / días calendario)
+  // Si alguien ha hecho 15 días live en 20 días calendario, la frecuencia es 0.75
+  // Esto nos dice qué tan probable es que haga live cada día
+  const liveDayFrequency = daysElapsed > 0 ? currentDays / daysElapsed : 0;
+  
+  // Para horas: tasa de horas por día calendario (no por día live)
   const hoursDailyRate = daysElapsed > 0 ? currentHours / daysElapsed : 0;
   
   return {
@@ -92,7 +99,7 @@ export function calculateAllMilestones(
     days: calculateMilestoneStatus(
       currentDays,
       DAY_MILESTONES,
-      daysDailyRate,
+      liveDayFrequency, // Ahora usa la frecuencia correcta
       daysRemaining
     ),
     hours: calculateMilestoneStatus(
