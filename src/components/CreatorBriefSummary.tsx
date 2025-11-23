@@ -29,7 +29,9 @@ export function CreatorBriefSummary({ creator, compact = false }: CreatorBriefSu
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold truncate">{getCreatorDisplayName(creator)}</h3>
-            <p className="text-xs text-muted-foreground truncate">{creator.nombre}</p>
+            {creator.tiktok_username && creator.tiktok_username !== creator.nombre && (
+              <p className="text-xs text-muted-foreground truncate">@{creator.tiktok_username}</p>
+            )}
           </div>
           {creator.graduacion && (
             <div className="flex items-center gap-1 text-xs neo-card-sm px-2 py-1 rounded-full">

@@ -170,7 +170,7 @@ export function CreatorPanel({
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [selectedFlags, setSelectedFlags] = useState<Record<string, boolean>>({});
-  const [notes, setNotes] = useState("");
+  const [reporte, setReporte] = useState("");
   const isMobile = useIsMobile();
   const isDesktop = !isMobile;
 
@@ -178,7 +178,7 @@ export function CreatorPanel({
   useEffect(() => {
     if (open && creator) {
       setSelectedFlags({});
-      setNotes("");
+      setReporte("");
     }
   }, [open, creator?.id]);
 
@@ -208,7 +208,7 @@ export function CreatorPanel({
         body: {
           creator_id: creator.id,
           flags: selectedFlags,
-          notas: notes.trim() || undefined
+          reporte: reporte.trim() || undefined
         }
       });
 
@@ -231,9 +231,9 @@ export function CreatorPanel({
         description: `Evento registrado para ${getCreatorDisplayName(creator)}`,
       });
 
-      // Limpiar selección y notas
+      // Limpiar selección y reporte
       setSelectedFlags({});
-      setNotes("");
+      setReporte("");
       onReload();
     } catch (error: any) {
       console.error('Error logging:', error);
@@ -245,7 +245,7 @@ export function CreatorPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [creator, selectedFlags, notes, toast, onReload]);
+  }, [creator, selectedFlags, reporte, toast, onReload]);
 
   // Early return AFTER all hooks
   if (!creator) return null;
@@ -440,12 +440,12 @@ export function CreatorPanel({
               </Button>
             </div>
 
-            {/* Campo de notas */}
+            {/* Campo de reporte */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Notas adicionales (opcional)</label>
               <NotesInput
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                value={reporte}
+                onChange={(e) => setReporte(e.target.value)}
                 disabled={submitting}
               />
             </div>
