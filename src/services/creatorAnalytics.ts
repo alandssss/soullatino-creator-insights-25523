@@ -174,9 +174,10 @@ export class CreatorAnalyticsService {
         (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
       ).length;
       
-      const horasTotales = data.reduce((sum: number, d: any) => 
-        sum + (d.duracion_live_horas || 0), 0
-      );
+      // Usar Math.max porque duracion_live_horas es un valor acumulado mensual, no diario
+      const horasTotales = Math.max(...data.map((d: any) => 
+        d.duracion_live_horas || 0
+      ), 0);
       
       return {
         dias_reales_hasta_hoy: diasReales,
