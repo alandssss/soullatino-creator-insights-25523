@@ -24,10 +24,15 @@ import {
   TrendingUp,
   Calendar,
   Clock,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getCreatorDisplayName } from "@/utils/creator-display";
+import { WhatsAppPreviewModal } from "@/components/creator-detail/WhatsAppPreviewModal";
+import { creatorMetricsService } from "@/services/creatorMetricsService";
+import { formatMetrics } from "@/utils/formatMetrics";
 
 interface Creator {
   id: string;
@@ -73,6 +78,9 @@ export function CreatorDrawer({
 }: CreatorDrawerProps) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const [dailyMessage, setDailyMessage] = useState<string>('');
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [loadingDailyMessage, setLoadingDailyMessage] = useState(false);
 
   if (!creator) return null;
 
@@ -128,6 +136,44 @@ export function CreatorDrawer({
     }
   };
 
+  const handleGenerateAI = async () => {
+    setLoadingDailyMessage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userName = user?.email?.split('@')[0] || 'el equipo';
+      
+      const message = await creatorMetricsService.generateDailyMessage(
+        creator.id,
+        getCreatorDisplayName(creator),
+        userName
+      );
+      
+      setDailyMessage(message);
+      setWhatsappModalOpen(true);
+    } catch (error) {
+      console.error('Error generando mensaje diario:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el mensaje diario",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingDailyMessage(false);
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (creator?.telefono) {
+      handleGenerateAI();
+    } else {
+      toast({
+        title: "Sin teléfono",
+        description: "Este creador no tiene número de WhatsApp registrado",
+        variant: "destructive",
+      });
+    }
+  };
+
   const timeSinceLog = latestLog 
     ? Math.floor((Date.now() - new Date(latestLog.fecha_evento).getTime()) / (1000 * 60))
     : null;
@@ -164,28 +210,64 @@ export function CreatorDrawer({
 
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6">
+            {/* Acciones rápidas AI + WhatsApp */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                💬 Contacto Rápido
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleGenerateAI}
+                  disabled={loadingDailyMessage}
+                  className="neo-button flex-col h-auto py-3"
+                >
+                  <Sparkles className="h-5 w-5 mb-1" />
+                  <span className="text-xs">{loadingDailyMessage ? 'Generando...' : 'IA Consejos'}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleWhatsApp}
+                  className="neo-button flex-col h-auto py-3"
+                >
+                  <MessageSquare className="h-5 w-5 mb-1" />
+                  <span className="text-xs">WhatsApp</span>
+                </Button>
+              </div>
+            </div>
+
             {/* Métricas rápidas */}
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                📊 Métricas Rápidas
+                📊 Métricas del Mes
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="neo-card-sm p-3 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <Calendar className="h-3 w-3 text-primary" />
-                    <p className="text-xs text-muted-foreground">Días en agencia</p>
+                    <p className="text-xs text-muted-foreground">Días</p>
                   </div>
                   <p className="text-lg font-bold">
-                    {creator.dias_en_agencia || 0}
+                    {formatMetrics.days(creator.dias_live_mes)}
                   </p>
                 </div>
                 <div className="neo-card-sm p-3 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="h-3 w-3 text-accent" />
-                    <p className="text-xs text-muted-foreground">Diamantes mes</p>
+                    <Clock className="h-3 w-3 text-accent" />
+                    <p className="text-xs text-muted-foreground">Horas</p>
                   </div>
                   <p className="text-lg font-bold">
-                    {creator.diam_live_mes?.toLocaleString() || 0}
+                    {formatMetrics.hours(creator.horas_live_mes)}
+                  </p>
+                </div>
+                <div className="neo-card-sm p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="h-3 w-3 text-primary" />
+                    <p className="text-xs text-muted-foreground">Diamantes</p>
+                  </div>
+                  <p className="text-sm font-bold">
+                    {formatMetrics.abbreviated(creator.diam_live_mes)}
                   </p>
                 </div>
               </div>
@@ -306,6 +388,15 @@ export function CreatorDrawer({
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
+
+      {/* WhatsApp Preview Modal */}
+      <WhatsAppPreviewModal
+        open={whatsappModalOpen}
+        onOpenChange={setWhatsappModalOpen}
+        defaultMessage={dailyMessage}
+        defaultPhone={creator.telefono || ''}
+        creatorName={getCreatorDisplayName(creator)}
+      />
     </Drawer>
   );
 }
