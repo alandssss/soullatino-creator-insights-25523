@@ -69,19 +69,23 @@ const prediction = calculateEOMPrediction(
 // prediction.method = 'Ritmo diario promedio'
 ```
 
-#### 1.3 Integración en CreatorMetricsPanel 🚧 PENDIENTE
-**Archivo a actualizar:** `src/components/creator-detail/CreatorMetricsPanel.tsx`
+#### 1.3 Integración en CreatorMetricsPanel ✅ COMPLETADO
+**Archivo actualizado:** `src/components/creator-detail/CreatorMetricsPanel.tsx`
 
-**Estado actual:**
-- ✅ Panel usa `creatorMetricsService.ts` (servicio legacy)
-- ✅ Ya muestra predicción EOM
-- ✅ Ya muestra hitos con progreso
-- 🔧 PENDIENTE: Migrar a nuevos servicios (milestonesService + predictiveAnalysis)
+**Cambios implementados:**
+- ✅ Migrado completamente a `milestonesService.ts` y `predictiveAnalysis.ts`
+- ✅ Eliminada dependencia de `creatorMetricsService.ts` (legacy)
+- ✅ Aplicado formateo consistente con `formatMetrics` en TODAS las métricas
+- ✅ Cálculo directo de MTD desde `creator_daily_stats` (sin duplicar sumatorias)
+- ✅ Hitos con progreso, ETA y badges visuales
+- ✅ Predicción EOM con nivel de confianza (high/medium/low)
+- ✅ Manejo explícito de "sin datos suficientes" en predicción
 
-**Razón del cambio:**
-- Nuevos servicios tienen lógica más clara y mantenible
-- Separación de responsabilidades (hitos vs predicción)
-- Más fácil de testear y reutilizar en otros componentes
+**Resultado:**
+- Lógica más clara y mantenible
+- Separación de responsabilidades bien definida
+- Formateo consistente: días (entero), horas (1 decimal), diamantes (con separadores)
+- Fácil de testear y reutilizar en otros componentes
 
 ---
 
