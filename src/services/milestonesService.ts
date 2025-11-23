@@ -31,15 +31,20 @@ export function calculateMilestoneStatus(
   dailyRate?: number, // tasa diaria para calcular ETA
   daysRemaining?: number
 ): MilestoneStatus {
+  // Sanitizar entrada
+  const sanitizedCurrent = isFinite(current) && current >= 0 ? current : 0;
+  
   // Encontrar el próximo hito no alcanzado
-  const next = milestones.find(m => m > current) || null;
-  const remaining = next ? next - current : null;
+  const next = milestones.find(m => m > sanitizedCurrent) || null;
+  const remaining = next ? next - sanitizedCurrent : null;
   const achieved = !next; // Si no hay próximo, ya se alcanzó el máximo
   
   // Calcular ETA (estimación de días para alcanzar)
   let eta: number | null = null;
-  if (remaining && dailyRate && dailyRate > 0) {
-    eta = Math.ceil(remaining / dailyRate);
+  if (remaining && dailyRate && isFinite(dailyRate) && dailyRate > 0.01) {
+    const calculatedEta = Math.ceil(remaining / dailyRate);
+    // Validar que el ETA sea razonable (máximo 365 días)
+    eta = isFinite(calculatedEta) && calculatedEta <= 365 ? calculatedEta : null;
   }
   
   // Calcular progreso hacia el próximo hito
@@ -48,16 +53,16 @@ export function calculateMilestoneStatus(
     const previousMilestone = milestones
       .slice()
       .reverse()
-      .find(m => m <= current) || 0;
+      .find(m => m <= sanitizedCurrent) || 0;
     const range = next - previousMilestone;
-    const currentProgress = current - previousMilestone;
+    const currentProgress = sanitizedCurrent - previousMilestone;
     progress = range > 0 ? Math.round((currentProgress / range) * 100) : 0;
   } else {
     progress = 100; // Si ya alcanzó el máximo
   }
   
   return {
-    current,
+    current: sanitizedCurrent,
     next,
     remaining,
     achieved,
@@ -76,34 +81,37 @@ export function calculateAllMilestones(
   daysInMonth: number,
   daysRemaining: number
 ): AllMilestones {
-  const daysElapsed = daysInMonth - daysRemaining;
+  // Sanitizar entradas
+  const sanitizedDiamonds = isFinite(currentDiamonds) && currentDiamonds >= 0 ? currentDiamonds : 0;
+  const sanitizedDays = isFinite(currentDays) && currentDays >= 0 ? currentDays : 0;
+  const sanitizedHours = isFinite(currentHours) && currentHours >= 0 ? currentHours : 0;
+  
+  const daysElapsed = Math.max(1, daysInMonth - daysRemaining); // Mínimo 1 para evitar división por 0
   
   // Para diamantes: tasa diaria promedio
-  const diamondsDailyRate = daysElapsed > 0 ? currentDiamonds / daysElapsed : 0;
+  const diamondsDailyRate = sanitizedDiamonds / daysElapsed;
   
   // Para días live: frecuencia de hacer live (días live / días calendario)
-  // Si alguien ha hecho 15 días live en 20 días calendario, la frecuencia es 0.75
-  // Esto nos dice qué tan probable es que haga live cada día
-  const liveDayFrequency = daysElapsed > 0 ? currentDays / daysElapsed : 0;
+  const liveDayFrequency = sanitizedDays / daysElapsed;
   
-  // Para horas: tasa de horas por día calendario (no por día live)
-  const hoursDailyRate = daysElapsed > 0 ? currentHours / daysElapsed : 0;
+  // Para horas: tasa de horas por día calendario
+  const hoursDailyRate = sanitizedHours / daysElapsed;
   
   return {
     diamonds: calculateMilestoneStatus(
-      currentDiamonds,
+      sanitizedDiamonds,
       DIAMOND_MILESTONES,
       diamondsDailyRate,
       daysRemaining
     ),
     days: calculateMilestoneStatus(
-      currentDays,
+      sanitizedDays,
       DAY_MILESTONES,
-      liveDayFrequency, // Ahora usa la frecuencia correcta
+      liveDayFrequency,
       daysRemaining
     ),
     hours: calculateMilestoneStatus(
-      currentHours,
+      sanitizedHours,
       HOUR_MILESTONES,
       hoursDailyRate,
       daysRemaining
