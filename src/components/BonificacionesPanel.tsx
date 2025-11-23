@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from "@/components/neo/NeoCard";
 import { NeoKPICard } from "@/components/neo/NeoKPICard";
 import { cn } from "@/lib/utils";
+import { formatMetrics } from "@/utils/formatMetrics";
 
 interface BonificacionesPanelProps {
   creatorId: string;
@@ -174,23 +175,23 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
               <div className="grid grid-cols-3 gap-6">
                 <NeoKPICard
                   label="Días Live"
-                  value={bonificacion.dias_live_mes || 0}
-                  insight="Necesitas 22 días para bonificación completa"
+                  value={formatMetrics.days(bonificacion.dias_live_mes)}
+                  insight="Meta: 22 días para bono completo"
                   icon={Calendar}
                   variant="default"
                 />
                 <NeoKPICard
                   label="Horas Live"
-                  value={`${bonificacion.horas_live_mes?.toFixed(1) || 0}h`}
+                  value={formatMetrics.hours(bonificacion.horas_live_mes)}
                   insight={bonificacion.dias_live_mes > 0 
-                    ? `Promedio ${(bonificacion.horas_live_mes / bonificacion.dias_live_mes).toFixed(1)}h/día`
+                    ? `Promedio ${formatMetrics.hours(bonificacion.horas_live_mes / bonificacion.dias_live_mes)}/día`
                     : 'Sin actividad aún'}
                   icon={Clock}
                   variant="default"
                 />
                 <NeoKPICard
                   label="Diamantes"
-                  value={bonificacion.diam_live_mes?.toLocaleString() || '0'}
+                  value={formatMetrics.diamonds(bonificacion.diam_live_mes)}
                   insight={bonificacion.proximo_objetivo_valor 
                     ? `Meta: ${bonificacion.proximo_objetivo_valor}`
                     : 'Trabaja hacia tu primera meta'}
