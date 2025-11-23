@@ -54,7 +54,32 @@
 - **ARCHIVOS CORREGIDOS:** 2 archivos (CreatorMetricsPanel.tsx, creatorAnalytics.ts)
 - **ARCHIVOS VERIFICADOS:** 5 archivos adicionales (Dashboard, TopPerformers, PriorityContacts, Bonificaciones, Alertas)
 - **DOCUMENTACIÓN:** Ver `VERIFICACION_METRICAS_MTD.md` para detalles completos
+- **TESTS E2E:** Creado `e2e/mtd-metrics-validation.spec.ts` con 7 tests automáticos
 - **ESTADO:** ✅ TODAS las métricas MTD en todo el sistema ahora usan Math.max() correctamente
+
+**🧪 Tests E2E Implementados:**
+1. ✅ Dashboard - valores de diamantes realistas (no duplicados)
+2. ✅ CreatorMetricsPanel - MTD metrics no multiplicados
+3. ✅ BonificacionesPanel - horas realistas
+4. ✅ Coherencia entre Dashboard y CreatorMetrics
+5. ✅ Validación de límites máximos físicos
+6. ✅ No valores NaN o undefined en UI
+7. ✅ Múltiples creadores validados
+
+**Comandos para ejecutar tests:**
+```bash
+# Ejecutar SOLO los tests de validación MTD
+npx playwright test mtd-metrics-validation.spec.ts
+
+# Ejecutar con UI interactiva
+npx playwright test mtd-metrics-validation.spec.ts --ui
+
+# Ejecutar en modo headed (ver el navegador)
+npx playwright test mtd-metrics-validation.spec.ts --headed
+
+# Ver reporte de tests
+npx playwright show-report
+```
 
 ---
 
