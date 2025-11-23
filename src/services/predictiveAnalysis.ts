@@ -21,20 +21,31 @@ export function calculateEOMPrediction(
   daysElapsed: number,
   daysInMonth: number
 ): EOMPrediction | null {
+  // Sanitizar entradas
+  const sanitizedDiamonds = isFinite(currentDiamonds) && currentDiamonds >= 0 ? currentDiamonds : 0;
+  const sanitizedDays = isFinite(currentDays) && currentDays >= 0 ? currentDays : 0;
+  const sanitizedHours = isFinite(currentHours) && currentHours >= 0 ? currentHours : 0;
+  const sanitizedDaysElapsed = Math.max(1, daysElapsed); // Mínimo 1 para evitar división por 0
+  
   // Validar que haya datos suficientes
   if (daysElapsed < 3) {
-    return null; // No hay suficientes datos para proyectar
+    return null;
   }
   
   // Calcular tasas diarias
-  const diamondsDailyRate = currentDiamonds / daysElapsed;
-  const daysDailyRate = currentDays / daysElapsed;
-  const hoursDailyRate = currentHours / daysElapsed;
+  const diamondsDailyRate = sanitizedDiamonds / sanitizedDaysElapsed;
+  const daysDailyRate = sanitizedDays / sanitizedDaysElapsed;
+  const hoursDailyRate = sanitizedHours / sanitizedDaysElapsed;
   
   // Proyectar al final del mes
   const projectedDiamonds = Math.round(diamondsDailyRate * daysInMonth);
-  const projectedDays = Math.round(daysDailyRate * daysInMonth);
+  const projectedDays = Math.min(daysInMonth, Math.round(daysDailyRate * daysInMonth)); // No puede exceder días del mes
   const projectedHours = parseFloat((hoursDailyRate * daysInMonth).toFixed(1));
+  
+  // Validar que las proyecciones sean finitas
+  if (!isFinite(projectedDiamonds) || !isFinite(projectedDays) || !isFinite(projectedHours)) {
+    return null;
+  }
   
   // Calcular nivel de confianza
   let confidence: 'high' | 'medium' | 'low';

@@ -166,20 +166,20 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysElapsed = now.getDate();
-  const daysRemaining = daysInMonth - daysElapsed;
+  const daysRemaining = Math.max(0, daysInMonth - daysElapsed);
 
   const milestones = calculateAllMilestones(
-    diamondsMTD,
-    liveDaysMTD,
-    liveHoursMTD,
+    diamondsMTD || 0,
+    liveDaysMTD || 0,
+    liveHoursMTD || 0,
     daysInMonth,
     daysRemaining
   );
 
   const prediction = calculateEOMPrediction(
-    diamondsMTD,
-    liveDaysMTD,
-    liveHoursMTD,
+    diamondsMTD || 0,
+    liveDaysMTD || 0,
+    liveHoursMTD || 0,
     daysElapsed,
     daysInMonth
   );
