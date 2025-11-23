@@ -1,5 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CreatorMetrics, Milestones, Prediction, SupervisionFlags } from "@/types/creatorMetrics";
+import { formatMetrics, sanitizeNumber } from "@/utils/formatMetrics";
+import { 
+  DIAMOND_MILESTONES, 
+  DAY_MILESTONES, 
+  HOUR_MILESTONES,
+  getNextMilestone,
+  estimateETA,
+  calculateExtraDaysBonus 
+} from "@/utils/bonusCalculations";
 
 export class CreatorMetricsService {
   /**
@@ -108,7 +117,37 @@ export class CreatorMetricsService {
   }
   
   /**
-   * Calcula hitos próximos para diamantes, días y horas
+   * Valida que no haya duplicados en creator_daily_stats para un creador y mes
+   */
+  async validateNoDuplicates(creatorId: string, month: string): Promise<boolean> {
+    const [year, monthNum] = month.split('-').map(Number);
+    const firstDay = new Date(year, monthNum - 1, 1).toISOString().split('T')[0];
+    const lastDay = new Date(year, monthNum, 0).toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('creator_daily_stats')
+      .select('fecha')
+      .eq('creator_id', creatorId)
+      .gte('fecha', firstDay)
+      .lte('fecha', lastDay);
+    
+    if (error) {
+      console.error('Error validando duplicados:', error);
+      return false;
+    }
+    
+    const uniqueDates = new Set(data?.map(d => d.fecha) || []);
+    const hasDuplicates = uniqueDates.size !== (data?.length || 0);
+    
+    if (hasDuplicates) {
+      console.warn(`⚠️ Duplicados detectados para creator ${creatorId} en ${month}`);
+    }
+    
+    return !hasDuplicates; // true si NO hay duplicados
+  }
+
+  /**
+   * Calcula hitos próximos para diamantes, días y horas usando utilidades compartidas
    */
   private calculateMilestones(
     currentDays: number,
@@ -116,38 +155,23 @@ export class CreatorMetricsService {
     currentDiamonds: number,
     remainingDays: number
   ): Milestones {
-    // Umbrales fijos
-    const DIAMOND_TARGETS = [100_000, 300_000, 500_000, 1_000_000];
-    const DAY_TARGETS = [12, 20, 22];
-    const HOUR_TARGETS = [40, 60, 80];
-    
-    const findNextMilestone = (current: number, targets: number[]) => {
-      const next = targets.find(t => t > current);
-      if (!next) {
-        return {
-          target: targets[targets.length - 1],
-          remaining: 0,
-          etaDays: 0,
-          achieved: true
-        };
-      }
-      
-      const remaining = next - current;
+    const findNextMilestone = (current: number, targets: readonly number[]) => {
+      const milestone = getNextMilestone(current, targets);
       const rate = currentDays > 0 ? current / currentDays : 0;
-      const etaDays = rate > 0 ? Math.ceil(remaining / rate) : 999;
+      const etaDays = estimateETA(current, milestone.target, rate);
       
       return {
-        target: next,
-        remaining,
+        target: milestone.target,
+        remaining: milestone.remaining,
         etaDays: Math.min(etaDays, remainingDays),
-        achieved: false
+        achieved: milestone.achieved
       };
     };
     
     return {
-      diamonds: findNextMilestone(currentDiamonds, DIAMOND_TARGETS),
-      liveDays: findNextMilestone(currentDays, DAY_TARGETS),
-      liveHours: findNextMilestone(currentHours, HOUR_TARGETS)
+      diamonds: findNextMilestone(sanitizeNumber(currentDiamonds), DIAMOND_MILESTONES),
+      liveDays: findNextMilestone(sanitizeNumber(currentDays), DAY_MILESTONES),
+      liveHours: findNextMilestone(sanitizeNumber(currentHours), HOUR_MILESTONES)
     };
   }
   
@@ -261,8 +285,8 @@ export class CreatorMetricsService {
     }
     // Regla 2: Cumple ≥22 días
     else if (metrics.liveDays_mtd >= 22) {
-      const bonusUSD = (metrics.liveDays_mtd - 22) * 3;
-      analysis = `Por tu consistencia de ${metrics.liveDays_mtd} días, estás generando $${bonusUSD} USD extra este mes. ¡Sigue así!`;
+      const bonusData = calculateExtraDaysBonus(metrics.liveDays_mtd);
+      analysis = `Por tu consistencia de ${metrics.liveDays_mtd} días, estás generando ${formatMetrics.currency(bonusData.bonusUSD)} extra este mes. ¡Sigue así!`;
     }
     // Regla 3: Superó graduación
     else if (nextTarget.achieved) {
