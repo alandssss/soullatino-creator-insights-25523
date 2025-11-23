@@ -37,6 +37,12 @@
 - **SOLUCIÓN:** Cambiar de contar filas a SUMAR el campo dias_validos_live
 - **IMPACTO:** MTD de días live ahora muestra valores reales, no días calendario con actividad
 
+**🔧 FIX CRÍTICO #3 - Valores acumulados duplicados (DEFINITIVO):**
+- **PROBLEMA:** Diamantes, horas y días TODOS duplicados porque `creator_daily_stats` guarda snapshots acumulados
+- **CAUSA:** `reduce((sum, s) => sum + s.field)` suma snapshots que ya son acumulados del mes
+- **SOLUCIÓN:** Usar `Math.max(...stats.map(s => s.field), 0)` para tomar el snapshot más reciente
+- **IMPACTO:** TODAS las métricas MTD ahora muestran valores correctos sin duplicación
+
 ---
 
 ## 📋 RESUMEN EJECUTIVO
