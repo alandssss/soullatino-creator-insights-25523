@@ -8,11 +8,12 @@
 
 ## 📝 **REGISTRO DE CAMBIOS IMPLEMENTADOS**
 
-### ✅ **SESIÓN 24/11/2025 - FASE 2 Y 3: CORRECCIÓN COMPLETA DEL FLUJO MTD**
+### ✅ **SESIÓN 24/11/2025 - FASE 2, 3 Y 4: CORRECCIÓN COMPLETA DEL FLUJO MTD**
 
 **Archivos modificados:**
 - `supabase/functions/upload-excel-recommendations/index.ts` - Corrección crítica en carga de datos ✅
 - `supabase/functions/calculate-bonificaciones/index.ts` - Corrección de cálculo MTD desde creator_daily_stats ✅
+- `src/components/LowActivityPanel.tsx` - Lectura de dias_live_mes desde creator_bonificaciones ✅
 
 **Archivos creados:**
 - `fix_bonificaciones_mtd.sql` - Script SQL para recalcular datos existentes ✅
@@ -55,6 +56,20 @@
   - ✅ Coherencia total con lógica del script SQL temporal
   - ✅ Próximas ejecuciones generarán `creator_bonificaciones` con valores precisos
 - **SIGUIENTE PASO:** Fase 4 - Verificar que componentes frontend lean datos correctos después del recálculo
+
+**🔧 FIX CRÍTICO #7 - Actualización de LowActivityPanel:**
+- **PROBLEMA RAÍZ:** Componente leía `creators.dias_live` que NUNCA se actualiza con datos del mes actual
+- **CAUSA:** Query directa a tabla `creators` sin unir con `creator_bonificaciones`
+- **SOLUCIÓN IMPLEMENTADA:**
+  - Líneas 5-13: Agregar tipo `CreatorWithBonificaciones` que extiende `Creator` con `dias_live_mes` y `horas_live_mes`
+  - Líneas 12-68: Cambiar query para unir con `creator_bonificaciones` filtrando por `mes_referencia` actual
+  - Usar `.lte("dias_live_mes", 8)` en lugar de `.lte("dias_live", 8)`
+  - Líneas 176-184: Cambiar display de `creator.horas_live` → `creator.horas_live_mes` con etiqueta "hrs live MTD"
+- **IMPACTO:**
+  - ✅ Panel ahora muestra creadores con BAJA ACTIVIDAD REAL del mes actual
+  - ✅ Números coherentes con `creator_bonificaciones` recalculados
+  - ✅ Solución completa al problema "388 creadores con 0 días" → ahora mostrará datos reales MTD
+- **SIGUIENTE PASO:** Verificar que otros componentes (Dashboard, TopPerformers) también usen datos correctos
 
 **Logging mejorado:**
 - Agregado comentario de advertencia en líneas 1-15 explicando el cambio
