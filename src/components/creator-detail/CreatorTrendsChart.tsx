@@ -18,27 +18,49 @@ interface CreatorTrendsChartProps {
 export function CreatorTrendsChart({ currentMonthData, previousMonthData }: CreatorTrendsChartProps) {
   const [metric, setMetric] = useState<'diamonds' | 'hours' | 'days'>('diamonds');
 
-  // Preparar datos para el gráfico - normalizar por día del mes
+  // Preparar datos para el gráfico - calcular deltas diarios
   const prepareChartData = () => {
     const maxDays = Math.max(currentMonthData.length, previousMonthData.length);
     const chartData = [];
 
     for (let day = 1; day <= maxDays; day++) {
       const currentDay = currentMonthData[day - 1];
-      const prevDay = previousMonthData[day - 1];
+      const prevDayData = currentMonthData[day - 2]; // Día anterior del mismo mes
+      const prevMonthDay = previousMonthData[day - 1];
+      const prevMonthDayBefore = previousMonthData[day - 2];
 
       const dataPoint: any = {
         day: `Día ${day}`,
       };
 
       if (metric === 'diamonds') {
-        dataPoint.mesActual = currentDay?.diamantes || 0;
-        dataPoint.mesAnterior = prevDay?.diamantes || 0;
+        // Calcular incremento diario (delta entre valores acumulados)
+        const currentDelta = day === 1 
+          ? (currentDay?.diamantes || 0)
+          : (currentDay?.diamantes || 0) - (prevDayData?.diamantes || 0);
+        
+        const prevDelta = day === 1
+          ? (prevMonthDay?.diamantes || 0)
+          : (prevMonthDay?.diamantes || 0) - (prevMonthDayBefore?.diamantes || 0);
+        
+        dataPoint.mesActual = Math.max(0, currentDelta);
+        dataPoint.mesAnterior = Math.max(0, prevDelta);
+        
       } else if (metric === 'hours') {
-        dataPoint.mesActual = parseFloat((currentDay?.duracion_live_horas || 0).toFixed(1));
-        dataPoint.mesAnterior = parseFloat((prevDay?.duracion_live_horas || 0).toFixed(1));
+        // Calcular incremento diario de horas
+        const currentDelta = day === 1
+          ? (currentDay?.duracion_live_horas || 0)
+          : (currentDay?.duracion_live_horas || 0) - (prevDayData?.duracion_live_horas || 0);
+        
+        const prevDelta = day === 1
+          ? (prevMonthDay?.duracion_live_horas || 0)
+          : (prevMonthDay?.duracion_live_horas || 0) - (prevMonthDayBefore?.duracion_live_horas || 0);
+        
+        dataPoint.mesActual = parseFloat(Math.max(0, currentDelta).toFixed(1));
+        dataPoint.mesAnterior = parseFloat(Math.max(0, prevDelta).toFixed(1));
+        
       } else {
-        // Para días, contar acumulativo
+        // Para días, contar acumulativo (esto está correcto)
         const currentActiveDays = currentMonthData.slice(0, day).filter(d => 
           (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
         ).length;
