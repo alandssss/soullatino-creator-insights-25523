@@ -60,27 +60,37 @@ serve(async (req) => {
       );
     }
 
-    // Obtener datos de creator_live_daily del mes
+    // Obtener datos de creator_daily_stats del mes actual
     const primerDia = new Date(year, month, 1);
-    const { data: liveData, error: liveError } = await supabaseClient
-      .from('creator_live_daily')
-      .select('fecha, horas, diamantes')
+    const { data: dailyStats, error: statsError } = await supabaseClient
+      .from('creator_daily_stats')
+      .select('fecha, duracion_live_horas, diamantes')
       .eq('creator_id', creatorId)
       .gte('fecha', primerDia.toISOString().split('T')[0])
-      .lte('fecha', ultimoDia.toISOString().split('T')[0]);
+      .lte('fecha', ultimoDia.toISOString().split('T')[0])
+      .order('fecha', { ascending: true });
 
-    if (liveError) {
-      console.error('Error obteniendo datos live:', liveError);
+    if (statsError) {
+      console.error('Error obteniendo datos de creator_daily_stats:', statsError);
       return new Response(
-        JSON.stringify({ error: "Error obteniendo datos live" }),
+        JSON.stringify({ error: "Error obteniendo datos de estadísticas diarias" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Calcular métricas
-    const dias_live_mes = liveData?.filter(d => (d.horas || 0) > 0).length || 0;
-    const horas_live_mes = liveData?.reduce((sum, d) => sum + (d.horas || 0), 0) || 0;
-    const diam_live_mes = liveData?.reduce((sum, d) => sum + (d.diamantes || 0), 0) || 0;
+    // Calcular métricas MTD correctamente desde creator_daily_stats
+    // Días live: contar fechas distintas donde diamantes > 0
+    const dias_live_mes = dailyStats?.filter(d => (d.diamantes || 0) > 0).length || 0;
+    
+    // Horas live: sumar duracion_live_horas incrementales del mes
+    const horas_live_mes = dailyStats?.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0) || 0;
+    
+    // Diamantes: tomar el valor máximo (son progresivos/acumulados del mes)
+    const diam_live_mes = dailyStats && dailyStats.length > 0 
+      ? Math.max(...dailyStats.map(d => d.diamantes || 0), 0)
+      : 0;
+
+    console.log(`📊 Métricas calculadas: ${dias_live_mes} días, ${horas_live_mes.toFixed(1)} horas, ${diam_live_mes} diamantes`);
 
     // Calcular hitos
     const hito_12d_40h = dias_live_mes >= 12 && horas_live_mes >= 40;
