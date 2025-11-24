@@ -35,19 +35,17 @@ export class CreatorMetricsService {
     
     if (currentError) throw new Error(`Error obteniendo stats actuales: ${currentError.message}`);
     
-    // 2. Calcular métricas MTD (contar días únicos con actividad)
-    const liveDays_mtd = (currentStats || []).filter(d => 
-      (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
-    ).length;
+    // 2. Obtener métricas MTD reales desde creator_bonificaciones (fuente correcta)
+    const { data: bonusData } = await supabase
+      .from('creator_bonificaciones')
+      .select('dias_live_mes, horas_live_mes, diam_live_mes')
+      .eq('creator_id', creatorId)
+      .eq('mes_referencia', firstDayStr)
+      .maybeSingle();
     
-    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
-    const liveHours_mtd = currentStats && currentStats.length > 0
-      ? Math.max(...currentStats.map(d => d.duracion_live_horas || 0))
-      : 0;
-    
-    const diamonds_mtd = currentStats && currentStats.length > 0
-      ? Math.max(...currentStats.map(d => d.diamantes || 0))
-      : 0;
+    const liveDays_mtd = bonusData?.dias_live_mes || 0;
+    const liveHours_mtd = bonusData?.horas_live_mes || 0;
+    const diamonds_mtd = bonusData?.diam_live_mes || 0;
     
     // 3. Obtener datos del mes anterior
     const prevMonthFirst = new Date(year, monthNum - 2, 1).toISOString().split('T')[0];

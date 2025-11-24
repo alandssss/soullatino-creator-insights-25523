@@ -165,54 +165,34 @@ export class InteractionService {
   }
 
   /**
-   * Obtiene las estadísticas del mes actual del creador
+   * Obtiene las estadísticas del mes actual desde creator_bonificaciones (fuente correcta)
    */
   static async getCurrentMonthStats(creatorId: string) {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const mesReferencia = firstDayOfMonth.toISOString().split('T')[0];
 
-    // Obtener estadísticas diarias del mes actual
-    const { data: dailyStats, error } = await supabase
-      .from("creator_daily_stats")
-      .select("diamantes, duracion_live_horas, dias_validos_live")
+    // Obtener desde creator_bonificaciones - fuente correcta de datos MTD
+    const { data: bonusData, error } = await supabase
+      .from("creator_bonificaciones")
+      .select("dias_live_mes, horas_live_mes, diam_live_mes")
       .eq("creator_id", creatorId)
-      .gte("fecha", mesReferencia)
-      .order("fecha", { ascending: false });
+      .eq("mes_referencia", mesReferencia)
+      .maybeSingle();
 
     if (error) {
-      console.error('[InteractionService] Error obteniendo stats mensuales:', error);
+      console.error('[InteractionService] Error obteniendo bonificaciones:', error);
       return { dias: 0, horas: 0, diamantes: 0 };
     }
 
-    if (!dailyStats || dailyStats.length === 0) {
+    if (!bonusData) {
       return { dias: 0, horas: 0, diamantes: 0 };
-    }
-
-    // ✅ CORRECCIÓN: Contar días ÚNICOS del mes actual con actividad
-    // Un día cuenta si tiene diamantes > 0 o duración >= 1.0 horas
-    const diasReales = dailyStats.filter(day => 
-      (day.diamantes || 0) > 0 || (day.duracion_live_horas || 0) >= 1.0
-    ).length;
-    
-    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
-    const horasTotales = dailyStats.length > 0
-      ? Math.max(...dailyStats.map(day => day.duracion_live_horas || 0))
-      : 0;
-    
-    const diamantesTotales = dailyStats.length > 0
-      ? Math.max(...dailyStats.map(day => day.diamantes || 0))
-      : 0;
-    
-    // Validación: si hay más de 31 registros, puede haber duplicados
-    if (dailyStats.length > 31) {
-      console.warn(`[InteractionService] Posibles datos duplicados para creator ${creatorId}: ${dailyStats.length} registros en el mes`);
     }
 
     return {
-      dias: diasReales,  // ✅ Días únicos con actividad del mes
-      horas: horasTotales, // ✅ Valor acumulado del mes
-      diamantes: diamantesTotales // ✅ Valor acumulado del mes
+      dias: bonusData.dias_live_mes || 0,
+      horas: bonusData.horas_live_mes || 0,
+      diamantes: bonusData.diam_live_mes || 0
     };
   }
 

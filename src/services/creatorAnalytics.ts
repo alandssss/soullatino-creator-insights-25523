@@ -146,42 +146,30 @@ export class CreatorAnalyticsService {
   }
 
   /**
-   * Obtiene días reales del mes actual (fallback a cálculo local)
+   * Obtiene días y horas reales del mes actual desde creator_bonificaciones (fuente correcta)
    */
   async getDiasRealesMes(creatorId: string): Promise<{ dias_reales_hasta_hoy: number; horas_totales_mes: number } | null> {
     try {
-      // Calcular desde creator_daily_stats usando columnas correctas
       const mesActual = new Date();
       const mesInicio = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, '0')}-01`;
-      const hoy = mesActual.toISOString().split('T')[0];
       
       const { data, error } = await supabase
-        .from('creator_daily_stats' as any)
-        .select('duracion_live_horas, diamantes, fecha')
+        .from('creator_bonificaciones')
+        .select('dias_live_mes, horas_live_mes')
         .eq('creator_id', creatorId)
-        .gte('fecha', mesInicio)
-        .lte('fecha', hoy);
+        .eq('mes_referencia', mesInicio)
+        .maybeSingle();
       
       if (error) {
-        console.error('Error cargando creator_daily_stats:', error);
+        console.error('Error cargando creator_bonificaciones:', error);
         return null;
       }
       
-      if (!data || data.length === 0) return null;
-      
-      // Contar días ÚNICOS con actividad (diamantes > 0 o horas >= 1.0)
-      const diasReales = data.filter((d: any) => 
-        (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
-      ).length;
-      
-      // Usar Math.max porque duracion_live_horas es un valor acumulado mensual, no diario
-      const horasTotales = Math.max(...data.map((d: any) => 
-        d.duracion_live_horas || 0
-      ), 0);
+      if (!data) return null;
       
       return {
-        dias_reales_hasta_hoy: diasReales,
-        horas_totales_mes: horasTotales
+        dias_reales_hasta_hoy: (data as any).dias_live_mes || 0,
+        horas_totales_mes: (data as any).horas_live_mes || 0
       };
     } catch (err) {
       console.error('Error en getDiasRealesMes:', err);
