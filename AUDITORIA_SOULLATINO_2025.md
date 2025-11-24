@@ -1,12 +1,38 @@
 # 🔍 AUDITORÍA Y TRANSFORMACIÓN CRM - SOULLATINO ANALYTICS 2025
 **Fecha Inicio:** 2025-11-23  
-**Última Actualización:** 2025-11-23 [Sesión de Implementación Real]  
-**Estado:** 🚀 EN PROGRESO - Fase 1 Completada ✅  
+**Última Actualización:** 2025-11-24 [Fase 2: Corrección de Carga de Excel]  
+**Estado:** 🚀 EN PROGRESO - Fase 2 Completada ✅ | Fase 3 Pendiente ⏳  
 **Proyecto:** Soullatino Analytics - CRM Interno de Creadores TikTok
 
 ---
 
 ## 📝 **REGISTRO DE CAMBIOS IMPLEMENTADOS**
+
+### ✅ **SESIÓN 24/11/2025 - FASE 2: CORRECCIÓN DE CARGA DE EXCEL**
+
+**Archivos modificados:**
+- `supabase/functions/upload-excel-recommendations/index.ts` - Corrección crítica en carga de datos ✅
+
+**🔧 FIX CRÍTICO #5 - Eliminar días/horas estáticos del Excel:**
+- **PROBLEMA RAÍZ:** El Excel contenía valores estáticos del MES ANTERIOR (octubre) para días y horas, causando duplicación al insertarse en `creator_daily_stats`
+- **CAUSA:** La función `upload-excel-recommendations` insertaba directamente `r.dias_actuales` y `r.horas_actuales` del Excel, que eran valores acumulados del mes anterior, no del mes actual
+- **SOLUCIÓN IMPLEMENTADA:**
+  - Líneas 473-481: Cambiar `duracion_live_horas: r.horas_actuales` → `duracion_live_horas: 0`
+  - Cambiar `dias_validos_live: r.dias_actuales` → `dias_validos_live: r.diamantes_actuales > 0 ? 1 : 0`
+  - Solo insertar diamantes progresivos (que SÍ son del mes actual)
+  - Marcar actividad diaria (1 si hubo diamantes, 0 si no) para contar días después
+- **IMPACTO:**
+  - ✅ `creator_daily_stats` ahora solo contiene diamantes progresivos correctos
+  - ✅ Días/horas MTD se calcularán después por `calculate-bonificaciones` desde datos reales
+  - ✅ Elimina duplicación en origen (edge function de carga)
+- **SIGUIENTE PASO:** Fase 3 - Recalcular `creator_bonificaciones` para que compute días/horas MTD correctamente desde `creator_daily_stats`
+
+**Logging mejorado:**
+- Agregado comentario de advertencia en líneas 1-15 explicando el cambio
+- Actualizado mensaje de éxito para indicar que días/horas MTD se calcularán después
+- Log claro: "Inserting X records with diamonds only (MTD days/hours will be calculated by bonificaciones)"
+
+---
 
 ### ✅ **SESIÓN 23/11/2025 - FASE 1: SERVICIOS CORE**
 
