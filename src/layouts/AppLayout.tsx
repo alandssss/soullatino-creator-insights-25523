@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppSidebar } from "@/components/app-sidebar";
-import { BottomNav } from "@/components/layout/BottomNav";
 import {
   Sheet,
   SheetContent,
@@ -84,14 +83,11 @@ const AppLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden pb-24 md:pb-6">
-          <div className="px-4 md:px-6 py-4 md:py-6 container-safe">
+        <main className="flex-1 overflow-x-hidden">
+          <div className="px-4 md:px-6 py-4 md:py-6">
             <Outlet />
           </div>
         </main>
-
-        {/* Bottom Navigation (Mobile only) */}
-        <BottomNav userRole={userRole} />
       </div>
     </div>
   );
