@@ -8,9 +8,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { getCreatorDisplayName } from "@/utils/creator-display";
 
 type Creator = Tables<"creators">;
+type CreatorWithBonificaciones = Creator & {
+  dias_live_mes: number;
+  horas_live_mes: number;
+};
 
 export const LowActivityPanel = () => {
-  const [creatorsByDays, setCreatorsByDays] = useState<{ [key: number]: Creator[] }>({});
+  const [creatorsByDays, setCreatorsByDays] = useState<{ [key: number]: CreatorWithBonificaciones[] }>({});
   const [loading, setLoading] = useState(true);
   const [openSections, setOpenSections] = useState<{ [key: number]: boolean }>({});
 
@@ -20,23 +24,42 @@ export const LowActivityPanel = () => {
 
   const fetchLowActivityCreators = async () => {
     try {
-      const { data, error } = await supabase
-        .from("creators")
-        .select("*")
-        .lte("dias_live", 8)
-        .eq("status", "activo")
-        .order("dias_live", { ascending: false });
+      // Obtener mes actual para filtrar bonificaciones
+      const mesActual = new Date();
+      const mesReferencia = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1)
+        .toISOString().split('T')[0];
+
+      // Unir creators con creator_bonificaciones para obtener dias_live_mes actual
+      const { data: bonificaciones, error } = await supabase
+        .from("creator_bonificaciones")
+        .select(`
+          dias_live_mes,
+          horas_live_mes,
+          creator_id,
+          creators!inner (*)
+        `)
+        .eq("mes_referencia", mesReferencia)
+        .lte("dias_live_mes", 8)
+        .eq("creators.status", "activo")
+        .order("dias_live_mes", { ascending: false });
 
       if (error) throw error;
       
-      // Agrupar creadores por días live exactos
-      const grouped: { [key: number]: Creator[] } = {};
-      (data || []).forEach(creator => {
-        const days = creator.dias_live || 0;
+      // Transformar datos y agrupar por días live MTD
+      const grouped: { [key: number]: CreatorWithBonificaciones[] } = {};
+      (bonificaciones || []).forEach(bonif => {
+        const creator = bonif.creators as Creator;
+        const days = bonif.dias_live_mes || 0;
+        
         if (!grouped[days]) {
           grouped[days] = [];
         }
-        grouped[days].push(creator);
+        
+        grouped[days].push({
+          ...creator,
+          dias_live_mes: bonif.dias_live_mes || 0,
+          horas_live_mes: bonif.horas_live_mes || 0,
+        });
       });
       
       setCreatorsByDays(grouped);
@@ -156,7 +179,7 @@ export const LowActivityPanel = () => {
                             <span>{days} {days === 1 ? 'día' : 'días'}</span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {(creator.horas_live || 0).toFixed(1)} hrs live
+                            {creator.horas_live_mes.toFixed(1)} hrs live MTD
                           </p>
                         </div>
                       </div>
