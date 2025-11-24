@@ -8,10 +8,11 @@
 
 ## 📝 **REGISTRO DE CAMBIOS IMPLEMENTADOS**
 
-### ✅ **SESIÓN 24/11/2025 - FASE 2: CORRECCIÓN DE CARGA DE EXCEL + SCRIPT SQL**
+### ✅ **SESIÓN 24/11/2025 - FASE 2 Y 3: CORRECCIÓN COMPLETA DEL FLUJO MTD**
 
 **Archivos modificados:**
 - `supabase/functions/upload-excel-recommendations/index.ts` - Corrección crítica en carga de datos ✅
+- `supabase/functions/calculate-bonificaciones/index.ts` - Corrección de cálculo MTD desde creator_daily_stats ✅
 
 **Archivos creados:**
 - `fix_bonificaciones_mtd.sql` - Script SQL para recalcular datos existentes ✅
@@ -39,6 +40,21 @@
 - **FUNCIÓN 4:** Estadísticas de corrección (total creadores, promedios, máximos, baja actividad)
 - **EJECUCIÓN:** Manual, una sola vez, después de subir nuevos datos con Excel corregido
 - **IMPACTO ESPERADO:** Métricas realistas (días: 0-22, horas: 0-550, diamantes coherentes con actividad)
+
+**🔧 FIX CRÍTICO #6 - Corrección de calculate-bonificaciones:**
+- **PROBLEMA RAÍZ:** Edge function usaba `creator_live_daily` con lógica incorrecta que sumaba horas y contaba días con `horas > 0`
+- **CAUSA:** Lectura desde tabla obsoleta con lógica que no reflejaba datos reales de `creator_daily_stats`
+- **SOLUCIÓN IMPLEMENTADA:**
+  - Líneas 63-92: Cambiar fuente de datos de `creator_live_daily` → `creator_daily_stats`
+  - `dias_live_mes`: Contar fechas con `diamantes > 0` (no `horas > 0`)
+  - `horas_live_mes`: Sumar `duracion_live_horas` incrementales
+  - `diam_live_mes`: Usar `Math.max()` de diamantes (son progresivos/acumulados)
+  - Agregado logging detallado: "📊 Métricas calculadas: X días, Y horas, Z diamantes"
+- **IMPACTO:**
+  - ✅ Edge function ahora calcula MTD correctamente desde datos reales
+  - ✅ Coherencia total con lógica del script SQL temporal
+  - ✅ Próximas ejecuciones generarán `creator_bonificaciones` con valores precisos
+- **SIGUIENTE PASO:** Fase 4 - Verificar que componentes frontend lean datos correctos después del recálculo
 
 **Logging mejorado:**
 - Agregado comentario de advertencia en líneas 1-15 explicando el cambio
