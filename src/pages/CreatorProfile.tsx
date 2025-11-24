@@ -163,7 +163,7 @@ export default function CreatorProfile() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6 container-safe">
+    <div className="max-w-7xl mx-auto space-y-6 p-6">
       <Button variant="outline" onClick={() => navigate('/supervision')}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver a Creadores
@@ -202,13 +202,13 @@ export default function CreatorProfile() {
 
       {/* Tabs de Contenido CRM */}
       <Tabs defaultValue="bonificaciones" className="w-full">
-        <TabsList className="w-full mobile-scroll flex md:grid md:grid-cols-6 overflow-x-auto">
-          <TabsTrigger value="bonificaciones" className="whitespace-nowrap min-w-[120px]">Bonificaciones</TabsTrigger>
-          <TabsTrigger value="metricas" className="whitespace-nowrap min-w-[100px]">Métricas</TabsTrigger>
-          <TabsTrigger value="alertas" className="whitespace-nowrap min-w-[100px]">Alertas</TabsTrigger>
-          <TabsTrigger value="agenda" className="whitespace-nowrap min-w-[100px]">Agenda</TabsTrigger>
-          <TabsTrigger value="analisis" className="whitespace-nowrap min-w-[100px]">Análisis</TabsTrigger>
-          <TabsTrigger value="historial" className="whitespace-nowrap min-w-[100px]">Historial</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-6">
+          <TabsTrigger value="bonificaciones">Bonificaciones</TabsTrigger>
+          <TabsTrigger value="metricas">Métricas</TabsTrigger>
+          <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="analisis">Análisis</TabsTrigger>
+          <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
         
         <TabsContent value="bonificaciones" className="mt-6">
