@@ -40,13 +40,14 @@ export class CreatorMetricsService {
       (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
     ).length;
     
-    const liveHours_mtd = (currentStats || []).reduce((sum, d) => 
-      sum + (d.duracion_live_horas || 0), 0
-    );
+    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
+    const liveHours_mtd = currentStats && currentStats.length > 0
+      ? Math.max(...currentStats.map(d => d.duracion_live_horas || 0))
+      : 0;
     
-    const diamonds_mtd = (currentStats || []).reduce((sum, d) => 
-      sum + (d.diamantes || 0), 0
-    );
+    const diamonds_mtd = currentStats && currentStats.length > 0
+      ? Math.max(...currentStats.map(d => d.diamantes || 0))
+      : 0;
     
     // 3. Obtener datos del mes anterior
     const prevMonthFirst = new Date(year, monthNum - 2, 1).toISOString().split('T')[0];
@@ -63,13 +64,14 @@ export class CreatorMetricsService {
       (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0
     ).length;
     
-    const liveHours_prevMonth = (prevStats || []).reduce((sum, d) => 
-      sum + (d.duracion_live_horas || 0), 0
-    );
+    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
+    const liveHours_prevMonth = prevStats && prevStats.length > 0
+      ? Math.max(...prevStats.map(d => d.duracion_live_horas || 0))
+      : 0;
     
-    const diamonds_prevMonth = (prevStats || []).reduce((sum, d) => 
-      sum + (d.diamantes || 0), 0
-    );
+    const diamonds_prevMonth = prevStats && prevStats.length > 0
+      ? Math.max(...prevStats.map(d => d.diamantes || 0))
+      : 0;
     
     // 4. Calcular deltas
     const deltaLiveDays = liveDays_mtd - liveDays_prevMonth;
@@ -195,8 +197,13 @@ export class CreatorMetricsService {
     
     // Método: Ritmo lineal
     const daysElapsed = dailyStats.length;
-    const totalDiamonds = dailyStats.reduce((sum, d) => sum + (d.diamantes || 0), 0);
-    const totalHours = dailyStats.reduce((sum, d) => sum + (d.duracion_live_horas || 0), 0);
+    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
+    const totalDiamonds = dailyStats.length > 0
+      ? Math.max(...dailyStats.map(d => d.diamantes || 0))
+      : 0;
+    const totalHours = dailyStats.length > 0
+      ? Math.max(...dailyStats.map(d => d.duracion_live_horas || 0))
+      : 0;
     const activeDays = dailyStats.filter(d => (d.diamantes || 0) > 0 || (d.duracion_live_horas || 0) >= 1.0).length;
     
     const diamondsRate = daysElapsed > 0 ? totalDiamonds / daysElapsed : 0;

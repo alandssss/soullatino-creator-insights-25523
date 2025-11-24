@@ -195,10 +195,14 @@ export class InteractionService {
       (day.diamantes || 0) > 0 || (day.duracion_live_horas || 0) >= 1.0
     ).length;
     
-    // Sumar horas de todos los registros del mes
-    const horasTotales = dailyStats.reduce((sum, day) => 
-      sum + (day.duracion_live_horas || 0), 0
-    );
+    // ✅ CORRECCIÓN: usar Math.max() porque son valores acumulados del mes
+    const horasTotales = dailyStats.length > 0
+      ? Math.max(...dailyStats.map(day => day.duracion_live_horas || 0))
+      : 0;
+    
+    const diamantesTotales = dailyStats.length > 0
+      ? Math.max(...dailyStats.map(day => day.diamantes || 0))
+      : 0;
     
     // Validación: si hay más de 31 registros, puede haber duplicados
     if (dailyStats.length > 31) {
@@ -207,8 +211,8 @@ export class InteractionService {
 
     return {
       dias: diasReales,  // ✅ Días únicos con actividad del mes
-      horas: horasTotales, // ✅ Suma de horas del mes
-      diamantes: dailyStats.reduce((sum, day) => sum + (day.diamantes || 0), 0) // ✅ Suma diaria
+      horas: horasTotales, // ✅ Valor acumulado del mes
+      diamantes: diamantesTotales // ✅ Valor acumulado del mes
     };
   }
 
