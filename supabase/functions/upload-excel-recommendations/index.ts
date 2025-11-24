@@ -1,3 +1,19 @@
+// ============= SUPABASE EDGE FUNCTION: upload-excel-recommendations =============
+// 
+// CORRECCIÓN CRÍTICA (2025-01-24): Este function ya NO inserta días/horas estáticos del Excel.
+// Solo inserta diamantes progresivos. Los valores MTD de días y horas se calcularán después
+// por la function calculate-bonificaciones desde los registros reales de creator_daily_stats.
+// 
+// Problema anterior: El Excel contenía valores estáticos del MES ANTERIOR que causaban
+// duplicación al sumarse. Ahora solo insertamos diamantes y marcamos actividad (días=1 si hubo).
+// 
+// Flujo correcto:
+// 1. Este function inserta diamantes progresivos del día
+// 2. calculate-bonificaciones cuenta días (WHERE diamantes > 0) y suma horas desde deltas diarios
+// 3. Frontend lee de creator_bonificaciones para MTD correcto
+// 
+// =============================================================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
@@ -470,12 +486,15 @@ serve(async (req) => {
         return null;
       }
       
+      // ⚠️ CORRECCIÓN CRÍTICA: Solo insertar diamantes progresivos del Excel
+      // Los días/horas del Excel son ESTÁTICOS del mes anterior y causan duplicación
+      // Los valores MTD correctos se calcularán después desde creator_bonificaciones
       return {
         creator_id: creatorId,
         fecha: today,
         diamantes: r.diamantes_actuales,
-        duracion_live_horas: r.horas_actuales,
-        dias_validos_live: r.dias_actuales,
+        duracion_live_horas: 0, // Se calculará después
+        dias_validos_live: r.diamantes_actuales > 0 ? 1 : 0, // Marcar día activo
         creator_username: r.creator_username,
         phone_e164: r.phone_e164
       };
@@ -507,6 +526,7 @@ serve(async (req) => {
     }
 
     // @snapshot: Delete ALL records for this date to replace complete snapshot
+    console.log(`[upload-excel-recommendations] ⚠️ Deleting existing records for ${today} to insert fresh snapshot`);
     const { error: delErr } = await supabase
       .from('creator_daily_stats')
       .delete()
@@ -516,7 +536,9 @@ serve(async (req) => {
       console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
     }
 
-    // @compat: Upsert para idempotencia - ahora con filas deduplicadas
+    // @compat: Upsert para idempotencia - solo con diamantes progresivos
+    // Días/horas MTD se calcularán posteriormente por calculate-bonificaciones
+    console.log(`[upload-excel-recommendations] Inserting ${dailyRowsDeduped.length} records with diamonds only (MTD days/hours will be calculated by bonificaciones)`);
     const { error: insertErr } = await supabase
       .from('creator_daily_stats')
       .upsert(dailyRowsDeduped, { onConflict: 'creator_id,fecha' });
@@ -555,9 +577,10 @@ serve(async (req) => {
           creators_deduplicated: creatorsDeduplicatedCount,
           snapshot_date: today,
           no_match: noMatch,
-          message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente` +
+          message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente (solo diamantes - días/horas MTD se calcularán en bonificaciones)` +
                    (duplicatesCount > 0 ? ` (${duplicatesCount} duplicados removidos en daily_stats)` : '') +
-                   (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : '')
+                   (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : ''),
+          note: '⚠️ Los días y horas del Excel NO se usan (son del mes anterior). Se calcularán desde creator_daily_stats actual.'
         }),
         {
           headers: { 
