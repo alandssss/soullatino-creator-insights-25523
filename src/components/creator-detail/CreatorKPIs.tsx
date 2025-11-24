@@ -17,15 +17,17 @@ export function CreatorKPIs({ dailyStats, monthlyGrowth }: CreatorKPIsProps) {
       return { diamantes: 0, horas: 0, dias: 0, seguidores: 0 };
     }
 
-    // ✅ CORRECCIÓN: dias_validos_live y duracion_live_horas YA SON ACUMULADOS
-    // Tomar el más reciente para días/horas, sumar diamantes y seguidores diarios
+    // ✅ CORRECCIÓN: dias_validos_live, duracion_live_horas y diamantes YA SON ACUMULADOS
+    // Usar Math.max() para obtener el valor acumulado más reciente
     const ultimoDia = dailyStats[0]; // Asumiendo orden DESC por fecha
 
     return {
       dias: ultimoDia.dias_validos_live || 0,  // ✅ Ya es acumulado del mes
       horas: ultimoDia.duracion_live_horas || 0, // ✅ Ya es acumulado del mes
-      diamantes: dailyStats.reduce((sum, stat) => sum + (stat.diamantes || 0), 0), // ✅ Suma diaria
-      seguidores: dailyStats.reduce((sum, stat) => sum + (stat.nuevos_seguidores || 0), 0) // ✅ Suma diaria
+      diamantes: dailyStats.length > 0 
+        ? Math.max(...dailyStats.map(stat => stat.diamantes || 0))
+        : 0, // ✅ Valor acumulado del mes
+      seguidores: dailyStats.reduce((sum, stat) => sum + (stat.nuevos_seguidores || 0), 0) // ✅ Suma diaria (este SÍ es incremental)
     };
   }, [dailyStats]);
 
