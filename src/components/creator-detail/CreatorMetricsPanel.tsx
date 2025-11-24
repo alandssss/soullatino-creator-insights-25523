@@ -187,7 +187,7 @@ export function CreatorMetricsPanel({ creatorId, creatorName }: CreatorMetricsPa
   return (
     <div className="space-y-6">
       {/* KPIs principales */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mobile:grid-cols-1">
         <NeoKPICard
           label="Días Live MTD"
           value={formatMetrics.days(liveDaysMTD)}
