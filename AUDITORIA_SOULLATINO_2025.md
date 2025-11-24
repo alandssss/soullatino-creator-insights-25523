@@ -8,10 +8,13 @@
 
 ## 📝 **REGISTRO DE CAMBIOS IMPLEMENTADOS**
 
-### ✅ **SESIÓN 24/11/2025 - FASE 2: CORRECCIÓN DE CARGA DE EXCEL**
+### ✅ **SESIÓN 24/11/2025 - FASE 2: CORRECCIÓN DE CARGA DE EXCEL + SCRIPT SQL**
 
 **Archivos modificados:**
 - `supabase/functions/upload-excel-recommendations/index.ts` - Corrección crítica en carga de datos ✅
+
+**Archivos creados:**
+- `fix_bonificaciones_mtd.sql` - Script SQL para recalcular datos existentes ✅
 
 **🔧 FIX CRÍTICO #5 - Eliminar días/horas estáticos del Excel:**
 - **PROBLEMA RAÍZ:** El Excel contenía valores estáticos del MES ANTERIOR (octubre) para días y horas, causando duplicación al insertarse en `creator_daily_stats`
@@ -26,6 +29,16 @@
   - ✅ Días/horas MTD se calcularán después por `calculate-bonificaciones` desde datos reales
   - ✅ Elimina duplicación en origen (edge function de carga)
 - **SIGUIENTE PASO:** Fase 3 - Recalcular `creator_bonificaciones` para que compute días/horas MTD correctamente desde `creator_daily_stats`
+
+**🗄️ SCRIPT SQL TEMPORAL CREADO:**
+- **ARCHIVO:** `fix_bonificaciones_mtd.sql` (raíz del proyecto)
+- **PROPÓSITO:** Recalcular `dias_live_mes` y `horas_live_mes` en `creator_bonificaciones` desde datos reales de `creator_daily_stats`
+- **FUNCIÓN 1:** Contar fechas distintas con `diamantes > 0` en el mes actual para `dias_live_mes`
+- **FUNCIÓN 2:** Sumar `duracion_live_horas` del mes actual para `horas_live_mes`
+- **FUNCIÓN 3:** Query de verificación mostrando top 20 creadores con métricas corregidas
+- **FUNCIÓN 4:** Estadísticas de corrección (total creadores, promedios, máximos, baja actividad)
+- **EJECUCIÓN:** Manual, una sola vez, después de subir nuevos datos con Excel corregido
+- **IMPACTO ESPERADO:** Métricas realistas (días: 0-22, horas: 0-550, diamantes coherentes con actividad)
 
 **Logging mejorado:**
 - Agregado comentario de advertencia en líneas 1-15 explicando el cambio
