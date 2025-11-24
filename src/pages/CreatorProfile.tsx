@@ -202,13 +202,13 @@ export default function CreatorProfile() {
 
       {/* Tabs de Contenido CRM */}
       <Tabs defaultValue="bonificaciones" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          <TabsTrigger value="bonificaciones">Bonificaciones</TabsTrigger>
-          <TabsTrigger value="metricas">Métricas</TabsTrigger>
-          <TabsTrigger value="alertas">Alertas</TabsTrigger>
-          <TabsTrigger value="agenda">Agenda</TabsTrigger>
-          <TabsTrigger value="analisis">Análisis</TabsTrigger>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
+        <TabsList className="w-full mobile-scroll flex md:grid md:grid-cols-6 overflow-x-auto">
+          <TabsTrigger value="bonificaciones" className="whitespace-nowrap min-w-[120px]">Bonificaciones</TabsTrigger>
+          <TabsTrigger value="metricas" className="whitespace-nowrap min-w-[100px]">Métricas</TabsTrigger>
+          <TabsTrigger value="alertas" className="whitespace-nowrap min-w-[100px]">Alertas</TabsTrigger>
+          <TabsTrigger value="agenda" className="whitespace-nowrap min-w-[100px]">Agenda</TabsTrigger>
+          <TabsTrigger value="analisis" className="whitespace-nowrap min-w-[100px]">Análisis</TabsTrigger>
+          <TabsTrigger value="historial" className="whitespace-nowrap min-w-[100px]">Historial</TabsTrigger>
         </TabsList>
         
         <TabsContent value="bonificaciones" className="mt-6">

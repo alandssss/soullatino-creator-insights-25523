@@ -450,53 +450,103 @@ All colors MUST be HSL.
    MOBILE OPTIMIZATIONS - CRITICAL
    ======================================== */
 
+/* Base mobile-first typography */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe container with mobile padding */
+.container-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Mobile typography scale */
 @media (max-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-  
-  .text-xs {
-    font-size: 0.875rem;
-  }
-  
-  .text-sm {
-    font-size: 1rem;
-  }
-  
-  .text-base {
-    font-size: 1.125rem;
-  }
-  
-  body {
-    line-height: 1.6;
-  }
-  
-  button:not(.btn-icon) {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0.75rem 1rem;
-  }
-  
-  input, textarea, select {
-    min-height: 48px;
-    font-size: 16px;
-    padding: 0.75rem;
-  }
-  
+  h1, .text-4xl { font-size: 1.875rem; line-height: 2.25rem; }
+  h2, .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+  h3, .text-2xl { font-size: 1.25rem; line-height: 1.75rem; }
+  h4, .text-xl { font-size: 1.125rem; line-height: 1.75rem; }
+  .text-base { font-size: 1rem; line-height: 1.5rem; }
+  .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+  .text-xs { font-size: 0.75rem; line-height: 1rem; }
+}
+
+/* Touch targets - WCAG AA minimum 44x44 */
+button:not(.btn-icon):not(.btn-sm) {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem 1.25rem;
+  touch-action: manipulation;
+}
+
+input, textarea, select {
+  min-height: 48px;
+  font-size: 16px !important; /* Prevent iOS zoom */
+  padding: 0.75rem 1rem;
+  touch-action: manipulation;
+}
+
+/* Mobile-first grids */
+@media (max-width: 768px) {
   .grid {
     gap: 1rem;
   }
+  
+  /* Force single column on mobile for most grids */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4,
+  .md\:grid-cols-2,
+  .md\:grid-cols-3,
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  /* Allow explicit mobile columns */
+  .mobile\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-/* Universal Touch Feedback */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
+/* Universal touch feedback */
+.touch-target,
+button,
+a[role="button"],
+[role="button"] {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-button, a[role="button"], [role="button"] {
-  touch-action: manipulation;
+button:active:not(:disabled),
+a[role="button"]:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Mobile scrolling optimization */
+.mobile-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bottom navigation safe area */
+.bottom-nav-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 button:active, 

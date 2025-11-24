@@ -185,7 +185,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 container-safe">
       <PageHeader
         title="Dashboard Operativo"
         description="Visualización interactiva y métricas de alto impacto"
