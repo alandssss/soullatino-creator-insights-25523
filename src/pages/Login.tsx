@@ -49,11 +49,11 @@ const Login = () => {
         });
         if (error) throw error;
 
-        // Asegurar que el usuario tenga un rol asignado
-        const { error: roleError } = await supabase.functions.invoke('ensure-user-role');
-        if (roleError) {
-          console.warn('Error asegurando rol del usuario:', roleError);
-        }
+        // Asegurar que el usuario tenga un rol asignado (opcional, no bloquea login)
+        // const { error: roleError } = await supabase.functions.invoke('ensure-user-role');
+        // if (roleError) {
+        //   console.warn('Error asegurando rol del usuario:', roleError);
+        // }
 
         // Verificar rol del usuario
         const { data: roleData } = await supabase
@@ -98,7 +98,7 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/10" />
       <div className="absolute top-0 left-0 w-96 h-96 bg-primary/30 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
-      
+
       <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-card/80 border-border/50 shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-4">
