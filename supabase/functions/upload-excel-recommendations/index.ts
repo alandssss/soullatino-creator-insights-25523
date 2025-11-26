@@ -204,6 +204,7 @@ serve(async (req) => {
       'tiktok username': 'creator_username',
       'nombre de usuario del creador': 'creator_username',
       'creators username': 'creator_username',
+      "creator's username": 'creator_username', // Con apóstrofe (Excel real)
       'id del creador': 'creator_username',
       'creator id': 'creator_username',
 
@@ -229,6 +230,7 @@ serve(async (req) => {
       'horas': 'horas_actuales',
       'hours': 'horas_actuales',
       'live hours': 'horas_actuales',
+      'live duration': 'horas_actuales', // Columna "LIVE duration" del Excel real
       'tiempo': 'horas_actuales',
       'duracion de live': 'horas_actuales',
       'duracion de emisiones live (en horas) durante el ultimo mes': 'horas_actuales',
