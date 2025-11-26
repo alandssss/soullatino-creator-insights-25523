@@ -49,6 +49,12 @@ const Login = () => {
         });
         if (error) throw error;
 
+        // Asegurar que el usuario tenga un rol asignado
+        const { error: roleError } = await supabase.functions.invoke('ensure-user-role');
+        if (roleError) {
+          console.warn('Error asegurando rol del usuario:', roleError);
+        }
+
         // Verificar rol del usuario
         const { data: roleData } = await supabase
           .from('user_roles')
