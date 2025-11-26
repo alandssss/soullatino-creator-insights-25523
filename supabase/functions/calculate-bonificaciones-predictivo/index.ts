@@ -79,8 +79,8 @@ serve(async (req) => {
       }
       const current = statsMap.get(stat.creator_id)!;
 
-      // ✅ SUMAR horas (si son deltas) pero USAR MAX para diamantes (son acumulativos del Excel)
-      current.horas_live_mes += stat.duracion_live_horas || 0;
+      // ✅ USAR MAX para horas y diamantes (son valores MTD acumulativos del Excel, no deltas)
+      current.horas_live_mes = Math.max(current.horas_live_mes, stat.duracion_live_horas || 0);
       current.diam_live_mes = Math.max(current.diam_live_mes, stat.diamantes || 0);
 
       // ✅ Contar días únicos (un día válido = tiene diamantes O ≥1h de live)

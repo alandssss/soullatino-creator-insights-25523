@@ -1,16 +1,17 @@
 // ============= SUPABASE EDGE FUNCTION: upload-excel-recommendations =============
 // 
-// CORRECCIÓN CRÍTICA (2025-01-24): Este function ya NO inserta días/horas estáticos del Excel.
-// Solo inserta diamantes progresivos. Los valores MTD de días y horas se calcularán después
-// por la function calculate-bonificaciones desde los registros reales de creator_daily_stats.
+// CORRECCIÓN (2025-11-26): Este function ahora inserta TODOS los datos del Excel:
+// - Diamantes (valores MTD acumulativos)
+// - Horas (valores MTD acumulativos) ← CORREGIDO
+// - Días válidos (1 si hubo actividad ese día)
 // 
-// Problema anterior: El Excel contenía valores estáticos del MES ANTERIOR que causaban
-// duplicación al sumarse. Ahora solo insertamos diamantes y marcamos actividad (días=1 si hubo).
+// El Excel de TikTok contiene valores Month-To-Date (MTD) acumulativos, no deltas diarios.
+// Por lo tanto, usamos Math.max() en calculate-bonificaciones para obtener el valor más reciente.
 // 
 // Flujo correcto:
-// 1. Este function inserta diamantes progresivos del día
-// 2. calculate-bonificaciones cuenta días (WHERE diamantes > 0) y suma horas desde deltas diarios
-// 3. Frontend lee de creator_bonificaciones para MTD correcto
+// 1. Este function inserta diamantes y horas MTD del Excel
+// 2. calculate-bonificaciones usa MAX para obtener el valor más reciente del mes
+// 3. Frontend lee de creator_bonificaciones para mostrar datos correctos
 // 
 // =============================================================================
 
@@ -23,7 +24,7 @@ import { withCORS, handleCORSPreflight } from "../_shared/cors.ts";
 serve(async (req) => {
   const origin = req.headers.get("origin");
   console.log('[upload-excel] === INICIO ===');
-  
+
   if (req.method === 'OPTIONS') {
     return handleCORSPreflight(origin);
   }
@@ -37,7 +38,7 @@ serve(async (req) => {
     if (!authHeader) {
       console.error('[upload-excel] NO auth header');
       return withCORS(
-        new Response(JSON.stringify({ error: 'No autorizado - Token requerido' }), { 
+        new Response(JSON.stringify({ error: 'No autorizado - Token requerido' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         }),
@@ -53,11 +54,11 @@ serve(async (req) => {
     // Verificar usuario autenticado
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     console.log('[upload-excel] User verificado:', user?.id, 'Error:', userError);
-    
+
     if (userError || !user) {
       console.error('[upload-excel] Token inválido:', userError);
       return withCORS(
-        new Response(JSON.stringify({ error: 'Token inválido' }), { 
+        new Response(JSON.stringify({ error: 'Token inválido' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         }),
@@ -71,13 +72,13 @@ serve(async (req) => {
       .select('role')
       .eq('user_id', user.id)
       .single();
-    
+
     console.log('[upload-excel] Rol del usuario:', roleData?.role);
 
     if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
       console.error('[upload-excel] Permisos insuficientes:', roleData?.role);
       return withCORS(
-        new Response(JSON.stringify({ error: 'Requiere rol admin o manager' }), { 
+        new Response(JSON.stringify({ error: 'Requiere rol admin o manager' }), {
           status: 403,
           headers: { 'Content-Type': 'application/json' }
         }),
@@ -109,9 +110,9 @@ serve(async (req) => {
     // Función para parsear horas en diferentes formatos
     function parseHours(input: any): number {
       if (!input) return 0;
-      
+
       const str = String(input).trim();
-      
+
       // Formato: "125h 8min 10s"
       const hmsMatch = str.match(/(\d+)h\s*(\d+)?min\s*(\d+)?s?/i);
       if (hmsMatch) {
@@ -120,7 +121,7 @@ serve(async (req) => {
         const secs = parseInt(hmsMatch[3] || '0');
         return hours + (mins / 60) + (secs / 3600);
       }
-      
+
       // Formato: "8:30:00" o "8:30"
       const timeMatch = str.match(/^(\d+):(\d+)(?::(\d+))?$/);
       if (timeMatch) {
@@ -129,13 +130,13 @@ serve(async (req) => {
         const secs = parseInt(timeMatch[3] || '0');
         return hours + (mins / 60) + (secs / 3600);
       }
-      
+
       // Formato: "90min"
       const minsMatch = str.match(/(\d+)\s*min/i);
       if (minsMatch) {
         return parseInt(minsMatch[1]) / 60;
       }
-      
+
       // Número simple
       const numMatch = str.replace(/,/g, '');
       const num = parseFloat(numMatch);
@@ -153,9 +154,9 @@ serve(async (req) => {
     // Función para normalizar nombres de columnas
     const normalize = (s: string) =>
       s.normalize('NFKC').trim().toLowerCase()
-       .replace(/\s+/g, ' ')
-       .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
-       .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n');
+        .replace(/\s+/g, ' ')
+        .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+        .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n');
 
     // Validar que el Excel tenga columnas reconocibles
     if (rawData.length > 0) {
@@ -163,15 +164,15 @@ serve(async (req) => {
       const headers = Object.keys(firstRow).map(normalize);
       console.log('[DEBUG] Excel columns found:', Object.keys(firstRow));
       console.log('[DEBUG] Normalized headers:', headers);
-      
-      const hasNameColumn = headers.some(h => 
+
+      const hasNameColumn = headers.some(h =>
         ['nombre', 'creador', 'usuario', 'username', 'creator name', 'name', 'tiktok', 'tiktok username', 'nombre de usuario del creador', 'creators username', 'id del creador', 'creator id'].includes(h)
       );
-      
+
       if (!hasNameColumn) {
         return withCORS(
           new Response(
-            JSON.stringify({ 
+            JSON.stringify({
               error: 'excel_sin_nombre',
               message: 'El Excel debe contener una columna de nombre de usuario',
               detalles: 'Columnas esperadas: "Nombre de usuario del creador", "Username", "Creador", "TikTok", etc.',
@@ -179,9 +180,9 @@ serve(async (req) => {
               columnas_normalizadas: headers.slice(0, 10),
               aliases_buscados: ['nombre', 'usuario', 'username', 'nombre de usuario del creador', 'tiktok', 'creator name']
             }),
-            { 
-              status: 400, 
-              headers: { 'Content-Type': 'application/json' } 
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
             }
           ),
           origin
@@ -205,13 +206,13 @@ serve(async (req) => {
       'creators username': 'creator_username',
       'id del creador': 'creator_username',
       'creator id': 'creator_username',
-      
+
       // Teléfonos
       'telefono': 'phone_e164',
       'tel': 'phone_e164',
       'phone': 'phone_e164',
       'celular': 'phone_e164',
-      
+
       // Días (AMPLIADO - TikTok español completo)
       'dias en live': 'dias_actuales',
       'dias': 'dias_actuales',
@@ -222,7 +223,7 @@ serve(async (req) => {
       'valid go live days': 'dias_actuales',
       'dias validos de emisiones live del mes pasado': 'dias_actuales',
       'valid go live days last month': 'dias_actuales',
-      
+
       // Horas (AMPLIADO - TikTok español completo)
       'duracion live': 'horas_actuales',
       'horas': 'horas_actuales',
@@ -232,34 +233,34 @@ serve(async (req) => {
       'duracion de live': 'horas_actuales',
       'duracion de emisiones live (en horas) durante el ultimo mes': 'horas_actuales',
       'live duration (hours) last month': 'horas_actuales',
-      
+
       // Diamantes
       'diamantes': 'diamantes_actuales',
       'diamonds': 'diamantes_actuales',
       'diam': 'diamantes_actuales',
-      
+
       // Estado de graduación
       'estado de graduacion': 'estado_graduacion',
       'graduation': 'estado_graduacion',
       'graduacion': 'estado_graduacion',
       'estado': 'estado_graduacion',
       'graduation status': 'estado_graduacion',
-      
+
       // Manager/Agente (AMPLIADO)
       'manager': 'manager',
       'agente': 'manager',
       'creator network manager': 'manager',
-      
+
       // Grupo
       'grupo': 'grupo',
       'group': 'grupo',
-      
+
       // Nuevos seguidores
       'nuevos seguidores': 'nuevos_seguidores',
       'new followers': 'nuevos_seguidores',
       'nuevos seguidores en el ultimo mes': 'nuevos_seguidores',
       'new followers last month': 'nuevos_seguidores',
-      
+
       // Emisiones/Partidas
       'emisiones live': 'emisiones_live',
       'live streams': 'emisiones_live',
@@ -280,29 +281,29 @@ serve(async (req) => {
         const normalizedKey = alias[normalize(key)] ?? key.trim();
         out[normalizedKey] = row[key];
       }
-      
+
       // Log detallado para debugging (solo primera fila)
       if (index === 0) {
         console.log('[DEBUG] First row raw columns:', Object.keys(row));
         console.log('[DEBUG] First row normalized out:', JSON.stringify(out, null, 2));
       }
-      
+
       // Buscar username de forma flexible
       const username = String(
-        out.creator_username ?? 
-        out.nombre ?? 
-        out.Nombre ?? 
-        out.creador ?? 
-        out.usuario ?? 
-        out.username ?? 
+        out.creator_username ??
+        out.nombre ??
+        out.Nombre ??
+        out.creador ??
+        out.usuario ??
+        out.username ??
         ''
       ).trim();
-      
+
       if (!username) {
         if (index === 0) console.log('[DEBUG] No username found in first row');
         return null as any;
       }
-      
+
       if (index === 0) console.log('[DEBUG] Username found:', username);
 
       return {
@@ -334,7 +335,7 @@ serve(async (req) => {
       const sampleRow = rawData[0] || {};
       return withCORS(
         new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Sin filas válidas después de normalizar',
             hint: 'Verifica que el Excel tenga columnas: Nombre, Dias, Horas, Diamantes',
             columns_found: Object.keys(sampleRow),
@@ -380,18 +381,18 @@ serve(async (req) => {
     for (const r of mapped) {
       const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
       const creatorId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
-      
+
       if (creatorId && (r.estado_graduacion || r.manager || r.grupo)) {
         const updateData: any = {};
         if (r.estado_graduacion) updateData.estado_graduacion = r.estado_graduacion;
         if (r.manager) updateData.manager = r.manager;
         if (r.grupo) updateData.grupo = r.grupo;
-        
+
         const { error: updateErr } = await supabase
           .from('creators')
           .update(updateData)
           .eq('id', creatorId);
-        
+
         if (updateErr) {
           console.warn(`[upload-excel-recommendations] Warning updating creator ${r.creator_username}:`, updateErr);
         }
@@ -399,17 +400,17 @@ serve(async (req) => {
     }
 
     // Sanitizar username para usar como creator_id
-    const sanitizeUsername = (u: string): string => 
+    const sanitizeUsername = (u: string): string =>
       u.trim().toLowerCase().replace(/[^a-z0-9_\.]/g, '_').substring(0, 50);
 
     // Detectar faltantes y crear creadores mínimos (DEDUPLICAR por username)
     const missingMap = new Map<string, { username: string; phone: string | null }>();
     let totalMissingOccurrences = 0;
-    
+
     for (const r of mapped) {
       const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
       const foundId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
-      
+
       if (!foundId) {
         totalMissingOccurrences++;
         // Solo agregar si no existe O si el teléfono actual es mejor (no vacío vs vacío)
@@ -432,7 +433,7 @@ serve(async (req) => {
     let creatorsCreated = 0;
     if (missing.length) {
       console.log(`[upload-excel-recommendations] Creando/actualizando ${missing.length} creadores únicos faltantes`);
-      
+
       const toCreate = missing.map(m => ({
         nombre: m.username,
         tiktok_username: m.username,
@@ -443,9 +444,9 @@ serve(async (req) => {
       // Usar UPSERT para evitar errores de duplicados
       const { data: created, error: createErr } = await supabase
         .from('creators')
-        .upsert(toCreate, { 
+        .upsert(toCreate, {
           onConflict: 'creator_id',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         })
         .select('id, tiktok_username, telefono');
 
@@ -462,7 +463,7 @@ serve(async (req) => {
 
       creatorsCreated = created?.length || 0;
       console.log(`[upload-excel-recommendations] Procesados ${creatorsCreated} creadores exitosamente`);
-      
+
       (created || []).forEach(c => {
         if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
         if (c.telefono) byPhone.set(String(c.telefono), c.id);
@@ -471,11 +472,11 @@ serve(async (req) => {
 
     // Construir filas finales para daily_stats + track no-match
     const noMatch: any[] = [];  // ⭐ Track Excel rows without matching creator
-    
+
     const dailyRows = mapped.map(r => {
       const keyU = r.creator_username.replace(/^@/, '').toLowerCase();
       const creatorId = byUsername.get(keyU) || (r.phone_e164 ? byPhone.get(r.phone_e164) : undefined);
-      
+
       if (!creatorId) {
         console.warn(`[upload-excel-recommendations] No creator found for username "${r.creator_username}" phone "${r.phone_e164}"`);
         noMatch.push({
@@ -485,16 +486,15 @@ serve(async (req) => {
         });
         return null;
       }
-      
-      // ⚠️ CORRECCIÓN CRÍTICA: Solo insertar diamantes progresivos del Excel
-      // Los días/horas del Excel son ESTÁTICOS del mes anterior y causan duplicación
-      // Los valores MTD correctos se calcularán después desde creator_bonificaciones
+
+      // ✅ CORRECCIÓN CRÍTICA: Usar horas reales del Excel (son valores MTD acumulativos)
+      // El Excel contiene valores Month-To-Date, no deltas diarios
       return {
         creator_id: creatorId,
         fecha: today,
-        diamantes: r.diamantes_actuales,
-        duracion_live_horas: 0, // Se calculará después
-        dias_validos_live: r.diamantes_actuales > 0 ? 1 : 0, // Marcar día activo
+        diamantes: r.diamantes_actuales, // MTD acumulativo
+        duracion_live_horas: r.horas_actuales, // MTD acumulativo (CORREGIDO)
+        dias_validos_live: r.diamantes_actuales > 0 || r.horas_actuales >= 1 ? 1 : 0, // Marcar día activo
         creator_username: r.creator_username,
         phone_e164: r.phone_e164
       };
@@ -565,7 +565,7 @@ serve(async (req) => {
     }
 
     const creatorsDeduplicatedCount = totalMissingOccurrences - missing.length;
-    
+
     return withCORS(
       new Response(
         JSON.stringify({
@@ -577,13 +577,13 @@ serve(async (req) => {
           creators_deduplicated: creatorsDeduplicatedCount,
           snapshot_date: today,
           no_match: noMatch,
-          message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente (solo diamantes - días/horas MTD se calcularán en bonificaciones)` +
-                   (duplicatesCount > 0 ? ` (${duplicatesCount} duplicados removidos en daily_stats)` : '') +
-                   (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : ''),
-          note: '⚠️ Los días y horas del Excel NO se usan (son del mes anterior). Se calcularán desde creator_daily_stats actual.'
+          message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente (diamantes y horas MTD del Excel)` +
+            (duplicatesCount > 0 ? ` (${duplicatesCount} duplicados removidos en daily_stats)` : '') +
+            (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : ''),
+          note: '✅ Usando valores MTD (Month-To-Date) del Excel para diamantes y horas. Los días se calculan desde fechas únicas.'
         }),
         {
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-store, must-revalidate'
           },
@@ -599,7 +599,7 @@ serve(async (req) => {
         JSON.stringify({ error: error?.message || 'Unknown error' }),
         {
           status: 500,
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-store, must-revalidate'
           },
