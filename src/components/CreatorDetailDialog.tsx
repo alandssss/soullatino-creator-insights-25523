@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import WhatsappButton from "@/components/WhatsappButton";
 import { buildWaMessage } from "@/utils/whatsapp";
-import { 
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -29,6 +29,7 @@ import { CreatorBattlesPanel } from "./creator-detail/CreatorBattlesPanel";
 import { CreatorSupervisionHistory } from "./creator-detail/CreatorSupervisionHistory";
 import { CreatorMetricsPanel } from "./creator-detail/CreatorMetricsPanel";
 import { WhatsAppPreviewModal } from "./creator-detail/WhatsAppPreviewModal";
+import { DebugStats } from "./creator-detail/DebugStats";
 import { creatorMetricsService } from "@/services/creatorMetricsService";
 import { getCreatorDisplayName } from "@/utils/creator-display";
 
@@ -77,11 +78,11 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       .from("user_roles")
       .select("role, created_at")
       .eq("user_id", user.id);
-    
+
     // Priorizar roles: admin > manager > supervisor > viewer
     const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
     const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
-    
+
     setUserRole(sortedRoles[0]?.role || null);
   };
 
@@ -91,7 +92,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       fetchInteractions();
       loadLatestRecommendation();
       loadDailyStats();
-      
+
       // Suscribirse a cambios en tiempo real de interacciones
       const channel = supabase
         .channel('creator-interactions-changes')
@@ -163,7 +164,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     setLoadingAdvice(true);
     try {
       const data = await interactionService.getLatestRecommendation(creator.id);
-      
+
       if (data) {
         setAiAdvice(data.advice);
         setMilestone(data.milestone);
@@ -178,20 +179,20 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
   // Generar NUEVA recomendación inteligente
   const generateAIAdvice = async () => {
     if (!creator) return;
-    
+
     console.log('[CreatorDetailDialog] Generando consejo para creator:', creator.id, creator.nombre);
     setLoadingAdvice(true);
     try {
       const response = await interactionService.generateAdvice(creator.id);
-      
+
       console.log('[CreatorDetailDialog] Consejo recibido:', response);
       setAiAdvice(response.advice);
       setMilestone(response.milestone || '');
-      
+
       toast({
         title: "✨ Recomendación generada",
-        description: response.milestoneDescription 
-          ? `Hito: ${response.milestoneDescription}` 
+        description: response.milestoneDescription
+          ? `Hito: ${response.milestoneDescription}`
           : "Recomendación creada exitosamente",
       });
     } catch (error: any) {
@@ -209,14 +210,14 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const handleOpenWhatsApp = async () => {
     if (!creator) return;
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const userName = user?.email?.split('@')[0] || "el equipo";
       const message = await interactionService.generateWhatsAppMessage(creator, userName);
-      
+
       await interactionService.sendWhatsAppMessage(creator, message, 'seguimiento');
-      
+
       toast({
         title: "✅ WhatsApp abierto",
         description: "Mensaje listo para enviar"
@@ -237,7 +238,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const loadWhatsAppPreview = async () => {
     if (!creator || loadingPreview) return;
-    
+
     setLoadingPreview(true);
     try {
       const userName = user?.email?.split('@')[0] || "el equipo";
@@ -253,7 +254,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const generateDailyMessage = async () => {
     if (!creator) return;
-    
+
     try {
       const userName = user?.email?.split('@')[0] || 'el equipo';
       const message = await creatorMetricsService.generateDailyMessage(
@@ -275,24 +276,24 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const getMonthlyGrowth = () => {
     if (!creator) return { diamantes: 0, views: 0, engagement: 0 };
-    
+
     const currentDiamantes = creator.diamantes || 0;
     const lastMonthDiamantes = creator.last_month_diamantes || 0;
     const currentViews = creator.views || 0;
     const lastMonthViews = creator.last_month_views || 0;
     const currentEngagement = creator.engagement_rate || 0;
     const lastMonthEngagement = creator.last_month_engagement || 0;
-    
-    const diamantesGrowth = lastMonthDiamantes > 0 
-      ? ((currentDiamantes - lastMonthDiamantes) / lastMonthDiamantes) * 100 
+
+    const diamantesGrowth = lastMonthDiamantes > 0
+      ? ((currentDiamantes - lastMonthDiamantes) / lastMonthDiamantes) * 100
       : 0;
-    const viewsGrowth = lastMonthViews > 0 
-      ? ((currentViews - lastMonthViews) / lastMonthViews) * 100 
+    const viewsGrowth = lastMonthViews > 0
+      ? ((currentViews - lastMonthViews) / lastMonthViews) * 100
       : 0;
-    const engagementGrowth = lastMonthEngagement > 0 
-      ? ((currentEngagement - lastMonthEngagement) / lastMonthEngagement) * 100 
+    const engagementGrowth = lastMonthEngagement > 0
+      ? ((currentEngagement - lastMonthEngagement) / lastMonthEngagement) * 100
       : 0;
-    
+
     return {
       diamantes: diamantesGrowth,
       views: viewsGrowth,
@@ -302,11 +303,11 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const getMilestones = () => {
     if (!creator) return [];
-    
+
     const diamantes = creator.diamantes || 0;
     const diasLive = creator.dias_live || 0;
     const horasLive = creator.horas_live || 0;
-    
+
     const diamantesMilestones = [
       { value: 10000, label: "10K Diamantes", type: "diamantes" },
       { value: 50000, label: "50K Diamantes", type: "diamantes" },
@@ -371,9 +372,9 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             <DrawerTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent flex flex-wrap items-center gap-2 sm:gap-3">
               {getCreatorDisplayName(creator)}
             </DrawerTitle>
-            
+
             {/* Botón de IA prominente en header */}
-            <Button 
+            <Button
               onClick={generateAIAdvice}
               disabled={loadingAdvice}
               variant="default"
@@ -395,7 +396,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">Engagement</p>
                 <p className="font-bold text-xl">{(creator.engagement_rate || 0).toFixed(1)}%</p>
               </div>
-              
+
               {/* Sección de Acciones - Grid de 3 columnas */}
               <div className="col-span-2 pt-2 grid grid-cols-3 gap-3">
                 {/* Botón WhatsApp nuevo */}
@@ -405,12 +406,12 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                   message={buildWaMessage(creator)}
                   className="col-span-3"
                 />
-                
+
                 {/* Botón Vista Previa del Mensaje existente */}
                 <div className="col-span-3">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button 
+                      <Button
                         variant="outline"
                         disabled={!creator.telefono}
                         size="sm"
@@ -438,7 +439,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
                             )}
                           </div>
                         </div>
-                        <Button 
+                        <Button
                           className="w-full"
                           variant="success"
                           onClick={handleOpenWhatsApp}
@@ -490,8 +491,8 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsList>
 
             <TabsContent value="bonificaciones" className="space-y-4 mt-6">
-              <BonificacionesPanel 
-                creatorId={creator.id} 
+              <BonificacionesPanel
+                creatorId={creator.id}
                 creatorName={creator.nombre}
                 tiktok_username={creator.tiktok_username || undefined}
                 creatorPhone={creator.telefono}
@@ -499,11 +500,11 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsContent>
 
             <TabsContent value="metricas" className="space-y-4 mt-6">
-              <CreatorMetricsPanel 
-                creatorId={creator.id} 
+              <CreatorMetricsPanel
+                creatorId={creator.id}
                 creatorName={creator.nombre}
               />
-              
+
               {/* Botón para mensaje diario */}
               <div className="mt-4">
                 <NeoButton
@@ -523,11 +524,11 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
             </TabsContent>
 
             <TabsContent value="agenda" className="space-y-4 mt-6">
-              <CreatorBattlesPanel 
+              <CreatorBattlesPanel
                 creatorId={creator.id}
                 creatorName={creator.nombre}
               />
-              <CreatorInteractions 
+              <CreatorInteractions
                 creatorId={creator.id}
                 interactions={interactions}
                 onInteractionAdded={fetchInteractions}
@@ -619,11 +620,18 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
               {/* Guía de Feedback */}
               <FeedbackGuide />
+              {/* DEBUG SECTION */}
+              <div className="p-4 rounded-lg bg-black/50 text-xs font-mono space-y-2">
+                <p className="font-bold text-red-400">DEBUG INFO (Solo visible temporalmente)</p>
+                <p>Creator ID: {creator.id}</p>
+                <p>Diamantes en tabla creators: {creator.diamantes}</p>
+                <DebugStats creatorId={creator.id} />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
       </DrawerContent>
-      
+
       {/* Dialog para asignar meta */}
       <AsignarMetaDialog
         open={metaDialogOpen}

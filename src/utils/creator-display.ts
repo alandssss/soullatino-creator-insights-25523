@@ -12,8 +12,19 @@ export interface CreatorDisplayData {
 /**
  * Detecta si un string parece un ID numérico largo de TikTok
  */
+/**
+ * Detecta si un string parece un ID numérico largo de TikTok
+ */
 const looksLikeNumericId = (str: string): boolean => {
   return /^\d{10,}$/.test(str.trim());
+};
+
+/**
+ * Detecta si un string parece un UUID
+ */
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str.trim());
 };
 
 /**
@@ -22,25 +33,26 @@ const looksLikeNumericId = (str: string): boolean => {
 export const getCreatorDisplayName = (creator: CreatorDisplayData | null | undefined): string => {
   if (!creator) return 'Sin nombre';
 
-  // Prioridad 1: tiktok_username (si no es un ID numérico)
-  if (creator.tiktok_username && !looksLikeNumericId(creator.tiktok_username)) {
+  // Prioridad 1: tiktok_username (si no es un ID numérico ni UUID)
+  if (creator.tiktok_username && !looksLikeNumericId(creator.tiktok_username) && !isUUID(creator.tiktok_username)) {
     const username = creator.tiktok_username.trim();
     return username.startsWith('@') ? username : `@${username}`;
   }
 
-  // Prioridad 2: nombre (si no es un ID numérico)
-  if (creator.nombre && !looksLikeNumericId(creator.nombre)) {
+  // Prioridad 2: nombre (si no es un ID numérico ni UUID)
+  if (creator.nombre && !looksLikeNumericId(creator.nombre) && !isUUID(creator.nombre)) {
     return creator.nombre.trim();
   }
 
-  // Prioridad 3: creator_id (sanitizado, no numérico)
-  if (creator.creator_id && !looksLikeNumericId(creator.creator_id)) {
+  // Prioridad 3: creator_id (sanitizado, no numérico, NO UUID)
+  // NOTA: Se eliminó el fallback a creator_id si es UUID para evitar mostrar códigos internos
+  if (creator.creator_id && !looksLikeNumericId(creator.creator_id) && !isUUID(creator.creator_id)) {
     const creatorId = creator.creator_id.trim();
     return creatorId.startsWith('@') ? creatorId : `@${creatorId}`;
   }
 
   // Último recurso: mostrar que falta el nombre
-  return 'ID no válido';
+  return 'Sin nombre';
 };
 
 /**

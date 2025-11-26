@@ -23,7 +23,7 @@ serve(async (req) => {
     if (!result.ok) return result.response!;
 
     const { mes_referencia } = result.data!;
-    
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -72,17 +72,17 @@ serve(async (req) => {
 
     // Agrupar por creator_id usando Map (creator_daily_stats contiene datos DIARIOS, necesitamos SUMAR)
     const statsMap = new Map<string, { dias_live_mes: number; horas_live_mes: number; diam_live_mes: number; fechas_vistas: Set<string> }>();
-    
+
     liveData?.forEach(stat => {
       if (!statsMap.has(stat.creator_id)) {
         statsMap.set(stat.creator_id, { dias_live_mes: 0, horas_live_mes: 0, diam_live_mes: 0, fechas_vistas: new Set() });
       }
       const current = statsMap.get(stat.creator_id)!;
-      
-      // ✅ SUMAR valores diarios (no usar máximo - datos son diarios, no acumulados MTD)
+
+      // ✅ SUMAR horas (si son deltas) pero USAR MAX para diamantes (son acumulativos del Excel)
       current.horas_live_mes += stat.duracion_live_horas || 0;
-      current.diam_live_mes += stat.diamantes || 0;
-      
+      current.diam_live_mes = Math.max(current.diam_live_mes, stat.diamantes || 0);
+
       // ✅ Contar días únicos (un día válido = tiene diamantes O ≥1h de live)
       if ((stat.diamantes || 0) > 0 || (stat.duracion_live_horas || 0) >= 1.0) {
         current.fechas_vistas.add(stat.fecha);
@@ -106,8 +106,7 @@ serve(async (req) => {
       const hito_20d_60h = dias_live_mes >= 20 && horas_live_mes >= 60;
       const hito_22d_80h = dias_live_mes >= 22 && horas_live_mes >= 80;
 
-      // Calcular graduaciones
-      const grad_50k = diam_live_mes >= 50000;
+      // Calcular graduaciones (milestones correctos: 100k, 300k, 500k, 1M)
       const grad_100k = diam_live_mes >= 100000;
       const grad_300k = diam_live_mes >= 300000;
       const grad_500k = diam_live_mes >= 500000;
@@ -117,15 +116,12 @@ serve(async (req) => {
       const dias_extra_22 = Math.max(0, dias_live_mes - 22);
       const bono_extra_usd = dias_extra_22 * 3;
 
-      // Determinar próximo objetivo
+      // Determinar próximo objetivo (sin 50k)
       let proximo_objetivo_tipo = 'graduacion';
-      let proximo_objetivo_valor = '50000';
+      let proximo_objetivo_valor = '100000';
       let faltante = 0;
 
-      if (!grad_50k) {
-        proximo_objetivo_valor = '50000';
-        faltante = 50000 - diam_live_mes;
-      } else if (!grad_100k) {
+      if (!grad_100k) {
         proximo_objetivo_valor = '100000';
         faltante = 100000 - diam_live_mes;
       } else if (!grad_300k) {
@@ -145,7 +141,7 @@ serve(async (req) => {
 
       // Calcular requerimientos diarios
       const req_diam_por_dia = diasRestantes > 0 ? Math.ceil(faltante / diasRestantes) : 0;
-      
+
       // Horas requeridas (calculado según hito pendiente)
       let horas_faltantes = 0;
       if (!hito_22d_80h) {
@@ -157,7 +153,7 @@ serve(async (req) => {
       } else if (!hito_12d_40h) {
         horas_faltantes = Math.max(0, 40 - horas_live_mes);
       }
-      
+
       const req_horas_por_dia = diasRestantes > 0 ? horas_faltantes / diasRestantes : 0;
 
       // Prioridad 300k para nuevos
@@ -168,7 +164,6 @@ serve(async (req) => {
 
       // ========== NUEVAS COLUMNAS: Semáforos, Faltantes y Fechas Estimadas ==========
       const graduaciones = [
-        { valor: 50000, key: 'semaforo_50k', faltanKey: 'faltan_50k', reqKey: 'req_diam_por_dia_50k', fechaKey: 'fecha_estimada_50k' },
         { valor: 100000, key: 'semaforo_100k', faltanKey: 'faltan_100k', reqKey: 'req_diam_por_dia_100k', fechaKey: 'fecha_estimada_100k' },
         { valor: 300000, key: 'semaforo_300k', faltanKey: 'faltan_300k', reqKey: 'req_diam_por_dia_300k', fechaKey: 'fecha_estimada_300k' },
         { valor: 500000, key: 'semaforo_500k', faltanKey: 'faltan_500k', reqKey: 'req_diam_por_dia_500k', fechaKey: 'fecha_estimada_500k' },
@@ -185,7 +180,7 @@ serve(async (req) => {
         const faltan = Math.max(0, grad.valor - diam_live_mes);
         const reqPorDia = diasRestantes > 0 ? Math.ceil(faltan / diasRestantes) : 0;
         const avanceDiam = (diam_live_mes / grad.valor) * 100;
-        
+
         let semaforo = 'rojo';
         if (diam_live_mes >= grad.valor) {
           semaforo = 'verde';
@@ -237,7 +232,6 @@ serve(async (req) => {
         hito_12d_40h,
         hito_20d_60h,
         hito_22d_80h,
-        grad_50k,
         grad_100k,
         grad_300k,
         grad_500k,

@@ -5,8 +5,9 @@
 
 /**
  * Umbrales fijos de diamantes
+ * NOTA: Se eliminó el hito de 50k por ser obsoleto (error de prototipo)
  */
-export const DIAMOND_MILESTONES = [50_000, 100_000, 300_000, 500_000, 1_000_000] as const;
+export const DIAMOND_MILESTONES = [100_000, 300_000, 500_000, 1_000_000] as const;
 
 /**
  * Umbrales fijos de días live
@@ -31,7 +32,7 @@ export const getNextMilestone = <T extends number>(
   milestones: readonly T[]
 ): { target: T; remaining: number; achieved: boolean } => {
   const next = milestones.find(m => m > current);
-  
+
   if (!next) {
     // Ya alcanzó el máximo
     return {
@@ -79,17 +80,17 @@ export const getSemaforoStatus = (
   daysRemaining: number
 ): 'verde' | 'amarillo' | 'rojo' => {
   const progress = calculateProgress(current, target);
-  
+
   if (progress >= 100) return 'verde';
   if (progress >= 85) return 'verde'; // Muy cerca
-  
+
   // Calcular ritmo requerido
   const remaining = target - current;
   const requiredPerDay = daysRemaining > 0 ? remaining / daysRemaining : Infinity;
-  
+
   // Si el ritmo requerido es razonable, amarillo; si no, rojo
   const currentRate = current / Math.max(1, 30 - daysRemaining);
-  
+
   if (currentRate >= requiredPerDay * 0.85) return 'amarillo';
   return 'rojo';
 };
@@ -200,10 +201,8 @@ export const calculateTotalBonus = (bonif: {
   } else if (bonif.grad_100k) {
     diamondBonus += 200;
     breakdown.push('100K diamantes: $200');
-  } else if (bonif.grad_50k) {
-    diamondBonus += 100;
-    breakdown.push('50K diamantes: $100');
   }
+  // NOTA: Se eliminó el bono de 50k
 
   const extraDaysBonus = bonif.bono_dias_extra_usd || 0;
   if (extraDaysBonus > 0) {
@@ -234,5 +233,5 @@ export const getRecommendedGoal = (
   if (projectedEOM >= 500_000) return '500K';
   if (projectedEOM >= 300_000) return '300K';
   if (projectedEOM >= 100_000) return '100K';
-  return '50K';
+  return '100K'; // Mínimo recomendado ahora es 100K
 };

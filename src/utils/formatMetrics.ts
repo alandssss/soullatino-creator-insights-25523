@@ -25,6 +25,10 @@ export const formatMetrics = {
    */
   diamonds: (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '0';
+    // Si es mayor a 1 millón, usar formato abreviado para evitar overflow
+    if (value >= 1_000_000) {
+      return formatMetrics.abbreviated(value);
+    }
     return Math.round(value).toLocaleString('es-MX', { maximumFractionDigits: 0 });
   },
 
@@ -50,7 +54,7 @@ export const formatMetrics = {
    */
   abbreviated: (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '0';
-    
+
     if (value >= 1_000_000) {
       return `${(value / 1_000_000).toFixed(1)}M`;
     }
@@ -86,10 +90,10 @@ export const formatMetrics = {
   date: (value: string | Date | null | undefined): string => {
     if (!value) return '—';
     const date = typeof value === 'string' ? new Date(value) : value;
-    return date.toLocaleDateString('es-MX', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   },
 

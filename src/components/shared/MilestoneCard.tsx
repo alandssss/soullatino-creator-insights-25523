@@ -16,7 +16,7 @@ function ProgressBar({ label, pct, current, total, tipo }: { label: string; pct:
   const displayPct = Math.min(100, pct);
   const barColor = pct >= 100 ? "bg-emerald-400" : pct >= 60 ? "bg-amber-400" : "bg-rose-400";
   const extra = current - total;
-  
+
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center text-xs">
@@ -24,7 +24,7 @@ function ProgressBar({ label, pct, current, total, tipo }: { label: string; pct:
         <span className="font-semibold text-white">{displayPct}%</span>
       </div>
       <div className="h-2 bg-zinc-800/60 rounded-full overflow-hidden">
-        <div 
+        <div
           className={cn("h-full transition-all duration-500", barColor)}
           style={{ width: `${displayPct}%` }}
         />
@@ -38,17 +38,17 @@ function ProgressBar({ label, pct, current, total, tipo }: { label: string; pct:
   );
 }
 
-export function MilestoneCard({ 
-  label, 
-  daysRequired, 
-  hoursRequired, 
-  currentDays, 
+export function MilestoneCard({
+  label,
+  daysRequired,
+  hoursRequired,
+  currentDays,
   currentHours,
-  onOpenPlan 
+  onOpenPlan
 }: MilestoneCardProps) {
   const daysPct = Math.min(100, Math.round((currentDays / daysRequired) * 100));
   const hoursPct = Math.min(100, Math.round((currentHours / hoursRequired) * 100));
-  
+
   const getStatus = (): MilestoneStatus => {
     if (daysPct >= 100 && hoursPct >= 100) return "ALCANZADO";
     if (daysPct >= 60 || hoursPct >= 60) return "EN PROCESO";
@@ -65,18 +65,21 @@ export function MilestoneCard({
 
   return (
     <div className={cn(
-      "rounded-2xl border-2 p-5 space-y-3 transition-all",
-      "shadow-[inset_2px_2px_6px_rgba(255,255,255,0.04),_0_0_10px_rgba(0,0,0,0.7)]",
+      "rounded-xl border p-4 space-y-3 transition-all h-full flex flex-col justify-between",
+      "shadow-sm",
       statusColors[status]
     )}>
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-foreground">{label}</h4>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-black/30 text-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-bold text-foreground whitespace-nowrap">{label}</h4>
+        <span className={cn(
+          "text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/20 text-foreground whitespace-nowrap",
+          status === "EN PROCESO" && "animate-pulse"
+        )}>
           {status}
         </span>
       </div>
 
-      <div className="space-y-4 pt-1">
+      <div className="space-y-3 pt-1 flex-1">
         <ProgressBar
           label={`Días ${currentDays}/${daysRequired}`}
           current={currentDays}
@@ -96,10 +99,10 @@ export function MilestoneCard({
       {onOpenPlan && (
         <Button
           onClick={onOpenPlan}
-          className="w-full mt-2 rounded-xl bg-gradient-to-br from-lime-300 to-emerald-400 text-zinc-900 font-semibold hover:brightness-110 transition-all"
+          className="w-full mt-3 rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold shadow-md hover:shadow-lg transition-all text-xs h-8"
           size="sm"
         >
-          Plan sugerido
+          Ver Plan
         </Button>
       )}
     </div>

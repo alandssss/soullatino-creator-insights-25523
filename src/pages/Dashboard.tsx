@@ -10,21 +10,24 @@ import { Tables } from "@/integrations/supabase/types";
 import { CreatorDetailDialog } from "@/components/CreatorDetailDialog";
 // Admin components moved to /admin page
 import { LowActivityPanel } from "@/components/LowActivityPanel";
-import DiamondsBars3D from "@/components/dashboard/DiamondsBars3D";
-import TopPerformersCards from "@/components/dashboard/TopPerformersCards";
 import { ManagerKPIsPanel } from "@/components/dashboard/ManagerKPIsPanel";
 import { PriorityContactsPanel } from "@/components/dashboard/PriorityContactsPanel";
 import { AlertTriangle, Users } from "lucide-react";
 
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { startTour, shouldShowTour } from "@/lib/onboarding/tour-config";
 import { KPIGraduacionNuevos } from "@/components/kpis/KPIGraduacionNuevos";
 import { GraduacionAlert } from "@/components/kpis/GraduacionAlert";
-import { isWebGLAvailable, getWebGLErrorMessage } from "@/utils/webglSupport";
+import { isWebGLAvailable } from "@/utils/webglSupport";
 import { WebGLFallback } from "@/components/dashboard/WebGLFallback";
 import { WebGL3DErrorBoundary } from "@/components/dashboard/WebGL3DErrorBoundary";
 import { SimpleBarChart } from "@/components/dashboard/SimpleBarChart";
+import { dedupeBy, normalizePhone, normalizeName } from "@/lib/dedupe";
+
+// Lazy load heavy 3D components
+const DiamondsBars3D = lazy(() => import("@/components/dashboard/DiamondsBars3D"));
+const TopPerformersCards = lazy(() => import("@/components/dashboard/TopPerformersCards"));
 
 type Creator = Tables<"creators">;
 
@@ -61,20 +64,20 @@ const Dashboard = () => {
       navigate("/login");
     } else {
       setUser(user);
-      
+
       // Lectura robusta de rol
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("role, created_at")
         .eq("user_id", user.id);
-      
+
       // Priorizar roles: admin > manager > supervisor > viewer
       const priority: Record<string, number> = { admin: 4, manager: 3, supervisor: 2, viewer: 1 };
       const sortedRoles = (rolesData || []).sort((a, b) => (priority[b.role] || 0) - (priority[a.role] || 0));
       const userRoleValue = sortedRoles[0]?.role || null;
-      
+
       setUserRole(userRoleValue);
-      
+
       // Cargar stats reales del día
       await fetchDailyStats();
     }
@@ -84,7 +87,7 @@ const Dashboard = () => {
   const fetchDailyStats = async () => {
     try {
       setLoading(true);
-      
+
       // 1️⃣ Obtener snapshot date más reciente
       const { data: latestSnap } = await supabase
         .from('creator_daily_stats')
@@ -113,7 +116,7 @@ const Dashboard = () => {
         .eq('fecha', snapshotDate);
 
       const snapshotIds = [...new Set((snapshotStats || []).map(s => s.creator_id))];
-      
+
       console.log(`[Dashboard] Snapshot: ${snapshotDate}, Creadores únicos del snapshot: ${snapshotIds.length}`);
 
       if (snapshotIds.length === 0) {
@@ -145,22 +148,33 @@ const Dashboard = () => {
         .order('diam_live_mes', { ascending: false });
 
       if (error) throw error;
-      
+
       const creatorsFromBonificaciones = (data || []).map((item: any) => ({
         ...item.creators,
         diamantes: item.diam_live_mes || 0,
         dias_live: item.dias_live_mes || 0,
         horas_live: item.horas_live_mes || 0,
       }));
-      
-      // Deduplicar por creator.id
-      const uniqueCreators = Array.from(
+
+      // Deduplicar por creator.id primero
+      const uniqueCreatorsById = Array.from(
         new Map(creatorsFromBonificaciones.map(c => [c.id, c])).values()
       );
 
-      setCreators(uniqueCreators);
-      console.log(`[Dashboard] Creadores después del merge (únicos por ID): ${uniqueCreators.length}`);
-      
+      // Aplicar deduplicación fuzzy (igual que CreatorsList)
+      // Esto elimina duplicados que tienen diferente ID pero mismo nombre/teléfono
+      const creatorsWithNorms = uniqueCreatorsById.map(c => ({
+        ...c,
+        phoneNorm: normalizePhone(c.telefono),
+        nameNorm: normalizeName(c.nombre),
+      }));
+
+      const dedupedCreators = dedupeBy(creatorsWithNorms, c => c.phoneNorm || c.nameNorm);
+
+      setCreators(dedupedCreators);
+      console.log(`[Dashboard] Creadores: ${uniqueCreatorsById.length} (ID único) -> ${dedupedCreators.length} (Deduplicado Fuzzy)`);
+      console.log('[Dashboard] DEBUG - Creadores data:', dedupedCreators.slice(0, 3));
+
     } catch (error) {
       console.error("Error loading bonificaciones:", error);
       toast({
@@ -214,115 +228,121 @@ const Dashboard = () => {
       </Card>
 
 
-        {/* Top Performers - Visual impact */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <span>🏆</span>
-            Top Performers del Mes
-          </h2>
-          {webGLSupported ? (
-            <TopPerformersCards creators={creators} />
-          ) : (
-            <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
-              Visualización 3D no disponible. Mostrando vista simplificada.
+      {/* Top Performers - Visual impact */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <span>🏆</span>
+          Top Performers del Mes
+        </h2>
+        {webGLSupported ? (
+          <Suspense fallback={
+            <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-lg">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          )}
-        </div>
-
-        {/* 3D Diamonds Chart - Interactive visualization with fallback */}
-        {isMobile ? (
-          <SimpleBarChart creators={creators} />
-        ) : webGLSupported ? (
-          <WebGL3DErrorBoundary>
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            }>
-              <DiamondsBars3D creators={creators} />
-            </Suspense>
-          </WebGL3DErrorBoundary>
+          }>
+            <TopPerformersCards creators={creators} />
+          </Suspense>
         ) : (
-          <SimpleBarChart creators={creators} />
+          <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
+            Visualización 3D no disponible. Mostrando vista simplificada.
+          </div>
         )}
+      </div>
 
-        {/* KPI Panels - Strategic metrics */}
-        <GraduacionAlert />
+      {/* 3D Diamonds Chart - Interactive visualization with fallback */}
+      {isMobile ? (
+        <SimpleBarChart creators={creators} />
+      ) : webGLSupported ? (
+        <WebGL3DErrorBoundary>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          }>
+            <DiamondsBars3D creators={creators} />
+          </Suspense>
+        </WebGL3DErrorBoundary>
+      ) : (
+        <SimpleBarChart creators={creators} />
+      )}
 
-        <KPIGraduacionNuevos />
+      {/* KPI Panels - Strategic metrics */}
+      <GraduacionAlert />
 
-        <LowActivityPanel />
+      <KPIGraduacionNuevos />
 
-        {/* KPIs por Manager */}
-        {(userRole === 'admin' || userRole === 'manager') && (
-          <Card className="glass-card-elevated">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Productividad de Managers
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Desempeño de los managers del equipo este mes
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ManagerKPIsPanel />
-            </CardContent>
-          </Card>
-        )}
+      <LowActivityPanel />
 
-        <Card className="rounded-2xl border-2 border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-semibold">Top Creadores</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Mostrando {creators.length} creadores únicos del snapshot
+      {/* KPIs por Manager */}
+      {(userRole === 'admin' || userRole === 'manager') && (
+        <Card className="glass-card-elevated">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Productividad de Managers
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Desempeño de los managers del equipo este mes
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {creators.map((creator, index) => (
-                <button
-                  key={creator.id}
-                  onClick={() => {
-                    setSelectedCreator(creator);
-                    setDialogOpen(true);
-                  }}
-                  className="group w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-primary/30 cursor-pointer text-left"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {creator.nombre}
-                        </h3>
-                        {creator.telefono && (
-                          <a
-                            href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-green-500 hover:text-green-600 transition-colors"
-                            title="Abrir WhatsApp"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{creator.categoria || "Sin categoría"}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
-                    <p className="text-sm text-muted-foreground">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <ManagerKPIsPanel />
           </CardContent>
         </Card>
+      )}
+
+      <Card className="rounded-2xl border-2 border-border/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Top Creadores</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Mostrando {creators.length} creadores únicos del snapshot
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {creators.map((creator, index) => (
+              <button
+                key={creator.id}
+                onClick={() => {
+                  setSelectedCreator(creator);
+                  setDialogOpen(true);
+                }}
+                className="group w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-primary/30 cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {creator.nombre}
+                      </h3>
+                      {creator.telefono && (
+                        <a
+                          href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-green-500 hover:text-green-600 transition-colors"
+                          title="Abrir WhatsApp"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{creator.categoria || "Sin categoría"}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
+                  <p className="text-sm text-muted-foreground">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <CreatorDetailDialog
         creator={selectedCreator}

@@ -17,6 +17,8 @@ import { LowActivityPanel } from "@/components/LowActivityPanel";
 import { WorkTimeTracker } from "@/components/WorkTimeTracker";
 import { CreatorPhoneUpdate } from "@/components/CreatorPhoneUpdate";
 import { getCreatorDisplayName } from "@/utils/creator-display";
+import { FixedSizeList as List } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 type Creator = Tables<"creators">;
 
@@ -47,13 +49,13 @@ const CreatorsList = () => {
       navigate("/login");
     } else {
       setUser(user);
-      
+
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .single();
-      
+
       setUserRole(roleData?.role || null);
     }
     setLoading(false);
@@ -206,50 +208,67 @@ const CreatorsList = () => {
         </CardHeader>
         <CardContent className="p-4 md:p-6 pt-0">
           <div className="space-y-3 md:space-y-4">
-              {creators.map((creator, index) => (
-                <div
-                  key={creator.id}
-                  className="flex items-center justify-between p-4 rounded-lg neo-card-sm hover:neo-card-pressed cursor-pointer transition-all hover:translate-y-[-2px]"
-                  onClick={() => {
-                    setSelectedCreator(creator);
-                    setDialogOpen(true);
-                  }}
-              >
-                  <div className="flex items-center space-x-3 md:space-x-4 flex-1">
-                    <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm md:text-base flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <h3 className="font-display font-semibold text-foreground truncate">{getCreatorDisplayName(creator)}</h3>
-                        {creator.telefono && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 font-display">
-                              <Phone className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                              <span className="truncate">{creator.telefono}</span>
-                            </span>
-                            <a
-                              href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-green-500 hover:text-green-600 transition-colors p-1 rounded-full hover:bg-green-500/10 flex-shrink-0"
-                              title="Abrir WhatsApp"
-                            >
-                              <MessageCircle className="h-3 w-3 md:h-4 md:w-4" />
-                            </a>
+            <div className="h-[600px] w-full">
+              <AutoSizer>
+                {({ height, width }) => (
+                  <List
+                    height={height}
+                    itemCount={creators.length}
+                    itemSize={80}
+                    width={width}
+                  >
+                    {({ index, style }) => {
+                      const creator = creators[index];
+                      return (
+                        <div style={style} className="px-2 py-1">
+                          <div
+                            className="flex items-center justify-between p-3 rounded-lg neo-card-sm hover:neo-card-pressed cursor-pointer transition-all hover:translate-y-[-2px] h-full"
+                            onClick={() => {
+                              setSelectedCreator(creator);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3 md:space-x-4 flex-1">
+                              <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm md:text-base flex-shrink-0">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                  <h3 className="font-display font-semibold text-foreground truncate">{getCreatorDisplayName(creator)}</h3>
+                                  {creator.telefono && (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 font-display">
+                                        <Phone className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                                        <span className="truncate">{creator.telefono}</span>
+                                      </span>
+                                      <a
+                                        href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-green-500 hover:text-green-600 transition-colors p-1 rounded-full hover:bg-green-500/10 flex-shrink-0"
+                                        title="Abrir WhatsApp"
+                                      >
+                                        <MessageCircle className="h-3 w-3 md:h-4 md:w-4" />
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs md:text-sm text-muted-foreground truncate font-display">{creator.categoria || "Sin categoría"}</p>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="font-display font-bold text-accent text-sm md:text-base whitespace-nowrap">{(creator.diamantes || 0).toLocaleString()} 💎</p>
+                              <p className="text-xs md:text-sm text-muted-foreground whitespace-nowrap font-display">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      <p className="text-xs md:text-sm text-muted-foreground truncate font-display">{creator.categoria || "Sin categoría"}</p>
-                    </div>
-                  </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-display font-bold text-accent text-sm md:text-base whitespace-nowrap">{(creator.diamantes || 0).toLocaleString()} 💎</p>
-                  <p className="text-xs md:text-sm text-muted-foreground whitespace-nowrap font-display">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
-                </div>
-              </div>
-            ))}
+                        </div>
+                      );
+                    }}
+                  </List>
+                )}
+              </AutoSizer>
+            </div>
           </div>
         </CardContent>
       </Card>

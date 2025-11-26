@@ -41,7 +41,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();
-    
+
     setUserRole(rolesData?.role || null);
   };
 
@@ -57,7 +57,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
 
       const bonificaciones: any[] = await creatorAnalytics.getBonificaciones(mesReferencia);
       const bonifCreator: any = bonificaciones.find((b: any) => b.creator_id === creatorId);
-      
+
       // Obtener días reales desde Supabase (si está disponible)
       if (bonifCreator) {
         const diasRealesData: any = await creatorAnalytics.getDiasRealesMes(creatorId);
@@ -66,7 +66,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
           bonifCreator.horas_live_mes = diasRealesData.horas_totales_mes || bonifCreator.horas_live_mes;
         }
       }
-      
+
       setBonificacion(bonifCreator || null);
     } catch (error) {
       console.error('Error cargando bonificación:', error);
@@ -155,7 +155,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
             />
           </div>
         )}
-        
+
         {!bonificacion ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No hay datos calculados para este mes</p>
@@ -183,7 +183,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
                 <NeoKPICard
                   label="Horas Live"
                   value={formatMetrics.hours(bonificacion.horas_live_mes)}
-                  insight={bonificacion.dias_live_mes > 0 
+                  insight={bonificacion.dias_live_mes > 0
                     ? `Promedio ${formatMetrics.hours(bonificacion.horas_live_mes / bonificacion.dias_live_mes)}/día`
                     : 'Sin actividad aún'}
                   icon={Clock}
@@ -192,7 +192,7 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
                 <NeoKPICard
                   label="Diamantes"
                   value={formatMetrics.diamonds(bonificacion.diam_live_mes)}
-                  insight={bonificacion.proximo_objetivo_valor 
+                  insight={bonificacion.proximo_objetivo_valor
                     ? `Meta: ${bonificacion.proximo_objetivo_valor}`
                     : 'Trabaja hacia tu primera meta'}
                   icon={Gem}
@@ -228,15 +228,15 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
                 <div className="flex-1 space-y-3">
                   <h4 className="font-semibold text-sm">💬 Mensaje Personalizado</h4>
                   <p className="text-sm text-muted-foreground">
-                    {bonificacion?.texto_creador || 
-                     `¡Hola @${tiktok_username || creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
+                    {bonificacion?.texto_creador ||
+                      `¡Hola @${tiktok_username || creatorName}! 🌟 Sigue trabajando para alcanzar tus metas este mes. Revisa tus estadísticas y mantente en contacto con tu manager para estrategias personalizadas. ¡Tú puedes lograrlo! 💪`}
                   </p>
                   {creatorPhone && (
                     <WhatsappButton
                       phone={creatorPhone}
                       country="MX"
-                      message={bonificacion?.texto_creador || 
-                               `Hola @${tiktok_username || creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
+                      message={bonificacion?.texto_creador ||
+                        `Hola @${tiktok_username || creatorName}! Quiero revisar tu progreso del mes contigo y apoyarte para alcanzar tus metas. ¿Cuándo podemos conversar?`}
                       className="w-full"
                     />
                   )}
@@ -264,7 +264,6 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
               </h3>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                 {[
-                  { key: 'semaforo_50k', label: '50K', faltan: bonificacion?.faltan_50k, req: bonificacion?.req_diam_por_dia_50k },
                   { key: 'semaforo_100k', label: '100K', faltan: bonificacion?.faltan_100k, req: bonificacion?.req_diam_por_dia_100k },
                   { key: 'semaforo_300k', label: '300K', faltan: bonificacion?.faltan_300k, req: bonificacion?.req_diam_por_dia_300k },
                   { key: 'semaforo_500k', label: '500K', faltan: bonificacion?.faltan_500k, req: bonificacion?.req_diam_por_dia_500k },
@@ -306,51 +305,45 @@ export const BonificacionesPanel = ({ creatorId, creatorName, tiktok_username, c
                 Hitos Días/Horas
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <NeoCard variant="elevated" padding="md">
-                  <MilestoneCard
-                    label="12d/40h"
-                    daysRequired={12}
-                    hoursRequired={40}
-                    currentDays={bonificacion.dias_live_mes || 0}
-                    currentHours={bonificacion.horas_live_mes || 0}
-                    onOpenPlan={() => {
-                      toast({
-                        title: "Plan del Día",
-                        description: "Funcionalidad en desarrollo",
-                      });
-                    }}
-                  />
-                </NeoCard>
-                <NeoCard variant="elevated" padding="md">
-                  <MilestoneCard
-                    label="20d/60h"
-                    daysRequired={20}
-                    hoursRequired={60}
-                    currentDays={bonificacion.dias_live_mes || 0}
-                    currentHours={bonificacion.horas_live_mes || 0}
-                    onOpenPlan={() => {
-                      toast({
-                        title: "Plan del Día",
-                        description: "Funcionalidad en desarrollo",
-                      });
-                    }}
-                  />
-                </NeoCard>
-                <NeoCard variant="elevated" padding="md">
-                  <MilestoneCard
-                    label="22d/80h"
-                    daysRequired={22}
-                    hoursRequired={80}
-                    currentDays={bonificacion.dias_live_mes || 0}
-                    currentHours={bonificacion.horas_live_mes || 0}
-                    onOpenPlan={() => {
-                      toast({
-                        title: "Plan del Día",
-                        description: "Funcionalidad en desarrollo",
-                      });
-                    }}
-                  />
-                </NeoCard>
+                <MilestoneCard
+                  label="12d/40h"
+                  daysRequired={12}
+                  hoursRequired={40}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
+                <MilestoneCard
+                  label="20d/60h"
+                  daysRequired={20}
+                  hoursRequired={60}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
+                <MilestoneCard
+                  label="22d/80h"
+                  daysRequired={22}
+                  hoursRequired={80}
+                  currentDays={bonificacion.dias_live_mes || 0}
+                  currentHours={bonificacion.horas_live_mes || 0}
+                  onOpenPlan={() => {
+                    toast({
+                      title: "Plan del Día",
+                      description: "Funcionalidad en desarrollo",
+                    });
+                  }}
+                />
               </div>
             </div>
 

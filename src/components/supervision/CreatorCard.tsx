@@ -1,4 +1,5 @@
 import { Clock } from "lucide-react";
+import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { getCreatorDisplayName } from "@/utils/creator-display";
 
@@ -35,7 +36,7 @@ interface CreatorCardProps {
   onClick: () => void;
 }
 
-export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
+export const CreatorCard = React.memo(function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
   const getRiesgoColor = (riesgo?: string) => {
     switch (riesgo) {
       case 'verde': return 'bg-green-500';
@@ -45,12 +46,12 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
     }
   };
 
-  const timeSinceLog = latestLog 
+  const timeSinceLog = latestLog
     ? Math.floor((Date.now() - new Date(latestLog.fecha_evento).getTime()) / (1000 * 60))
     : null;
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="neo-card p-4 cursor-pointer hover:neo-card-pressed active:neo-card-pressed transition-all"
     >
@@ -61,7 +62,7 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
             {creator.nombre.charAt(0).toUpperCase()}
           </span>
         </div>
-        
+
         {/* Nombre e info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm truncate">{getCreatorDisplayName(creator)}</h3>
@@ -83,9 +84,9 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
               🆕
             </Badge>
           )}
-          <div 
-            className={`w-3 h-3 rounded-full ${getRiesgoColor(latestLog?.riesgo)}`} 
-            title={latestLog?.riesgo || 'Sin datos'} 
+          <div
+            className={`w - 3 h - 3 rounded - full ${getRiesgoColor(latestLog?.riesgo)} `}
+            title={latestLog?.riesgo || 'Sin datos'}
           />
         </div>
       </div>
@@ -109,4 +110,8 @@ export function CreatorCard({ creator, latestLog, onClick }: CreatorCardProps) {
       )}
     </div>
   );
-}
+}, (prev, next) => {
+  return prev.creator.id === next.creator.id &&
+    prev.latestLog?.id === next.latestLog?.id &&
+    prev.latestLog?.riesgo === next.latestLog?.riesgo;
+});
