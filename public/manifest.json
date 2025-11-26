@@ -6,19 +6,27 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["tabbed", "window-controls-overlay", "standalone"],
+  "display_override": [
+    "tabbed",
+    "window-controls-overlay",
+    "standalone"
+  ],
   "background_color": "#0a0f1e",
   "theme_color": "#d4ff6a",
   "orientation": "portrait-primary",
   "lang": "es-MX",
   "dir": "ltr",
-  "categories": ["business", "productivity", "analytics"],
+  "categories": [
+    "business",
+    "productivity",
+    "analytics"
+  ],
   "prefer_related_applications": false,
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=app.lovable.f8b38fe6e36c4ad5b1203b74ef284578",
-      "id": "app.lovable.f8b38fe6e36c4ad5b1203b74ef284578"
+      "url": "https://play.google.com/store/apps/details?id=app.lovable.3769febe65294338813359f6c57901",
+      "id": "app.lovable.3769febe65294338813359f6c57901"
     },
     {
       "platform": "itunes",
@@ -35,9 +43,15 @@
     {
       "action": "/dashboard/upload",
       "accept": {
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-        "application/vnd.ms-excel": [".xls"],
-        "text/csv": [".csv"]
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+          ".xlsx"
+        ],
+        "application/vnd.ms-excel": [
+          ".xls"
+        ],
+        "text/csv": [
+          ".csv"
+        ]
       },
       "icons": [
         {
@@ -108,21 +122,36 @@
       "short_name": "Pendiente",
       "description": "Ver feedback pendiente de creadores",
       "url": "/dashboard/pending",
-      "icons": [{ "src": "/logo.png", "sizes": "512x512" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "512x512"
+        }
+      ]
     },
     {
       "name": "Historial",
       "short_name": "Historial",
       "description": "Ver historial de feedback",
       "url": "/dashboard/history",
-      "icons": [{ "src": "/logo.png", "sizes": "512x512" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "512x512"
+        }
+      ]
     },
     {
       "name": "Lista de Creadores",
       "short_name": "Creadores",
       "description": "Ver todos los creadores",
       "url": "/dashboard/creators",
-      "icons": [{ "src": "/logo.png", "sizes": "512x512" }]
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "512x512"
+        }
+      ]
     }
   ],
   "share_target": {
@@ -136,7 +165,10 @@
     }
   },
   "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
   },
   "edge_side_panel": {
     "preferred_width": 400
