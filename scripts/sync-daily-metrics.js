@@ -17,7 +17,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY; // Usamos la key pública para lectura, si necesitamos escritura role service role sería mejor pero para esto basta
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_NAME = 'DailyMetrics';
+const TABLE_NAME = 'tbl2KTAcZLmLx5mcw'; // Métricas Diarias
 
 if (!SUPABASE_URL || !SUPABASE_KEY || !AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     console.error('❌ Faltan credenciales en .env');

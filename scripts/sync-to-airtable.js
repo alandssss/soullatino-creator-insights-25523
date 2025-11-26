@@ -41,7 +41,7 @@ const airtable = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_I
 
 // Nombres de las tablas en Airtable
 const TABLES = {
-    CREADORES: 'Creadores',
+    CREADORES: 'tblFK1tY8yvFpl4bP', // Creadores
     MANAGERS: 'Managers',
     INCENTIVOS: 'Incentivos'
 };
