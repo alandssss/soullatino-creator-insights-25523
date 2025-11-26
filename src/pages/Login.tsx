@@ -26,10 +26,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('🔐 Iniciando autenticación...', { email, isSignUp });
+
     try {
       const validated = authSchema.parse({ email, password });
 
       if (isSignUp) {
+        console.log('📝 Intentando registro...');
         const { error } = await supabase.auth.signUp({
           email: validated.email,
           password: validated.password,
@@ -43,53 +46,94 @@ const Login = () => {
           description: "Revisa tu email para confirmar tu cuenta.",
         });
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: validated.email,
-          password: validated.password,
-        });
-        if (error) throw error;
+        console.log('🔑 Intentando login con Supabase...');
+        
+        // Verificar conectividad antes de intentar login
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: validated.email,
+            password: validated.password,
+          });
+          
+          if (error) {
+            console.error('❌ Error de Supabase auth:', error);
+            throw error;
+          }
 
-        // Asegurar que el usuario tenga un rol asignado
-        const { error: roleError } = await supabase.functions.invoke('ensure-user-role');
-        if (roleError) {
-          console.warn('Error asegurando rol del usuario:', roleError);
-        }
+          console.log('✅ Login exitoso, usuario:', data.user.id);
 
-        // Verificar rol del usuario
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single();
+          // Asegurar que el usuario tenga un rol asignado
+          console.log('👤 Asignando rol de usuario...');
+          const { error: roleError } = await supabase.functions.invoke('ensure-user-role');
+          if (roleError) {
+            console.warn('⚠️ Error asegurando rol del usuario:', roleError);
+          }
 
-        toast({
-          title: "¡Bienvenido!",
-          description: "Has iniciado sesión correctamente.",
-        });
+          // Verificar rol del usuario
+          console.log('🔍 Verificando rol del usuario...');
+          const { data: roleData, error: roleQueryError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .single();
 
-        // Redirigir según rol
-        if (roleData?.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
+          if (roleQueryError) {
+            console.warn('⚠️ Error consultando rol:', roleQueryError);
+          }
+
+          console.log('✅ Rol del usuario:', roleData?.role || 'viewer');
+
+          toast({
+            title: "¡Bienvenido!",
+            description: "Has iniciado sesión correctamente.",
+          });
+
+          // Redirigir según rol
+          if (roleData?.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
+        } catch (authError: any) {
+          // Errores específicos de red o conectividad
+          if (authError.message?.includes('fetch') || authError.message?.includes('network')) {
+            console.error('🌐 Error de conexión:', authError);
+            throw new Error('Error de conexión: No se pudo contactar con el servidor. Verifica tu conexión a internet o intenta más tarde.');
+          }
+          throw authError;
         }
       }
     } catch (error: any) {
+      console.error('💥 Error en handleAuth:', error);
+      
       if (error instanceof z.ZodError) {
         toast({
           title: "Error de validación",
           description: error.errors[0].message,
           variant: "destructive",
         });
+      } else if (error.message?.includes('Invalid login credentials')) {
+        toast({
+          title: "Credenciales incorrectas",
+          description: "El email o la contraseña son incorrectos. Verifica tus datos e intenta de nuevo.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('conexión') || error.message?.includes('fetch') || error.message?.includes('network')) {
+        toast({
+          title: "Error de conexión",
+          description: error.message || "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
+          variant: "destructive",
+        });
       } else {
         toast({
-          title: "Error",
-          description: error.message,
+          title: "Error de autenticación",
+          description: error.message || "Ocurrió un error inesperado. Intenta de nuevo.",
           variant: "destructive",
         });
       }
     } finally {
       setLoading(false);
+      console.log('🏁 Proceso de autenticación finalizado');
     }
   };
 
