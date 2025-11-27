@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useEffect, useCallback, memo, ChangeEvent } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -54,7 +54,7 @@ function BatallasCreatorSection({ creator }: { creator: Creator }) {
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true })
         .limit(3);
-
+      
       setBatallas(data || []);
     } catch (error: any) {
       console.error('Error loading batallas:', error);
@@ -192,7 +192,7 @@ export function CreatorPanel({
 
   const quickLog = useCallback(async () => {
     if (!creator) return;
-
+    
     if (Object.keys(selectedFlags).length === 0) {
       toast({
         title: "Sin selección",
@@ -259,10 +259,24 @@ export function CreatorPanel({
     }
   };
 
-  const timeSinceLog = latestLog
+  const timeSinceLog = latestLog 
     ? Math.floor((Date.now() - new Date(latestLog.fecha_evento).getTime()) / (1000 * 60))
     : null;
 
+  // Componente memoizado para el Textarea
+  const NotesInput = memo(({ value, onChange, disabled }: { 
+    value: string; 
+    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void; 
+    disabled: boolean 
+  }) => (
+    <Textarea
+      value={value}
+      onChange={onChange}
+      placeholder="Escribe observaciones adicionales..."
+      className="neo-input min-h-[80px] resize-none"
+      disabled={disabled}
+    />
+  ));
 
   const PanelContent = () => (
     <>
@@ -287,9 +301,9 @@ export function CreatorPanel({
             </div>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
+        <Button 
+          variant="ghost" 
+          size="icon" 
           onClick={() => onOpenChange(false)}
           className="neo-button flex-shrink-0"
         >
@@ -340,7 +354,7 @@ export function CreatorPanel({
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               🛠 Selecciona Acciones
             </h3>
-
+            
             <div className="grid grid-cols-3 gap-2">
               <Button
                 size="sm"
@@ -429,11 +443,9 @@ export function CreatorPanel({
             {/* Campo de reporte */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Notas adicionales (opcional)</label>
-              <Textarea
+              <NotesInput
                 value={reporte}
                 onChange={(e) => setReporte(e.target.value)}
-                placeholder="Escribe observaciones adicionales..."
-                className="neo-input min-h-[80px] resize-none"
                 disabled={submitting}
               />
             </div>
@@ -467,8 +479,8 @@ export function CreatorPanel({
       {/* Footer solo en móvil */}
       {!isDesktop && (
         <div className="p-4 border-t border-border/50">
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             className="w-full neo-button"
             onClick={() => onOpenChange(false)}
           >

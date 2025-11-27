@@ -52,15 +52,15 @@ export const CreatorBasicInfo = ({ creator, dailyStats }: CreatorBasicInfoProps)
         {dailyStats ? (
           <div className="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-green-500/10 backdrop-blur-sm border border-green-500/20 overflow-hidden">
-              <p className="text-xs uppercase tracking-wider text-green-600 mb-1 font-medium truncate">Días Live MTD</p>
+              <p className="text-xs uppercase tracking-wider text-green-600 mb-1 font-medium truncate">Días Live Hoy</p>
               <p className="font-bold text-xl text-green-600 truncate" title={dailyStats.dias_validos_live?.toString()}>{dailyStats.dias_validos_live || 0}</p>
             </div>
             <div className="p-4 rounded-lg bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 overflow-hidden">
-              <p className="text-xs uppercase tracking-wider text-blue-600 mb-1 font-medium truncate">Horas MTD</p>
+              <p className="text-xs uppercase tracking-wider text-blue-600 mb-1 font-medium truncate">Horas Hoy</p>
               <p className="font-bold text-xl text-blue-600 truncate" title={formatMetrics.hours(dailyStats.duracion_live_horas)}>{formatMetrics.hours(dailyStats.duracion_live_horas)}</p>
             </div>
             <div className="p-4 rounded-lg bg-accent/10 backdrop-blur-sm border border-accent/20 overflow-hidden">
-              <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium truncate">Diamantes MTD</p>
+              <p className="text-xs uppercase tracking-wider text-accent mb-1 font-medium truncate">Diamantes Hoy</p>
               <p className="font-bold text-2xl text-accent truncate" title={formatMetrics.diamonds(dailyStats.diamantes)}>{formatMetrics.diamonds(dailyStats.diamantes)} 💎</p>
             </div>
           </div>
