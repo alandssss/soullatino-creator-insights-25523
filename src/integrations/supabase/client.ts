@@ -7,21 +7,18 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const errorMsg = '❌ Error de configuración: El servidor no está configurado. Contacta al administrador.';
-  console.error(errorMsg);
-  console.error('Missing:', {
-    SUPABASE_URL: SUPABASE_URL ? 'OK' : 'MISSING',
-    SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY ? 'OK' : 'MISSING'
-  });
-  throw new Error(errorMsg);
+  console.error('❌ Missing Supabase environment variables');
+  console.error('VITE_SUPABASE_URL:', SUPABASE_URL || 'MISSING');
+  console.error('VITE_SUPABASE_PUBLISHABLE_KEY:', SUPABASE_PUBLISHABLE_KEY ? 'Present' : 'MISSING');
+  console.error('Using fallback values - app may not work correctly');
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_URL || 'https://fhboambxnmswtxalllnn.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYm9hbWJ4bm1zd3R4YWxsbG5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwOTk0MjAsImV4cCI6MjA3OTY3NTQyMH0.6GpLHPbKmzN6eCRY0crTEqmTdv4yNGf2cTilDoiaeUo',
   {
     auth: {
       storage: localStorage,
