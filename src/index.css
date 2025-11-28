@@ -19,23 +19,31 @@
     --glass-shadow: 0 8px 32px 0 rgb(163 177 198 / 0.3);
 
     --background: 210 40% 96%;
-    --foreground: 222 47% 11%;
+    --foreground: 222 47% 15%;
+    /* Más oscuro para mejor contraste */
     --card: 210 40% 98%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 47% 15%;
+    /* Más oscuro */
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222 47% 15%;
+    /* Más oscuro */
     --primary: 211 75% 59%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 92%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 92%;
-    --muted-foreground: 215 16% 46%;
+    --secondary-foreground: 222 47% 15%;
+    /* Más oscuro */
+    --muted: 210 40% 90%;
+    /* Ligeramente más oscuro */
+    --muted-foreground: 215 20% 35%;
+    /* MUCHO más oscuro para mejor lectura */
     --accent: 175 61% 56%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 31% 91%;
-    --input: 210 40% 98%;
+    --border: 214 31% 85%;
+    /* Bordes más visibles */
+    --input: 210 40% 96%;
+    /* Más contraste */
     --ring: 211 75% 59%;
 
     --radius: 0.75rem;
