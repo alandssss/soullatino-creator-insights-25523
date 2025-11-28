@@ -174,8 +174,6 @@ const Dashboard = () => {
       const dedupedCreators = dedupeBy(creatorsWithNorms, c => c.phoneNorm || c.nameNorm);
 
       setCreators(dedupedCreators);
-      console.log(`[Dashboard] Creadores: ${uniqueCreatorsById.length} (ID único) -> ${dedupedCreators.length} (Deduplicado Fuzzy)`);
-      console.log('[Dashboard] DEBUG - Creadores data:', dedupedCreators.slice(0, 3));
 
     } catch (error) {
       console.error("Error loading bonificaciones:", error);

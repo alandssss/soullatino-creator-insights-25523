@@ -26,12 +26,12 @@ export const CompactCreatorCard = ({ creator, rank }: CompactCreatorCardProps) =
 
     return (
         <Card className="neo-card-sm hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
+            <CardContent className="p-3">
+                <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                        <span className="text-2xl">{getMedalEmoji(rank)}</span>
+                        <span className="text-xl">{getMedalEmoji(rank)}</span>
                         <div>
-                            <h3 className="font-bold text-base group-hover:text-primary transition-colors">
+                            <h3 className="font-bold text-sm group-hover:text-primary transition-colors">
                                 {creator.nombre}
                             </h3>
                             <p className="text-xs text-muted-foreground">{creator.categoria || "Sin categoría"}</p>
@@ -45,15 +45,15 @@ export const CompactCreatorCard = ({ creator, rank }: CompactCreatorCardProps) =
                             onClick={(e) => e.stopPropagation()}
                             className="text-green-500 hover:text-green-600 transition-colors"
                         >
-                            <MessageCircle className="h-4 w-4" />
+                            <MessageCircle className="h-3.5 w-3.5" />
                         </a>
                     )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">💎 Diamantes</span>
-                        <span className="font-bold text-accent">{diamantes.toLocaleString()}</span>
+                        <span className="text-xs text-muted-foreground">💎 Diamantes</span>
+                        <span className="font-bold text-sm text-accent">{diamantes.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                         <span className="text-muted-foreground">📅 {dias} días</span>
@@ -62,7 +62,7 @@ export const CompactCreatorCard = ({ creator, rank }: CompactCreatorCardProps) =
                 </div>
 
                 {creator.hito_diamantes && (
-                    <Badge variant="outline" className="mt-3 w-full justify-center text-xs">
+                    <Badge variant="outline" className="mt-2 w-full justify-center text-xs py-0.5">
                         🎯 Hito: {(creator.hito_diamantes / 1000).toFixed(0)}K
                     </Badge>
                 )}
