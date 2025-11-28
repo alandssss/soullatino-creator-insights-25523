@@ -48,7 +48,7 @@ export function LeaderboardPanel() {
       // Obtener el ranking más reciente del periodo seleccionado
       const { data, error } = await supabase
         .from('creator_rankings')
-        .select('*')
+        .select('*, creators(nombre, tiktok_username)')
         .eq('periodo_tipo', periodo)
         .order('periodo_inicio', { ascending: false })
         .limit(100);
@@ -57,21 +57,27 @@ export function LeaderboardPanel() {
 
       // Agrupar por periodo más reciente
       const rankingsByPeriodo = new Map<string, RankingData[]>();
-      
+
       for (const r of data || []) {
         const key = r.periodo_inicio;
         if (!rankingsByPeriodo.has(key)) {
           rankingsByPeriodo.set(key, []);
         }
-        rankingsByPeriodo.get(key)!.push(r as any);
+        // Combinar datos del snapshot con datos actuales del creador
+        const rankingItem = {
+          ...r,
+          nombre: r.creators?.nombre || r.nombre,
+          tiktok_username: r.creators?.tiktok_username || r.tiktok_username
+        };
+        rankingsByPeriodo.get(key)!.push(rankingItem as any);
       }
 
       // Obtener el periodo más reciente
       const periodos = Array.from(rankingsByPeriodo.keys()).sort().reverse();
       const periodoReciente = periodos[0];
-      
+
       const rankingsRecientes = rankingsByPeriodo.get(periodoReciente) || [];
-      
+
       return rankingsRecientes.sort((a, b) => a.ranking_position - b.ranking_position);
     }
   });
@@ -157,17 +163,17 @@ export function LeaderboardPanel() {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis 
-                          dataKey="nombre" 
-                          angle={-45} 
-                          textAnchor="end" 
+                        <XAxis
+                          dataKey="nombre"
+                          angle={-45}
+                          textAnchor="end"
                           height={80}
                           className="text-xs"
                         />
                         <YAxis className="text-xs" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--card))', 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
                             border: '1px solid hsl(var(--border))',
                             borderRadius: '8px'
                           }}
