@@ -52,7 +52,7 @@ export function AppSidebar({ userRole, isMobile = false }: AppSidebarProps) {
 
   return (
     <div className={cn(
-      "flex-col border-r border-border bg-white/95 backdrop-blur-2xl text-foreground relative",
+      "flex-col border-r border-border bg-card/95 backdrop-blur-2xl text-foreground relative",
       isMobile ? "flex w-full" : "hidden md:flex md:w-64"
     )}>
       {/* Subtle gradient overlay */}
