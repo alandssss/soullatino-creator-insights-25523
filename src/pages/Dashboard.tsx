@@ -189,6 +189,9 @@ const Dashboard = () => {
     }
   };
 
+  // Hooks must be called before any early returns
+  const topThree = useMemo(() => creators.slice(0, 3), [creators]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -200,14 +203,11 @@ const Dashboard = () => {
     );
   }
 
-  const topThree = useMemo(() => creators.slice(0, 3), [creators]);
-
   return (
     <div className="space-y-4 md:space-y-6 container-safe">
       <PageHeader
         title="Dashboard Operativo"
         description="Métricas clave y acciones prioritarias"
-        sticky={false}
       />
 
       {/* KPIs Grid - 3 columnas */}
