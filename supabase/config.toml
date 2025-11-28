@@ -103,14 +103,10 @@ verify_jwt = true
 [functions.manage-user]
 verify_jwt = true
 
-# Endpoint público para pruebas manuales
-[functions.rapid-endpoint]
-verify_jwt = false
-
-# Generación de imágenes para badges con Lovable AI
+# Generación de imágenes para badges con Lovable AI - requiere rol admin/manager
 [functions.generate-badge-image]
-verify_jwt = false
+verify_jwt = true
 
-# Cálculo de rankings y badges gamificados
+# Cálculo de rankings y badges gamificados - requiere rol admin
 [functions.calculate-rankings]
-verify_jwt = false
+verify_jwt = true
