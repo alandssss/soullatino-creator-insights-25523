@@ -38,7 +38,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ userRole, isMobile = false }: AppSidebarProps) {
   const location = useLocation();
-  
+
   const isActive = (path: string) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -46,40 +46,40 @@ export function AppSidebar({ userRole, isMobile = false }: AppSidebarProps) {
     return location.pathname.startsWith(path);
   };
 
-  const filteredNav = sidebarNav.filter(item => 
+  const filteredNav = sidebarNav.filter(item =>
     userRole && item.roles.includes(userRole)
   );
 
   return (
     <div className={cn(
-      "flex-col border-r border-white/10 bg-slate-950/80 backdrop-blur-2xl text-white relative",
+      "flex-col border-r border-border bg-white/95 backdrop-blur-2xl text-foreground relative",
       isMobile ? "flex w-full" : "hidden md:flex md:w-64"
     )}>
-      {/* Gradient overlay sutil en el fondo */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent pointer-events-none" />
-      
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+
       {/* Logo/Header */}
-      <div className="relative flex items-center gap-3 p-6 border-b border-white/10">
+      <div className="relative flex items-center gap-3 p-6 border-b border-border">
         <div className="relative group">
-          <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-lg opacity-30 group-hover:opacity-60 transition-opacity duration-500"></div>
-          <img 
-            src={logo} 
-            alt="Soullatino" 
-            className="relative h-10 w-10 object-contain" 
+          <div className="absolute -inset-2 bg-gradient-to-r from-primary to-accent rounded-full blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+          <img
+            src={logo}
+            alt="Soullatino"
+            className="relative h-10 w-10 object-contain"
           />
         </div>
         <div>
-          <span className="text-xl font-bold text-white block">Soullatino</span>
-          <span className="text-xs text-slate-400">Analytics CRM</span>
+          <span className="text-xl font-bold text-foreground block">Soullatino</span>
+          <span className="text-xs text-muted-foreground">Analytics CRM</span>
         </div>
       </div>
-      
+
       {/* Navigation */}
       <nav className="relative flex-1 p-4 space-y-2" aria-label="Navegación principal">
         {filteredNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
-          
+
           return (
             <Button
               key={item.name}
@@ -92,32 +92,33 @@ export function AppSidebar({ userRole, isMobile = false }: AppSidebarProps) {
                 'active:scale-95',
                 'transition-all duration-200',
                 active && [
-                  'bg-gradient-to-r from-blue-500/20 to-indigo-500/20',
-                  'border border-blue-500/30',
-                  'text-white font-semibold',
-                  'shadow-lg shadow-blue-500/20',
+                  'neo-card-sm',
+                  'bg-gradient-to-r from-primary/10 to-accent/10',
+                  'border border-primary/30',
+                  'text-foreground font-semibold',
+                  'shadow-[var(--neo-shadow-sm-light),var(--neo-shadow-sm-dark)]',
                 ],
                 !active && [
-                  'text-slate-200 hover:text-white',
-                  'hover:bg-white/10',
-                  'border border-transparent hover:border-white/10',
+                  'text-muted-foreground hover:text-foreground',
+                  'hover:bg-muted/50',
+                  'border border-transparent hover:border-border',
                 ]
               )}
             >
               <Link to={item.path} className="flex items-center gap-3 w-full">
                 <div className={cn(
                   'p-2 rounded-lg transition-all duration-300',
-                  active && 'bg-blue-500/20 shadow-lg shadow-blue-500/30',
-                  !active && 'bg-white/5'
+                  active && 'bg-primary/10 shadow-sm',
+                  !active && 'bg-muted/30'
                 )}>
                   <Icon className={cn(
                     'h-5 w-5 transition-transform duration-300',
-                    active && 'scale-110'
+                    active && 'scale-110 text-primary'
                   )} />
                 </div>
                 <span className="flex-1">{item.name}</span>
                 {active && (
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 )}
               </Link>
             </Button>

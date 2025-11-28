@@ -33,18 +33,18 @@ export const AdminUploadPanel = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      
+
       // Validar por extensión Y tipo MIME (Android puede enviar octet-stream)
       const fileName = selectedFile.name.toLowerCase();
       const hasValidExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-      
+
       const validTypes = [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/vnd.ms-excel',
         'application/octet-stream', // Android WebView puede usar este tipo
       ];
       const hasValidType = validTypes.includes(selectedFile.type);
-      
+
       if (!hasValidExtension && !hasValidType) {
         toast({
           title: "Archivo inválido",
@@ -53,7 +53,7 @@ export const AdminUploadPanel = () => {
         });
         return;
       }
-      
+
       setFile(selectedFile);
     }
   };
@@ -143,13 +143,13 @@ export const AdminUploadPanel = () => {
     }
 
     setUploading(true);
-    
+
     console.log('[AdminUploadPanel] Iniciando upload de archivo:', file.name, file.size, 'bytes');
-    
+
     try {
       // Obtener sesión y token
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !sessionData?.session) {
         console.error('[AdminUploadPanel] Error de sesión:', sessionError);
         toast({
@@ -168,9 +168,9 @@ export const AdminUploadPanel = () => {
       formData.append('file', file);
 
       // Construir URL correcta
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = "https://fhboambxnmswtxalllnn.supabase.co";
       const functionUrl = `${supabaseUrl}/functions/v1/upload-excel-recommendations`;
-      
+
       console.log('[AdminUploadPanel] Enviando a:', functionUrl);
 
       // Enviar archivo
@@ -221,11 +221,15 @@ export const AdminUploadPanel = () => {
           variant: "destructive",
           duration: 8000,
         });
-        
+
         console.warn('[AdminUploadPanel] No match:', payload.no_match);
       }
 
-      // Recalcular bonificaciones del mes actual
+      // ✅ REFACTOR: No llamar bonificaciones desde frontend - backend ya lo hace
+      // La función upload-excel-recommendations ahora invoca calculate-bonificaciones-predictivo internamente
+      // Eliminamos la doble invocación para evitar race conditions y duplicación
+
+      /* COMENTADO - Backend ya hace esto
       try {
         const mesRef = new Date().toISOString().slice(0, 7) + '-01';
         const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
@@ -250,6 +254,16 @@ export const AdminUploadPanel = () => {
       } catch (error) {
         console.error('Error en recálculo de bonificaciones:', error);
       }
+      */
+
+      // Mostrar resultado si backend incluye info de bonificaciones
+      if (payload.bonificaciones_calculadas) {
+        toast({
+          title: "✅ Bonificaciones calculadas",
+          description: `${payload.bonificaciones_calculadas} creadores procesados`,
+          duration: 3000,
+        });
+      }
 
       setFile(null);
       const fileInput = document.getElementById("file-upload") as HTMLInputElement;
@@ -265,7 +279,7 @@ export const AdminUploadPanel = () => {
         stack: error?.stack,
         error: error,
       });
-      
+
       toast({
         title: "❌ Error al cargar archivo",
         description: error?.message || "No se pudo procesar el archivo. Revisa la consola para más detalles.",
@@ -299,7 +313,7 @@ export const AdminUploadPanel = () => {
         if (partes.length !== 2) continue;
 
         const [username, telefono] = partes.map(p => p.trim());
-        
+
         // Saltar si es [No Data]
         if (telefono === '[No Data]' || !telefono) {
           noEncontrados++;
@@ -349,9 +363,9 @@ export const AdminUploadPanel = () => {
           cantidad_creadores: 15
         }
       });
-      
+
       if (error) throw error;
-      
+
       const resultado = data?.resultado?.[0];
       toast({
         title: "✅ Datos demo creados",

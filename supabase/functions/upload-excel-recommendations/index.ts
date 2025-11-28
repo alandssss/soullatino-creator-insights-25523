@@ -48,7 +48,8 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Note: Supabase reserves SUPABASE_ prefix, so we use SERVICE_ROLE_KEY instead
+    const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Verificar usuario autenticado
@@ -96,7 +97,7 @@ serve(async (req) => {
       throw new Error('No file uploaded');
     }
 
-    console.log(`[upload-excel-recommendations] Processing file: ${file.name}`);
+    console.log('[STEP 1] ===  Processing file:', file.name, 'Size:', file.size, 'bytes');
 
     // Leer el archivo Excel
     const fileBuffer = await file.arrayBuffer();
@@ -105,7 +106,7 @@ serve(async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const rawData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
-    console.log(`[upload-excel-recommendations] Found ${rawData.length} rows`);
+    console.log('[STEP 2] === Excel parsed. Rows found:', rawData.length);
 
     // Función para parsear horas en diferentes formatos
     function parseHours(input: any): number {
@@ -205,6 +206,9 @@ serve(async (req) => {
       'nombre de usuario del creador': 'creator_username',
       'creators username': 'creator_username',
       "creator's username": 'creator_username', // Con apóstrofe (Excel real)
+      "creators username": 'creator_username', // Sin apóstrofe
+      'creator s username': 'creator_username', // Con espacio
+      'creatorusername': 'creator_username', // Sin espacios
       'id del creador': 'creator_username',
       'creator id': 'creator_username',
 
@@ -331,7 +335,7 @@ serve(async (req) => {
       fecha: string;
     }>;
 
-    console.log(`[upload-excel-recommendations] Mapped ${mapped.length} valid rows`);
+    console.log('[STEP 3] === Mapped rows:', mapped.length, 'out of', rawData.length);
 
     if (!mapped.length) {
       const sampleRow = rawData[0] || {};
@@ -433,6 +437,9 @@ serve(async (req) => {
     }
 
     let creatorsCreated = 0;
+    let created: any[] | null = null;
+    let createErr: any = null;
+
     if (missing.length) {
       console.log(`[upload-excel-recommendations] Creando/actualizando ${missing.length} creadores únicos faltantes`);
 
@@ -443,14 +450,14 @@ serve(async (req) => {
         creator_id: sanitizeUsername(m.username) // campo requerido (texto sanitizado)
       }));
 
-      // Usar UPSERT para evitar errores de duplicados
-      const { data: created, error: createErr } = await supabase
+      // Usar INSERT porque upsert falla sin constraint único en creator_id
+      const result = await supabase
         .from('creators')
-        .upsert(toCreate, {
-          onConflict: 'creator_id',
-          ignoreDuplicates: false
-        })
+        .insert(toCreate)
         .select('id, tiktok_username, telefono');
+
+      created = result.data;
+      createErr = result.error;
 
       if (createErr) {
         console.error('[upload-excel-recommendations] Error creating/updating creators:', createErr);
@@ -464,7 +471,7 @@ serve(async (req) => {
       }
 
       creatorsCreated = created?.length || 0;
-      console.log(`[upload-excel-recommendations] Procesados ${creatorsCreated} creadores exitosamente`);
+      console.log('[STEP 4] === Creators created/updated:', creatorsCreated);
 
       (created || []).forEach(c => {
         if (c.tiktok_username) byUsername.set(String(c.tiktok_username).toLowerCase(), c.id);
@@ -515,7 +522,7 @@ serve(async (req) => {
     if (duplicatesCount > 0) {
       console.warn(`[upload-excel-recommendations] ⚠️ Found ${duplicatesCount} duplicate rows in Excel - kept last occurrence`);
     }
-    console.log(`[upload-excel-recommendations] Deduped from ${dailyRows.length} to ${dailyRowsDeduped.length} unique rows`);
+    console.log('[STEP 5] === Daily rows prepared:', dailyRowsDeduped.length, '( deduplicated from', dailyRows.length, ')');
 
     if (!dailyRowsDeduped.length) {
       return withCORS(
@@ -528,35 +535,87 @@ serve(async (req) => {
     }
 
     // @snapshot: Delete ALL records for this date to replace complete snapshot
-    console.log(`[upload-excel-recommendations] ⚠️ Deleting existing records for ${today} to insert fresh snapshot`);
-    const { error: delErr } = await supabase
+    console.log('[STEP 6] === Deleting existing records for date:', today);
+    const { data: deletedData, error: delErr, count: deletedCount } = await supabase
       .from('creator_daily_stats')
       .delete()
-      .eq('fecha', today);
+      .eq('fecha', today)
+      .select('*', { count: 'exact' });
 
     if (delErr) {
-      console.warn('[upload-excel-recommendations] Warning deleting existing rows:', delErr);
+      console.error('[STEP 6] ERROR during DELETE:', delErr);
+      throw new Error(`Failed to delete existing records: ${delErr.message}`);
     }
+    console.log('[STEP 6] Successfully deleted', deletedCount || 0, 'existing records');
 
-    // @compat: Upsert para idempotencia - solo con diamantes progresivos
-    // Días/horas MTD se calcularán posteriormente por calculate-bonificaciones
-    console.log(`[upload-excel-recommendations] Inserting ${dailyRowsDeduped.length} records with diamonds only (MTD days/hours will be calculated by bonificaciones)`);
-    const { error: insertErr } = await supabase
+    // @compat: Use INSERT instead of UPSERT to avoid silent failures
+    console.log('[STEP 7] === Inserting', dailyRowsDeduped.length, 'records into creator_daily_stats');
+    console.log('[STEP 7] Sample record:', dailyRowsDeduped[0]);
+
+    const { data: insertedData, error: insertErr } = await supabase
       .from('creator_daily_stats')
-      .upsert(dailyRowsDeduped, { onConflict: 'creator_id,fecha' });
+      .insert(dailyRowsDeduped)
+      .select();
 
     if (insertErr) {
-      console.error('[upload-excel-recommendations] Insert error:', insertErr);
+      console.error('[STEP 7] ❌ INSERT ERROR:', insertErr);
+      console.error('[STEP 7] Error details:', JSON.stringify(insertErr, null, 2));
       return withCORS(
         new Response(
-          JSON.stringify({ error: insertErr.message }),
+          JSON.stringify({
+            error: `Failed to insert data: ${insertErr.message}`,
+            code: insertErr.code,
+            details: insertErr.details
+          }),
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         ),
         origin
       );
     }
 
-    console.log(`[upload-excel-recommendations] Successfully upserted ${dailyRowsDeduped.length} unique records`);
+    console.log('[STEP 7] ✅ INSERT completed. Returned rows:', insertedData?.length || 0);
+    if (insertedData && insertedData.length > 0) {
+      console.log('[STEP 7] Sample inserted record:', insertedData[0]);
+    }
+
+    // ✅ VALIDACIÓN POST-INSERT: Verificar que los datos realmente se guardaron
+    console.log('[STEP 8] === Verifying data persistence...');
+    const { data: verifyData, error: verifyError, count: verifyCount } = await supabase
+      .from('creator_daily_stats')
+      .select('*', { count: 'exact' })
+      .eq('fecha', today);
+
+    if (verifyError) {
+      console.error('[STEP 8] ❌ VERIFICATION ERROR:', verifyError);
+    } else {
+      console.log('[STEP 8] ✅ VERIFIED:', verifyCount, 'records in DB for', today);
+      if (verifyData && verifyData.length > 0) {
+        console.log('[STEP 8] Sample verified record:', verifyData[0]);
+      }
+    }
+
+    // ⚠️ CRITICAL: Si no hay datos después del insert, fallar explícitamente
+    if (!verifyCount || verifyCount === 0) {
+      console.error('[STEP 8] ❌❌❌ CRITICAL FAILURE: INSERT succeeded but verification found 0 records!');
+      console.error('[STEP 8] This should be IMPOSSIBLE. Check RLS policies or database triggers.');
+      return withCORS(
+        new Response(
+          JSON.stringify({
+            error: 'CRITICAL: Data persistence failed - INSERT succeeded but 0 records in DB',
+            debug: {
+              inserted: insertedData?.length || 0,
+              verified: verifyCount || 0,
+              date: today,
+              hint: 'Possible RLS policy blocking reads or cascade delete triggered'
+            }
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        ),
+        origin
+      );
+    }
+
+    console.log('[STEP 8] ✅✅✅ SUCCESS: Verified', verifyCount, 'records persisted to database');
 
     // Refrescar la vista materializada
     console.log('[upload-excel-recommendations] Refreshing materialized view...');
@@ -564,6 +623,21 @@ serve(async (req) => {
 
     if (refreshError) {
       console.error('[upload-excel-recommendations] Error refreshing view:', refreshError);
+    }
+
+    // ✅ CRITICAL FIX: Call calculate-bonificaciones-predictivo to populate creator_bonificaciones
+    console.log('[upload-excel-recommendations] Calculating bonificaciones for current month...');
+    const currentMonth = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chihuahua' }).substring(0, 7) + '-01'; // YYYY-MM-01
+
+    const { data: bonifData, error: bonifError } = await supabase.functions.invoke('calculate-bonificaciones-predictivo', {
+      body: { mes_referencia: currentMonth }
+    });
+
+    if (bonifError) {
+      console.error('[upload-excel-recommendations] Error calculating bonificaciones:', bonifError);
+      // Don't fail the entire upload, just warn
+    } else {
+      console.log('[upload-excel-recommendations] Bonificaciones calculated successfully:', bonifData);
     }
 
     const creatorsDeduplicatedCount = totalMissingOccurrences - missing.length;
@@ -579,6 +653,15 @@ serve(async (req) => {
           creators_deduplicated: creatorsDeduplicatedCount,
           snapshot_date: today,
           no_match: noMatch,
+          bonificaciones_calculadas: bonifData?.total_creadores || 0, // ✅ Include bonificaciones info
+          debug_info: {
+            missing_count: missing.length,
+            missing_samples: missing.slice(0, 5),
+            creators_to_create: missing.length,
+            creators_created_count: creatorsCreated,
+            create_error: createErr ? createErr.message : null,
+            first_created: created && created.length > 0 ? created[0] : null
+          },
           message: `✅ ${dailyRowsDeduped.length} registros procesados exitosamente (diamantes y horas MTD del Excel)` +
             (duplicatesCount > 0 ? ` (${duplicatesCount} duplicados removidos en daily_stats)` : '') +
             (creatorsDeduplicatedCount > 0 ? ` (${creatorsDeduplicatedCount} creadores duplicados en Excel)` : ''),

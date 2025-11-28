@@ -23,13 +23,13 @@ export default function AdminPanel() {
 
   const checkAdminAccess = async () => {
     console.log('[Admin] 🔐 Verificando acceso...');
-    
+
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+
       console.log('[Admin] Usuario:', user?.id);
       console.log('[Admin] Error auth:', authError);
-      
+
       if (!user) {
         console.log('[Admin] ❌ Sin usuario, redirigiendo a login');
         navigate("/login");
@@ -75,40 +75,40 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Shield className="w-8 h-8 text-primary" />
+    <div className="container mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-4 md:mb-6">
+        <Shield className="w-6 h-6 md:w-8 md:h-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Panel de Administración</h1>
-          <p className="text-muted-foreground">Gestión completa del sistema</p>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">Panel de Administración</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Gestión completa del sistema</p>
         </div>
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 mb-6">
-          <TabsTrigger value="users" className="gap-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 md:gap-2 mb-4 md:mb-6">
+          <TabsTrigger value="users" className="gap-1 md:gap-2 text-xs md:text-sm">
             <Users className="w-4 h-4" />
-            Usuarios
+            <span className="hidden sm:inline">Usuarios</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="gap-2">
+          <TabsTrigger value="upload" className="gap-1 md:gap-2 text-xs md:text-sm">
             <Upload className="w-4 h-4" />
-            Carga Masiva
+            <span className="hidden sm:inline">Carga</span>
           </TabsTrigger>
-          <TabsTrigger value="creators" className="gap-2">
+          <TabsTrigger value="creators" className="gap-1 md:gap-2 text-xs md:text-sm">
             <Users className="w-4 h-4" />
-            Creadores
+            <span className="hidden sm:inline">Creadores</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2">
+          <TabsTrigger value="config" className="gap-1 md:gap-2 text-xs md:text-sm">
             <Settings className="w-4 h-4" />
-            Configuración
+            <span className="hidden sm:inline">Config</span>
           </TabsTrigger>
-          <TabsTrigger value="ia" className="gap-2">
+          <TabsTrigger value="ia" className="gap-1 md:gap-2 text-xs md:text-sm">
             <TrendingUp className="w-4 h-4" />
-            IA Stats
+            <span className="hidden sm:inline">IA</span>
           </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-2">
+          <TabsTrigger value="activity" className="gap-1 md:gap-2 text-xs md:text-sm">
             <Activity className="w-4 h-4" />
-            Actividad
+            <span className="hidden sm:inline">Actividad</span>
           </TabsTrigger>
         </TabsList>
 

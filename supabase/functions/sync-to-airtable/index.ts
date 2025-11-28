@@ -32,40 +32,40 @@ serve(async (req) => {
         console.log('✅ Environment validated');
 
         // ============================================
-        // 2. PARSE REQUEST (optional date override)
+        // 2. PARSE REQUEST (optional month override)
         // ============================================
-        let targetDate: string | undefined;
+        let targetMonth: string | undefined;
 
         if (req.method === 'POST') {
             try {
                 const body = await req.json();
-                targetDate = body.date;
-                if (targetDate) {
-                    console.log(`📅 Manual sync requested for date: ${targetDate}`);
+                targetMonth = body.month || body.mes_referencia;
+                if (targetMonth) {
+                    console.log(`📅 Manual sync requested for month: ${targetMonth}`);
                 }
             } catch {
-                // No body or invalid JSON, use default (yesterday)
+                // No body or invalid JSON, use default (current month)
             }
         }
 
         // ============================================
         // 3. EXTRACT DATA FROM SUPABASE
         // ============================================
-        console.log('\n📊 Extracting data from Supabase...');
+        console.log('\n📊 Extracting bonificaciones from Supabase...');
         const extractor = new SupabaseDataExtractor(
             config.supabaseUrl,
             config.supabaseServiceKey
         );
 
-        const metrics = await extractor.extractDailyMetrics(targetDate);
+        const metrics = await extractor.extractDailyMetrics(targetMonth);
 
         if (metrics.length === 0) {
-            console.warn('⚠️  No metrics found for the specified date');
+            console.warn('⚠️  No bonificaciones found for the specified month');
             return new Response(
                 JSON.stringify({
                     success: true,
                     message: 'No data to sync',
-                    date: targetDate || 'yesterday',
+                    month: targetMonth || 'current month',
                     totalRecords: 0,
                 }),
                 {
@@ -92,7 +92,7 @@ serve(async (req) => {
 
         const result: SyncResult = {
             success: true,
-            date: metrics[0]?.fecha || targetDate || 'unknown',
+            date: metrics[0]?.fecha || targetMonth || 'unknown',
             totalRecords: metrics.length,
             creatorsProcessed: 0,
             creatorsCreated: 0,
@@ -221,7 +221,7 @@ function validateEnvironment() {
 
     return {
         supabaseUrl: Deno.env.get('SUPABASE_URL')!,
-        supabaseServiceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        supabaseServiceKey: Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
         airtableApiKey: Deno.env.get('AIRTABLE_API_KEY')!,
         airtableBaseId: Deno.env.get('AIRTABLE_BASE_ID')!,
         airtableCreatorsTableId: Deno.env.get('AIRTABLE_CREATORS_TABLE_ID')!,

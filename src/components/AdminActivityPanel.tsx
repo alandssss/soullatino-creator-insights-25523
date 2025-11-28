@@ -21,7 +21,7 @@ export const AdminActivityPanel = () => {
 
   useEffect(() => {
     fetchActivities();
-    
+
     // Suscribirse a cambios en tiempo real
     const channel = supabase
       .channel('whatsapp-activity-changes')
@@ -33,7 +33,6 @@ export const AdminActivityPanel = () => {
           table: 'whatsapp_activity'
         },
         (payload) => {
-          console.log('Nueva actividad:', payload);
           setActivities(prev => [payload.new as WhatsAppActivity, ...prev]);
         }
       )
@@ -61,9 +60,9 @@ export const AdminActivityPanel = () => {
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+      <Card className="neo-card bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+          <CardTitle className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
             Actividad en Tiempo Real
           </CardTitle>
@@ -78,13 +77,13 @@ export const AdminActivityPanel = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
+    <Card className="neo-card bg-card border-border">
       <CardHeader>
-              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+        <CardTitle className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-primary" />
-          Actividad de Mensajes WhatsApp
+          <span className="flex-1">Actividad de Mensajes WhatsApp</span>
           {activities.length > 0 && (
-            <span className="ml-auto text-sm font-normal text-muted-foreground">
+            <span className="ml-auto text-xs md:text-sm font-normal text-muted-foreground">
               {activities.length} interacciones recientes
             </span>
           )}
@@ -100,12 +99,12 @@ export const AdminActivityPanel = () => {
             {activities.map((activity) => (
               <div
                 key={activity.id}
-                className="p-4 rounded-lg bg-background/50 border border-border/30 hover:border-primary/30 transition-all"
+                className="p-3 md:p-4 rounded-lg neo-card-sm bg-card border border-border hover:border-primary/30 transition-all"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-green-500" />
-                    <span className="font-semibold text-foreground">
+                    <MessageSquare className="h-4 w-4 text-green-600" />
+                    <span className="font-semibold text-sm md:text-base text-foreground">
                       {activity.creator_name || 'Creador Desconocido'}
                     </span>
                   </div>
@@ -117,12 +116,12 @@ export const AdminActivityPanel = () => {
                     })}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                   <User className="h-3 w-3" />
                   <span>{activity.user_email}</span>
                 </div>
                 {activity.message_preview && (
-                  <div className="mt-2 p-2 bg-background/80 rounded text-xs text-muted-foreground border-l-2 border-green-500">
+                  <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground border-l-2 border-green-500">
                     {activity.message_preview.substring(0, 150)}
                     {activity.message_preview.length > 150 ? '...' : ''}
                   </div>

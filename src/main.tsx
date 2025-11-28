@@ -1,3 +1,4 @@
+// Updated: 2025-11-28 03:30 - Fixed engagement display and hardcoded Supabase credentials
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
@@ -53,3 +54,5 @@ createRoot(rootElement).render(
     <App />
   </GlobalErrorBoundary>
 );
+
+// Force deploy: 2025-11-28 03:27

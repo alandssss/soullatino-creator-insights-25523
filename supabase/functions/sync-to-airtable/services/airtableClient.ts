@@ -81,8 +81,8 @@ export class AirtableClient {
     private async findCreatorByCreatorId(
         creatorId: string
     ): Promise<AirtableRecord<any> | null> {
-        const formula = `{creator_id} = '${creatorId.replace(/'/g, "\\'")}'`;
-        const url = `https://api.airtable.com/v0/${this.baseId}/${this.creatorsTableId}?filterByFormula=${encodeURIComponent(formula)}`;
+        const formula = "{Creator ID} = '" + creatorId.replace(/'/g, "\\'") + "'";
+        const url = "https://api.airtable.com/v0/" + this.baseId + "/" + this.creatorsTableId + "?filterByFormula=" + encodeURIComponent(formula);
 
         const response = await this.makeRequest<AirtableListResponse<any>>(url, 'GET');
 
@@ -108,12 +108,12 @@ export class AirtableClient {
 
         const payload = {
             fields: {
-                creator_id: creator.creator_id,
-                username: creator.username,
-                ...(creator.email && { email: creator.email }),
-                ...(creator.nivel_actual && { nivel_actual: creator.nivel_actual }),
-                meta_dias_mes: creator.meta_dias_mes,
-                meta_horas_mes: creator.meta_horas_mes,
+                "Creator ID": creator.creator_id,
+                "Username": creator.username,
+                ...(creator.email && { "email": creator.email }),
+                ...(creator.nivel_actual && /^G\d+$/.test(creator.nivel_actual) && { "Nivel Actual": creator.nivel_actual }),
+                "Meta Días Mes": creator.meta_dias_mes,
+                "Meta Horas Mes": creator.meta_horas_mes,
             },
         };
 
@@ -141,11 +141,11 @@ export class AirtableClient {
 
         const payload = {
             fields: {
-                username: creator.username,
-                ...(creator.email && { email: creator.email }),
-                ...(creator.nivel_actual && { nivel_actual: creator.nivel_actual }),
-                meta_dias_mes: creator.meta_dias_mes,
-                meta_horas_mes: creator.meta_horas_mes,
+                "Username": creator.username,
+                ...(creator.email && { "email": creator.email }),
+                ...(creator.nivel_actual && /^G\d+$/.test(creator.nivel_actual) && { "Nivel Actual": creator.nivel_actual }),
+                "Meta Días Mes": creator.meta_dias_mes,
+                "Meta Horas Mes": creator.meta_horas_mes,
             },
         };
 

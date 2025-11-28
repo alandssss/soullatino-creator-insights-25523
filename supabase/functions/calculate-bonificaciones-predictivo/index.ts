@@ -225,9 +225,9 @@ serve(async (req) => {
       return {
         creator_id: creator.id,
         mes_referencia: mesRef,
-        dias_live_mes,
-        horas_live_mes,
-        diam_live_mes,
+        dias_mtd: dias_live_mes,
+        horas_mtd: horas_live_mes,
+        diamantes_mtd: diam_live_mes,
         dias_restantes: diasRestantes,
         hito_12d_40h,
         hito_20d_60h,

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,6 +25,7 @@ import { WebGLFallback } from "@/components/dashboard/WebGLFallback";
 import { WebGL3DErrorBoundary } from "@/components/dashboard/WebGL3DErrorBoundary";
 import { SimpleBarChart } from "@/components/dashboard/SimpleBarChart";
 import { dedupeBy, normalizePhone, normalizeName } from "@/lib/dedupe";
+import { CompactCreatorCard } from "@/components/dashboard/CompactCreatorCard";
 
 // Lazy load heavy 3D components
 const DiamondsBars3D = lazy(() => import("@/components/dashboard/DiamondsBars3D"));
@@ -198,80 +200,80 @@ const Dashboard = () => {
     );
   }
 
+  const topThree = useMemo(() => creators.slice(0, 3), [creators]);
+
   return (
-    <div className="space-y-6 md:space-y-8 container-safe">
+    <div className="space-y-4 md:space-y-6 container-safe">
       <PageHeader
         title="Dashboard Operativo"
-        description="Visualización interactiva y métricas de alto impacto"
+        description="Métricas clave y acciones prioritarias"
         sticky={false}
       />
 
-      {/* Contactos Prioritarios */}
-      <Card className="glass-card-elevated border-2 border-yellow-500/30 shadow-lg shadow-yellow-500/20">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <AlertTriangle className="h-6 w-6 text-yellow-500" />
-              ⚡ A Quién Contactar HOY
+      {/* KPIs Grid - 3 columnas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="neo-card-sm">
+          <CardContent className="p-4">
+            <KPIGraduacionNuevos />
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card-sm">
+          <CardContent className="p-4">
+            <LowActivityPanel />
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card-elevated border-2 border-yellow-500/30">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              Contactar HOY
             </CardTitle>
-            <Badge variant="destructive" className="text-sm px-3 py-1">
-              Urgente
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Creadores con mayor riesgo de perder bonificaciones este mes
-          </p>
-        </CardHeader>
-        <CardContent>
-          <PriorityContactsPanel />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <PriorityContactsPanel />
+          </CardContent>
+        </Card>
+      </div>
 
-
-      {/* Top Performers - Visual impact */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
+      {/* Top 3 Performers - Horizontal Cards */}
+      <div className="space-y-3">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <span>🏆</span>
-          Top Performers del Mes
+          Top 3 del Mes
         </h2>
-        {webGLSupported ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {topThree.map((creator, index) => (
+            <div
+              key={creator.id}
+              onClick={() => {
+                setSelectedCreator(creator);
+                setDialogOpen(true);
+              }}
+            >
+              <CompactCreatorCard creator={creator} rank={index + 1} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 3D Chart - Más compacto */}
+      {!isMobile && webGLSupported && (
+        <WebGL3DErrorBoundary>
           <Suspense fallback={
-            <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-lg">
+            <div className="flex items-center justify-center h-[350px] bg-card rounded-lg">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           }>
-            <TopPerformersCards creators={creators} />
-          </Suspense>
-        ) : (
-          <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
-            Visualización 3D no disponible. Mostrando vista simplificada.
-          </div>
-        )}
-      </div>
-
-      {/* 3D Diamonds Chart - Interactive visualization with fallback */}
-      {isMobile ? (
-        <SimpleBarChart creators={creators} />
-      ) : webGLSupported ? (
-        <WebGL3DErrorBoundary>
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-[500px] bg-card rounded-lg">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="h-[350px]">
+              <DiamondsBars3D creators={creators} />
             </div>
-          }>
-            <DiamondsBars3D creators={creators} />
           </Suspense>
         </WebGL3DErrorBoundary>
-      ) : (
-        <SimpleBarChart creators={creators} />
       )}
 
-      {/* KPI Panels - Strategic metrics */}
       <GraduacionAlert />
-
-      <KPIGraduacionNuevos />
-
-      <LowActivityPanel />
 
       {/* KPIs por Manager */}
       {(userRole === 'admin' || userRole === 'manager') && (
@@ -291,55 +293,82 @@ const Dashboard = () => {
         </Card>
       )}
 
-      <Card className="rounded-2xl border-2 border-border/50">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Top Creadores</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Mostrando {creators.length} creadores únicos del snapshot
+      {/* Lista Completa - Tabla Compacta */}
+      <Card className="neo-card-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Todos los Creadores</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {creators.length} creadores activos
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {creators.map((creator, index) => (
-              <button
-                key={creator.id}
-                onClick={() => {
-                  setSelectedCreator(creator);
-                  setDialogOpen(true);
-                }}
-                className="group w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-primary/30 cursor-pointer text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {creator.nombre}
-                      </h3>
-                      {creator.telefono && (
-                        <a
-                          href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '').length === 10 ? '52' : ''}${creator.telefono.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-green-500 hover:text-green-600 transition-colors"
-                          title="Abrir WhatsApp"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{creator.categoria || "Sin categoría"}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-accent">{(creator.diamantes || 0).toLocaleString()} 💎</p>
-                  <p className="text-sm text-muted-foreground">Hito: {((creator.hito_diamantes || 0) / 1000).toFixed(0)}K</p>
-                </div>
-              </button>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">#</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nombre</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">💎 Diamantes</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">📅 Días</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">⏰ Horas</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {creators.map((creator, index) => (
+                  <tr
+                    key={creator.id}
+                    className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedCreator(creator);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <td className="py-2 px-2 text-sm font-medium">{index + 1}</td>
+                    <td className="py-2 px-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">{creator.nombre}</span>
+                        {creator.telefono && (
+                          <a
+                            href={`https://wa.me/${creator.telefono.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-green-500 hover:text-green-600"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{creator.categoria || "Sin categoría"}</p>
+                    </td>
+                    <td className="py-2 px-2 text-right font-bold text-accent text-sm">
+                      {(creator.diamantes || 0).toLocaleString()}
+                    </td>
+                    <td className="py-2 px-2 text-center text-sm hidden md:table-cell">
+                      {creator.dias_live || 0}
+                    </td>
+                    <td className="py-2 px-2 text-center text-sm hidden md:table-cell">
+                      {(creator.horas_live || 0).toFixed(1)}
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCreator(creator);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        Ver
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

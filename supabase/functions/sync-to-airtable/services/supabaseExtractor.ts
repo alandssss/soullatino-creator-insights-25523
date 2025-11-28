@@ -18,25 +18,22 @@ export class SupabaseDataExtractor {
     }
 
     /**
-     * Extract daily metrics for a specific date
-     * @param date - Date in YYYY-MM-DD format (defaults to yesterday)
+     * Extract monthly bonificaciones metrics
+     * @param mesReferencia - Month in YYYY-MM format (defaults to current month)
      * @returns Array of creator metrics
      */
-    async extractDailyMetrics(date?: string): Promise<SupabaseCreatorMetric[]> {
-        const targetDate = date || this.getYesterdayDate();
+    async extractDailyMetrics(mesReferencia?: string): Promise<SupabaseCreatorMetric[]> {
+        const rawMonth = mesReferencia || this.getCurrentMonth();
+        // Ensure we query with a full date (YYYY-MM-01) as the column is likely type 'date'
+        const targetDate = `${rawMonth}-01`;
 
-        console.log(`[SupabaseExtractor] Extracting metrics for date: ${targetDate}`);
+        console.log(`[SupabaseExtractor] Extracting bonificaciones for month: ${rawMonth} (query date: ${targetDate})`);
 
         try {
             const { data, error } = await this.client
-                .from('creator_daily_stats')
+                .from('creator_bonificaciones')
                 .select(`
-          fecha,
-          diamantes,
-          duracion_live_horas,
-          nuevos_seguidores,
-          emisiones_live,
-          creator_id,
+          *,
           creators!inner (
             creator_id,
             nombre,
@@ -46,7 +43,7 @@ export class SupabaseDataExtractor {
             meta_horas_mes
           )
         `)
-                .eq('fecha', targetDate)
+                .eq('mes_referencia', targetDate)
                 .order('creator_id');
 
             if (error) {
@@ -55,7 +52,7 @@ export class SupabaseDataExtractor {
             }
 
             if (!data || data.length === 0) {
-                console.warn(`[SupabaseExtractor] No data found for date: ${targetDate}`);
+                console.warn(`[SupabaseExtractor] No data found for month: ${rawMonth}`);
                 return [];
             }
 
@@ -74,11 +71,11 @@ export class SupabaseDataExtractor {
                     nivel_actual: creator.estado_graduacion || null,
                     meta_dias_mes: creator.meta_dias_mes || 22,
                     meta_horas_mes: creator.meta_horas_mes || 80,
-                    fecha: record.fecha,
-                    diamonds_dia: Number(record.diamantes) || 0,
-                    live_hours_dia: Number(record.duracion_live_horas) || 0,
-                    new_followers_dia: Number(record.nuevos_seguidores) || 0,
-                    hizo_live: (record.emisiones_live || 0) > 0 ? 1 : 0,
+                    fecha: targetDate, // Use the calculated date
+                    diamonds_dia: Number(record.diamantes_mtd) || 0,
+                    live_hours_dia: Number(record.horas_mtd) || 0,
+                    new_followers_dia: 0, // Not available in bonificaciones
+                    hizo_live: Number(record.dias_mtd) > 0 ? 1 : 0,
                 };
             });
 
@@ -92,30 +89,32 @@ export class SupabaseDataExtractor {
     }
 
     /**
-     * Get yesterday's date in YYYY-MM-DD format
+     * Get current month in YYYY-MM format
      */
-    private getYesterdayDate(): string {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        return yesterday.toISOString().split('T')[0];
+    private getCurrentMonth(): string {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
     }
 
     /**
-     * Validate that data exists for a given date
+     * Validate that data exists for a given month
      */
-    async validateDataExists(date: string): Promise<boolean> {
+    async validateDataExists(mesReferencia: string): Promise<boolean> {
+        const targetDate = `${mesReferencia}-01`;
         try {
             const { count, error } = await this.client
-                .from('creator_daily_stats')
+                .from('creator_bonificaciones')
                 .select('*', { count: 'exact', head: true })
-                .eq('fecha', date);
+                .eq('mes_referencia', targetDate);
 
             if (error) {
                 console.error('[SupabaseExtractor] Validation error:', error);
                 return false;
             }
 
-            console.log(`[SupabaseExtractor] Found ${count} records for ${date}`);
+            console.log(`[SupabaseExtractor] Found ${count} records for ${mesReferencia}`);
             return (count || 0) > 0;
         } catch (error) {
             console.error('[SupabaseExtractor] Validation failed:', error);
