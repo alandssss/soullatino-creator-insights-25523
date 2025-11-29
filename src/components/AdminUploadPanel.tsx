@@ -547,9 +547,20 @@ export const AdminUploadPanel = () => {
                 const data = await response.json();
                 console.log('Sync response:', data);
 
+                if (!data.success) {
+                  throw new Error(data.message || 'Error en la sincronización');
+                }
+
+                toast({
+                  title: "✅ Sincronización completada",
+                  description: `Se procesaron ${data.totalRecords || 0} registros.`,
+                  duration: 5000,
+                });
+              } catch (error: any) {
+                console.error('[Airtable Sync] Error:', error);
                 toast({
                   title: "❌ Error en sincronización",
-                  description: error.message || error?.msg || "Falló la conexión con la Edge Function",
+                  description: error.message || "Falló la conexión con la Edge Function",
                   variant: "destructive",
                 });
               }
@@ -560,6 +571,26 @@ export const AdminUploadPanel = () => {
             <Database className="h-4 w-4 mr-2" />
             Sincronizar con Airtable
           </Button>
+
+          <div className="flex justify-center mt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground"
+              onClick={async () => {
+                const results = [];
+                results.push(`Online: ${navigator.onLine}`);
+                try {
+                  const t0 = performance.now();
+                  const res = await fetch('https://fhboambxnmswtxalllnn.supabase.co/functions/v1/sync-to-airtable', { method: 'OPTIONS' });
+                  results.push(`Supabase: ${res.ok ? 'OK' : 'ERR'} (${res.status}) ${Math.round(performance.now() - t0)}ms`);
+                } catch (e: any) { results.push(`Supabase Err: ${e.message}`); }
+                alert(results.join('\n'));
+              }}
+            >
+              🔍 Diagnóstico
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground mt-2">
             • Ejecuta manualmente la sincronización diaria de métricas
           </p>
