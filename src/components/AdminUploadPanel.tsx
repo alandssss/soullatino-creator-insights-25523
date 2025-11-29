@@ -525,10 +525,6 @@ export const AdminUploadPanel = () => {
 
               try {
                 console.log('[Airtable Sync] Invoking function...');
-                // BYPASS SUPABASE CLIENT AUTH - Use direct fetch to Edge Function
-                // This resolves the "non 2xx" error caused by mismatched frontend config
-                const functionUrl = 'https://fhboambxnmswtxalllnn.supabase.co/functions/v1/sync-to-airtable';
-                console.log('Calling sync function directly:', functionUrl);
 
                 // Use yesterday's date to sync existing data
                 const yesterday = new Date();
@@ -537,22 +533,15 @@ export const AdminUploadPanel = () => {
 
                 console.log('Syncing date:', dateToSync);
 
-                const response = await fetch(functionUrl, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    // No Authorization header needed because function is deployed with --no-verify-jwt
-                  },
-                  body: JSON.stringify({ date: dateToSync })
+                const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
+                  body: { date: dateToSync }
                 });
 
-                if (!response.ok) {
-                  const errorText = await response.text();
-                  throw new Error(`Error ${response.status}: ${errorText}`);
-                }
+                console.log('Sync response:', { data, error });
 
-                const data = await response.json();
-                console.log('Sync response:', data);
+                if (error) {
+                  throw error;
+                }
 
                 if (!data.success) {
                   throw new Error(data.message || 'Error en la sincronización');
