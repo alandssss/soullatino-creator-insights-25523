@@ -48,7 +48,7 @@ export function LeaderboardPanel() {
       // Obtener el ranking más reciente del periodo seleccionado
       const { data, error } = await supabase
         .from('creator_rankings')
-        .select('*, creators(nombre, tiktok_username)')
+        .select('*, creators(nombre, tiktok_username, manager)')
         .eq('periodo_tipo', periodo)
         .order('periodo_inicio', { ascending: false })
         .limit(100);
@@ -66,8 +66,9 @@ export function LeaderboardPanel() {
         // Combinar datos del snapshot con datos actuales del creador
         const rankingItem = {
           ...r,
-          nombre: r.creators?.nombre || r.nombre,
-          tiktok_username: r.creators?.tiktok_username || r.tiktok_username
+          nombre: r.creators?.nombre || '',
+          tiktok_username: r.creators?.tiktok_username || '',
+          manager: r.creators?.manager || ''
         };
         rankingsByPeriodo.get(key)!.push(rankingItem as any);
       }
