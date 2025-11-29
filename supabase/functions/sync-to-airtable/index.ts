@@ -32,19 +32,20 @@ serve(async (req) => {
         console.log('✅ Environment validated');
 
         // ============================================
-        // 2. PARSE REQUEST (optional month override)
+        // 2. PARSE REQUEST (optional date override)
         // ============================================
-        let targetMonth: string | undefined;
+        let targetDate: string | undefined;
 
         if (req.method === 'POST') {
             try {
                 const body = await req.json();
-                targetMonth = body.month || body.mes_referencia;
-                if (targetMonth) {
-                    console.log(`📅 Manual sync requested for month: ${targetMonth}`);
+                // Accept 'date', 'fecha' (YYYY-MM-DD) or 'month' (YYYY-MM)
+                targetDate = body.date || body.fecha || body.month || body.mes_referencia;
+                if (targetDate) {
+                    console.log(`📅 Manual sync requested for: ${targetDate}`);
                 }
             } catch {
-                // No body or invalid JSON, use default (current month)
+                // No body or invalid JSON, use default
             }
         }
 
@@ -57,7 +58,7 @@ serve(async (req) => {
             config.supabaseServiceKey
         );
 
-        const metrics = await extractor.extractDailyMetrics(targetMonth);
+        const metrics = await extractor.extractDailyMetrics(targetDate);
 
         if (metrics.length === 0) {
             console.warn('⚠️  No bonificaciones found for the specified month');
@@ -65,7 +66,7 @@ serve(async (req) => {
                 JSON.stringify({
                     success: true,
                     message: 'No data to sync',
-                    month: targetMonth || 'current month',
+                    month: targetDate || 'yesterday',
                     totalRecords: 0,
                 }),
                 {
@@ -92,7 +93,7 @@ serve(async (req) => {
 
         const result: SyncResult = {
             success: true,
-            date: metrics[0]?.fecha || targetMonth || 'unknown',
+            date: metrics[0]?.fecha || targetDate || 'unknown',
             totalRecords: metrics.length,
             creatorsProcessed: 0,
             creatorsCreated: 0,

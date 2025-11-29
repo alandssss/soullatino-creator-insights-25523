@@ -509,6 +509,45 @@ export const AdminUploadPanel = () => {
             </div>
           )}
         </div>
+
+        {/* Exportación a Airtable */}
+        <div className="pt-4 border-t border-border/50">
+          <p className="text-sm font-medium mb-2">☁️ Exportación a Airtable</p>
+          <Button
+            onClick={async () => {
+              const toastId = toast({
+                title: "⏳ Iniciando sincronización...",
+                description: "Esto puede tomar unos segundos.",
+              });
+
+              try {
+                const { data, error } = await supabase.functions.invoke('sync-to-airtable');
+
+                if (error) throw error;
+
+                toast({
+                  title: "✅ Sincronización completada",
+                  description: `Se procesaron ${data?.totalRecords || 0} registros.`,
+                });
+              } catch (error: any) {
+                console.error('Error syncing to Airtable:', error);
+                toast({
+                  title: "❌ Error en sincronización",
+                  description: error.message || "Falló la conexión con la Edge Function",
+                  variant: "destructive",
+                });
+              }
+            }}
+            variant="secondary"
+            className="w-full"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Sincronizar con Airtable
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            • Ejecuta manualmente la sincronización diaria de métricas
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

@@ -18,33 +18,42 @@ export class SupabaseDataExtractor {
     }
 
     /**
-     * Extract monthly bonificaciones metrics
-     * @param mesReferencia - Month in YYYY-MM format (defaults to current month)
+     * Extract daily metrics from creator_daily_stats
+     * @param dateOrMonth - Specific date (YYYY-MM-DD) or Month (YYYY-MM). Defaults to yesterday.
      * @returns Array of creator metrics
      */
-    async extractDailyMetrics(mesReferencia?: string): Promise<SupabaseCreatorMetric[]> {
-        const rawMonth = mesReferencia || this.getCurrentMonth();
-        // Ensure we query with a full date (YYYY-MM-01) as the column is likely type 'date'
-        const targetDate = `${rawMonth}-01`;
+    async extractDailyMetrics(dateOrMonth?: string): Promise<SupabaseCreatorMetric[]> {
+        let targetDate = dateOrMonth;
 
-        console.log(`[SupabaseExtractor] Extracting bonificaciones for month: ${rawMonth} (query date: ${targetDate})`);
+        // If no date provided, or only month provided, default to yesterday
+        // (Daily stats are usually run for the previous day)
+        if (!targetDate || targetDate.length === 7) {
+            const d = new Date();
+            d.setDate(d.getDate() - 1); // Yesterday
+            targetDate = d.toISOString().split('T')[0];
+
+            if (dateOrMonth && dateOrMonth.length === 7) {
+                console.log(`[SupabaseExtractor] Month provided (${dateOrMonth}), defaulting to yesterday: ${targetDate}`);
+            }
+        }
+
+        console.log(`[SupabaseExtractor] Extracting daily stats for date: ${targetDate}`);
 
         try {
             const { data, error } = await this.client
-                .from('creator_bonificaciones')
+                .from('creator_daily_stats')
                 .select(`
-          *,
-          creators!inner (
-            creator_id,
-            nombre,
-            email,
-            estado_graduacion,
-            meta_dias_mes,
-            meta_horas_mes
-          )
-        `)
-                .eq('mes_referencia', targetDate)
-                .order('creator_id');
+                    *,
+                    creators (
+                        creator_id,
+                        tiktok_username,
+                        email,
+                        estado_graduacion,
+                        meta_dias_mes,
+                        meta_horas_mes
+                    )
+                `)
+                .eq('fecha', targetDate);
 
             if (error) {
                 console.error('[SupabaseExtractor] Query error:', error);
@@ -52,7 +61,7 @@ export class SupabaseDataExtractor {
             }
 
             if (!data || data.length === 0) {
-                console.warn(`[SupabaseExtractor] No data found for month: ${rawMonth}`);
+                console.warn(`[SupabaseExtractor] No data found for date: ${targetDate}`);
                 return [];
             }
 
@@ -64,20 +73,25 @@ export class SupabaseDataExtractor {
                     ? record.creators[0]
                     : record.creators;
 
+                if (!creator) {
+                    console.warn(`[SupabaseExtractor] Warning: No creator details for record ${record.id}`);
+                    return null;
+                }
+
                 return {
                     creator_id: creator.creator_id,
-                    username: creator.nombre || 'Unknown',
+                    username: creator.tiktok_username || 'Unknown',
                     email: creator.email || null,
                     nivel_actual: creator.estado_graduacion || null,
                     meta_dias_mes: creator.meta_dias_mes || 22,
                     meta_horas_mes: creator.meta_horas_mes || 80,
-                    fecha: targetDate, // Use the calculated date
-                    diamonds_dia: Number(record.diamantes_mtd) || 0,
-                    live_hours_dia: Number(record.horas_mtd) || 0,
-                    new_followers_dia: 0, // Not available in bonificaciones
-                    hizo_live: Number(record.dias_mtd) > 0 ? 1 : 0,
+                    fecha: record.fecha,
+                    diamonds_dia: Number(record.diamantes) || 0,
+                    live_hours_dia: Number(record.duracion_live_horas) || 0,
+                    new_followers_dia: Number(record.nuevos_seguidores) || 0,
+                    hizo_live: Number(record.emisiones_live) > 0 ? 1 : 0,
                 };
-            });
+            }).filter((m): m is SupabaseCreatorMetric => m !== null);
 
             console.log(`[SupabaseExtractor] Transformed ${metrics.length} records successfully`);
             return metrics;
