@@ -526,11 +526,8 @@ export const AdminUploadPanel = () => {
               try {
                 console.log('[Airtable Sync] Invoking function...');
 
-                // Use yesterday's date to sync existing data
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                const dateToSync = yesterday.toISOString().split('T')[0];
-
+                // Use today's date (we now have fresh data)
+                const dateToSync = new Date().toISOString().split('T')[0];
                 console.log('Syncing date:', dateToSync);
 
                 const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
