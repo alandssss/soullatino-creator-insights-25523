@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Test Sync to Airtable</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
     <h1>Test Sync to Airtable</h1>
     <button onclick="testSync()">Test Sync</button>
@@ -11,32 +13,41 @@
 
     <script>
         const supabaseUrl = 'https://fhboambxnmswtxalllnn.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYm9hbWJ4bm1zd3R4YWxsbG5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI2MTM0MzgsImV4cCI6MjA0ODE4OTQzOH0.JxdcMEbUdNqrv6Hy_LmVUkqMxTKhVPVVnKCTvpbI0Zg';
-        
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const functionUrl = `${supabaseUrl}/functions/v1/sync-to-airtable`;
 
         async function testSync() {
-            const resultEl = document.getElementById('result');
-            resultEl.textContent = 'Testing...';
-            
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Testing connection...';
+            resultDiv.className = '';
+
             try {
-                console.log('Calling sync-to-airtable...');
-                const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
-                    body: { date: '2025-11-28' }
+                console.log('Fetching:', functionUrl);
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // No Authorization header needed
+                    },
+                    body: JSON.stringify({ date: new Date().toISOString().split('T')[0] })
                 });
-                
-                if (error) {
-                    console.error('Error:', error);
-                    resultEl.textContent = 'ERROR:\n' + JSON.stringify(error, null, 2);
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.textContent = '✅ SUCCESS: ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'success';
                 } else {
-                    console.log('Success:', data);
-                    resultEl.textContent = 'SUCCESS:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.textContent = '❌ ERROR: ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'error';
                 }
-            } catch (err) {
-                console.error('Exception:', err);
-                resultEl.textContent = 'EXCEPTION:\n' + err.message + '\n' + err.stack;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                resultDiv.textContent = '❌ NETWORK ERROR: ' + error.message;
+                resultDiv.className = 'error';
             }
         }
     </script>
 </body>
+
 </html>

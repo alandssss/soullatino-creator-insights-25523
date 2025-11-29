@@ -388,4 +388,71 @@
   [id*="chat-widget"] {
     display: none !important;
   }
+}/* Premium Neomorphism Light Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+    --font-family: 'Inter', sans-serif;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+    --primary: hsl(210, 70%, 55%);
+    --secondary: hsl(210, 30%, 90%);
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --shadow-light: rgba(255, 255, 255, 0.7);
+    --shadow-dark: rgba(0, 0, 0, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+button {
+    cursor: pointer;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: hsl(210, 70%, 45%);
 }

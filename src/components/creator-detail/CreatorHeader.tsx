@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles, MessageCircle, Target } from "lucide-react";
 import { getCreatorDisplayName } from "@/utils/creator-display";
 
@@ -9,6 +9,7 @@ interface CreatorHeaderProps {
     nombre: string;
     tiktok_username?: string;
     engagement_rate?: number;
+    profile_image_url?: string | null;
   };
   onWhatsApp: () => void;
   onGenerateAI: () => void;
@@ -38,6 +39,7 @@ export function CreatorHeader({
     <div className="flex items-start justify-between p-6 border-b">
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16">
+          <AvatarImage src={creator.profile_image_url || undefined} alt={displayName} />
           <AvatarFallback className="text-lg font-bold bg-primary/10">
             {initials}
           </AvatarFallback>

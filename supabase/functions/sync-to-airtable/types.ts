@@ -13,6 +13,7 @@ export interface SupabaseCreatorMetric {
   nivel_actual: string | null;
   meta_dias_mes: number;
   meta_horas_mes: number;
+  profile_image_url?: string | null;
   fecha: string; // YYYY-MM-DD
   diamonds_dia: number;
   live_hours_dia: number;
@@ -32,6 +33,7 @@ export interface AirtableCreator {
     nivel_actual?: string;
     meta_dias_mes: number;
     meta_horas_mes: number;
+    foto_perfil?: Array<{ url: string }>;
   };
 }
 

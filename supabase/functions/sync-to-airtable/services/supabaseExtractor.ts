@@ -50,7 +50,8 @@ export class SupabaseDataExtractor {
                         email,
                         estado_graduacion,
                         meta_dias_mes,
-                        meta_horas_mes
+                        meta_horas_mes,
+                        profile_image_url
                     )
                 `)
                 .eq('fecha', targetDate);
@@ -85,6 +86,7 @@ export class SupabaseDataExtractor {
                     nivel_actual: creator.estado_graduacion || null,
                     meta_dias_mes: creator.meta_dias_mes || 22,
                     meta_horas_mes: creator.meta_horas_mes || 80,
+                    profile_image_url: creator.profile_image_url || null,
                     fecha: record.fecha,
                     diamonds_dia: Number(record.diamantes) || 0,
                     live_hours_dia: Number(record.duracion_live_horas) || 0,

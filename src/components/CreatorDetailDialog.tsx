@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import WhatsappButton from "@/components/WhatsappButton";
 import { buildWaMessage } from "@/utils/whatsapp";
 import {
@@ -362,6 +363,16 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     return [...nextDiamantesMilestones.slice(0, 2), ...nextDiasMilestones.slice(0, 1), ...nextHorasMilestones.slice(0, 1)];
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .replace('@', '')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (!creator) return null;
 
   return (
@@ -369,9 +380,17 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
       <DrawerContent className="max-h-[95vh] flex flex-col">
         <DrawerHeader className="pb-4 border-b border-border/50 space-y-3 flex-shrink-0 px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <DrawerTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent flex flex-wrap items-center gap-2 sm:gap-3">
-              {getCreatorDisplayName(creator)}
-            </DrawerTitle>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20">
+                <AvatarImage src={creator.profile_image_url || undefined} alt={creator.nombre} />
+                <AvatarFallback className="text-lg font-bold bg-primary/10">
+                  {getInitials(creator.nombre)}
+                </AvatarFallback>
+              </Avatar>
+              <DrawerTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent flex flex-wrap items-center gap-2 sm:gap-3">
+                {getCreatorDisplayName(creator)}
+              </DrawerTitle>
+            </div>
 
             {/* Botón de IA prominente en header */}
             <Button

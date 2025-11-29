@@ -23,6 +23,11 @@ import ScoringConfig from "./pages/ScoringConfig";
 import IAEffectiveness from "./pages/IAEffectiveness";
 import Rankings from "./pages/Rankings";
 import { BatallasPanel } from "@/components/batallas/BatallasPanel";
+import DashboardGlobal from "@/components/DashboardGlobal";
+import DashboardSegmento from "@/components/DashboardSegmento";
+import CreatorProfileDashboard from "@/components/CreatorProfileDashboard";
+import HitosPanel from "@/components/HitosPanel";
+import AlertasOperativas from "@/components/AlertasOperativas";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,13 +40,13 @@ const queryClient = new QueryClient({
 
 function App() {
   const [mounted, setMounted] = useState(false);
-  
+
   // Detectar si estamos en el dominio del portal de creadores
-  const isCreatorPortal = typeof window !== 'undefined' && 
+  const isCreatorPortal = typeof window !== 'undefined' &&
     window.location.hostname === 'pkosoullatino.neuron.lat';
-  
+
   useEffect(() => { setMounted(true); }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
@@ -90,10 +95,15 @@ function App() {
                   <Route path="/home" element={<HomePage />} />
                   <Route path="/portal/:username" element={<CreatorPortal />} />
                   <Route path="/portal" element={<CreatorPortal />} />
-                  
+
                   {/* Rutas protegidas con layout */}
                   <Route element={<AppLayout />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="dashboard-global" element={<DashboardGlobal />} />
+                    <Route path="dashboard-segmentos" element={<DashboardSegmento />} />
+                    <Route path="dashboard-creador/:id" element={<CreatorProfileDashboard />} />
+                    <Route path="dashboard-hitos" element={<HitosPanel />} />
+                    <Route path="alertas-operativas" element={<AlertasOperativas />} />
                     <Route path="admin" element={<Admin />} />
                     <Route path="alertas" element={<AlertasSugerenciasPage />} />
                     <Route path="batallas" element={<BatallasPanel />} />
