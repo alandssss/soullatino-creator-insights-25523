@@ -17,7 +17,17 @@ import { SyncResult, SyncError } from './types.ts';
  * 3. Return sync summary
  */
 
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders });
+    }
+
     const startTime = Date.now();
 
     console.log('='.repeat(60));
@@ -71,7 +81,7 @@ serve(async (req) => {
                 }),
                 {
                     status: 200,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 }
             );
         }
@@ -177,7 +187,7 @@ serve(async (req) => {
             JSON.stringify(result, null, 2),
             {
                 status: result.success ? 200 : 207, // 207 = Multi-Status (partial success)
-                headers: { 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
         );
 
@@ -195,7 +205,7 @@ serve(async (req) => {
             JSON.stringify(errorResult, null, 2),
             {
                 status: 500,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
         );
     }

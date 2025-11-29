@@ -515,25 +515,40 @@ export const AdminUploadPanel = () => {
           <p className="text-sm font-medium mb-2">☁️ Exportación a Airtable</p>
           <Button
             onClick={async () => {
-              const toastId = toast({
+              console.log('[Airtable Sync] Button clicked');
+              console.log('[Airtable Sync] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+
+              toast({
                 title: "⏳ Iniciando sincronización...",
                 description: "Esto puede tomar unos segundos.",
               });
 
               try {
-                const { data, error } = await supabase.functions.invoke('sync-to-airtable');
+                console.log('[Airtable Sync] Invoking function...');
+                const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
+                  body: { date: new Date().toISOString().split('T')[0] }
+                });
 
-                if (error) throw error;
+                console.log('[Airtable Sync] Response:', { data, error });
+
+                if (error) {
+                  console.error('[Airtable Sync] Error object:', error);
+                  throw error;
+                }
 
                 toast({
                   title: "✅ Sincronización completada",
                   description: `Se procesaron ${data?.totalRecords || 0} registros.`,
                 });
               } catch (error: any) {
-                console.error('Error syncing to Airtable:', error);
+                console.error('[Airtable Sync] Exception caught:', error);
+                console.error('[Airtable Sync] Error message:', error?.message);
+                console.error('[Airtable Sync] Error stack:', error?.stack);
+                console.error('[Airtable Sync] Full error:', JSON.stringify(error, null, 2));
+
                 toast({
                   title: "❌ Error en sincronización",
-                  description: error.message || "Falló la conexión con la Edge Function",
+                  description: error.message || error?.msg || "Falló la conexión con la Edge Function",
                   variant: "destructive",
                 });
               }

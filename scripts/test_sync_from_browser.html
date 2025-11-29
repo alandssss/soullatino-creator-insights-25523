@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sync to Airtable</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Sync to Airtable</h1>
+    <button onclick="testSync()">Test Sync</button>
+    <pre id="result"></pre>
+
+    <script>
+        const supabaseUrl = 'https://fhboambxnmswtxalllnn.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYm9hbWJ4bm1zd3R4YWxsbG5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI2MTM0MzgsImV4cCI6MjA0ODE4OTQzOH0.JxdcMEbUdNqrv6Hy_LmVUkqMxTKhVPVVnKCTvpbI0Zg';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testSync() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Testing...';
+            
+            try {
+                console.log('Calling sync-to-airtable...');
+                const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
+                    body: { date: '2025-11-28' }
+                });
+                
+                if (error) {
+                    console.error('Error:', error);
+                    resultEl.textContent = 'ERROR:\n' + JSON.stringify(error, null, 2);
+                } else {
+                    console.log('Success:', data);
+                    resultEl.textContent = 'SUCCESS:\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                console.error('Exception:', err);
+                resultEl.textContent = 'EXCEPTION:\n' + err.message + '\n' + err.stack;
+            }
+        }
+    </script>
+</body>
+</html>
