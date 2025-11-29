@@ -20,7 +20,11 @@
                img-src 'self' data: https:;
                script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;
                style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-               connect-src *;
+               connect-src 'self' 
+                 https://fhboambxnmswtxalllnn.supabase.co 
+                 https://generativelanguage.googleapis.com 
+                 https://www.google-analytics.com
+                 wss://fhboambxnmswtxalllnn.supabase.co;
                font-src 'self' data: https://fonts.gstatic.com;
                frame-ancestors 'none';
                base-uri 'self';
