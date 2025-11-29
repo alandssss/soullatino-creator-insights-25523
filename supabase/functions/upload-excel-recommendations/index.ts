@@ -206,7 +206,6 @@ serve(async (req) => {
       'nombre de usuario del creador': 'creator_username',
       'creators username': 'creator_username',
       "creator's username": 'creator_username', // Con apóstrofe (Excel real)
-      "creators username": 'creator_username', // Sin apóstrofe
       'creator s username': 'creator_username', // Con espacio
       'creatorusername': 'creator_username', // Sin espacios
       'id del creador': 'creator_username',
@@ -536,17 +535,17 @@ serve(async (req) => {
 
     // @snapshot: Delete ALL records for this date to replace complete snapshot
     console.log('[STEP 6] === Deleting existing records for date:', today);
-    const { data: deletedData, error: delErr, count: deletedCount } = await supabase
+    const { data: deletedData, error: delErr } = await supabase
       .from('creator_daily_stats')
       .delete()
       .eq('fecha', today)
-      .select('*', { count: 'exact' });
+      .select();
 
     if (delErr) {
       console.error('[STEP 6] ERROR during DELETE:', delErr);
       throw new Error(`Failed to delete existing records: ${delErr.message}`);
     }
-    console.log('[STEP 6] Successfully deleted', deletedCount || 0, 'existing records');
+    console.log('[STEP 6] Successfully deleted', deletedData?.length || 0, 'existing records');
 
     // @compat: Use INSERT instead of UPSERT to avoid silent failures
     console.log('[STEP 7] === Inserting', dailyRowsDeduped.length, 'records into creator_daily_stats');
