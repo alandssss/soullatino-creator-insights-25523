@@ -21,10 +21,8 @@ En la sección "Edge Function Secrets" o "Environment Variables", agrega:
 #### Secret 1: AIRTABLE_API_KEY
 ```
 Nombre: AIRTABLE_API_KEY
-Valor: [TU AIRTABLE API KEY]
+Valor: [TU_AIRTABLE_API_KEY_AQUI]
 ```
-**Nota**: Este es tu Personal Access Token de Airtable. Lo puedes obtener en:
-https://airtable.com/create/tokens
 
 #### Secret 2: AIRTABLE_BASE_ID
 ```

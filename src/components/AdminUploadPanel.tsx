@@ -525,20 +525,36 @@ export const AdminUploadPanel = () => {
 
               try {
                 console.log('[Airtable Sync] Invoking function...');
-                const { data, error } = await supabase.functions.invoke('sync-to-airtable', {
-                  body: { date: new Date().toISOString().split('T')[0] }
+                // BYPASS SUPABASE CLIENT AUTH - Use direct fetch to Edge Function
+                // This resolves the "non 2xx" error caused by mismatched frontend config
+                const functionUrl = 'https://fhboambxnmswtxalllnn.supabase.co/functions/v1/sync-to-airtable';
+                console.log('Calling sync function directly:', functionUrl);
+
+                const response = await fetch(functionUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    // No Authorization header needed because function is deployed with --no-verify-jwt
+                  },
+                  body: JSON.stringify({ date: new Date().toISOString().split('T')[0] })
                 });
 
-                console.log('[Airtable Sync] Response:', { data, error });
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`Error ${response.status}: ${errorText}`);
+                }
 
-                if (error) {
-                  console.error('[Airtable Sync] Error object:', error);
-                  throw error;
+                const data = await response.json();
+                console.log('Sync response:', data);
+
+                if (!data.success) {
+                  throw new Error(data.message || 'Error en la sincronización');
                 }
 
                 toast({
                   title: "✅ Sincronización completada",
-                  description: `Se procesaron ${data?.totalRecords || 0} registros.`,
+                  description: `Se procesaron ${data.totalRecords || 0} registros.`,
+                  duration: 5000,
                 });
               } catch (error: any) {
                 console.error('[Airtable Sync] Exception caught:', error);

@@ -31,8 +31,13 @@ Valor: https://fhboambxnmswtxalllnn.supabase.co
 #### Variable 2: VITE_SUPABASE_PUBLISHABLE_KEY
 ```
 Nombre: VITE_SUPABASE_PUBLISHABLE_KEY
-Valor: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoYm9hbWJ4bm1zd3R4YWxsbG5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI2MTM0MzgsImV4cCI6MjA0ODE4OTQzOH0.JxdcMEbUdNqrv6Hy_LmVUkqMxTKhVPVVnKCTvpbI0Zg
+Valor: [COPIA TU ANON KEY DESDE SUPABASE DASHBOARD]
 ```
+**⚠️ IMPORTANTE**: La clave que te di antes era incorrecta.
+1. Ve a https://supabase.com/dashboard/project/fhboambxnmswtxalllnn/settings/api
+2. Busca la sección **Project API keys**
+3. Copia la clave que dice `anon` `public`
+4. Pega esa clave en Lovable
 
 #### Variable 3: VITE_SUPABASE_PROJECT_ID
 ```
