@@ -547,21 +547,6 @@ export const AdminUploadPanel = () => {
                 const data = await response.json();
                 console.log('Sync response:', data);
 
-                if (!data.success) {
-                  throw new Error(data.message || 'Error en la sincronización');
-                }
-
-                toast({
-                  title: "✅ Sincronización completada",
-                  description: `Se procesaron ${data.totalRecords || 0} registros.`,
-                  duration: 5000,
-                });
-              } catch (error: any) {
-                console.error('[Airtable Sync] Exception caught:', error);
-                console.error('[Airtable Sync] Error message:', error?.message);
-                console.error('[Airtable Sync] Error stack:', error?.stack);
-                console.error('[Airtable Sync] Full error:', JSON.stringify(error, null, 2));
-
                 toast({
                   title: "❌ Error en sincronización",
                   description: error.message || error?.msg || "Falló la conexión con la Edge Function",
