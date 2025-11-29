@@ -1,4 +1,4 @@
-project_id = "mpseoscrzpnequwvzokn"
+project_id = "fhboambxnmswtxalllnn"
 
 [api]
 enabled = true
@@ -80,7 +80,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.upload-excel-recommendations]
-verify_jwt = true
+verify_jwt = false
 
 [functions.supervision-quicklog]
 verify_jwt = true
@@ -110,3 +110,6 @@ verify_jwt = true
 # Cálculo de rankings y badges gamificados - requiere rol admin
 [functions.calculate-rankings]
 verify_jwt = true
+
+[functions.sync-to-airtable]
+verify_jwt = false
