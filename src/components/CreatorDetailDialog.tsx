@@ -121,9 +121,12 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
     }
   }, [open, creator]);
 
+  const [dailyStatsLoading, setDailyStatsLoading] = useState(false);
+  const [dailyStatsError, setDailyStatsError] = useState<string | null>(null);
   const loadDailyStats = async () => {
     if (!creator) return;
-
+    setDailyStatsLoading(true);
+    setDailyStatsError(null);
     try {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
@@ -135,11 +138,25 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
       if (error) {
         console.error('Error cargando stats diarias:', error);
+        setDailyStatsError(error.message || 'Error al cargar estadísticas');
+        toast({
+          title: 'Error',
+          description: error.message || 'Error al cargar estadísticas diarias',
+          variant: 'destructive'
+        });
       } else {
         setDailyStats(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
+      setDailyStatsError(error.message || 'Error inesperado');
+      toast({
+        title: 'Error',
+        description: error.message || 'Error inesperado al cargar estadísticas',
+        variant: 'destructive'
+      });
+    } finally {
+      setDailyStatsLoading(false);
     }
   };
 
@@ -211,6 +228,18 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
 
   const handleOpenWhatsApp = async () => {
     if (!creator) return;
+
+    // Validar número de teléfono en formato E.164
+    const phone = creator?.telefono;
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (!phone || !phoneRegex.test(phone)) {
+      toast({
+        title: 'Error',
+        description: 'Número de teléfono no válido o no registrado. No se puede abrir WhatsApp.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();

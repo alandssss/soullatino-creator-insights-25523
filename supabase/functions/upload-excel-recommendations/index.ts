@@ -34,8 +34,7 @@ serve(async (req) => {
   if (!rl.ok) return withCORS(rl.response!, origin);
 
   try {
-    /* 
-    // TEMPORARILY DISABLED AUTH CHECKS TO UNBLOCK USER
+    // Reactivar autenticación y verificación de rol
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       console.error('[upload-excel] NO auth header');
@@ -50,12 +49,11 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    // Note: Supabase reserves SUPABASE_ prefix, so we use SERVICE_ROLE_KEY instead
     const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAuth = createClient(supabaseUrl, supabaseKey);
 
     // Verificar usuario autenticado
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     console.log('[upload-excel] User verificado:', user?.id, 'Error:', userError);
 
     if (userError || !user) {
@@ -70,7 +68,7 @@ serve(async (req) => {
     }
 
     // Verificar rol admin/manager
-    const { data: roleData } = await supabase
+    const { data: roleData } = await supabaseAuth
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -88,7 +86,6 @@ serve(async (req) => {
         origin
       );
     }
-    */
 
     // Initialize Supabase client with Service Role Key for database operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

@@ -11,6 +11,7 @@ import BrandingSettings from "@/pages/BrandingSettings";
 import ScoringConfig from "@/pages/ScoringConfig";
 import IAEffectiveness from "@/pages/IAEffectiveness";
 import { toast } from "sonner";
+import { CreatorTable } from "@/components/CreatorTable";
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -144,15 +145,10 @@ export default function AdminPanel() {
           <Card>
             <CardHeader>
               <CardTitle>Gestión de Creadores</CardTitle>
-              <CardDescription>
-                Lista completa de creadores con edición avanzada
-              </CardDescription>
+              <CardDescription>Lista paginada de creadores con edición básica</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Tabla de gestión de creadores disponible próximamente</p>
-                <p className="text-sm mt-2">Por ahora, usa el Dashboard para ver creadores</p>
-              </div>
+              <CreatorTable />
             </CardContent>
           </Card>
         </TabsContent>
