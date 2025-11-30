@@ -14,16 +14,32 @@ export default function DashboardGlobal() {
     if (errDaily || errSeg) return <div className="card">Error al cargar datos.</div>;
 
     const totalCreators = new Set(dailyStats?.map(d => d.creator_id)).size;
-    const totalDiamonds = dailyStats?.reduce((a, b) => a + Number(b.diamonds_dia), 0) ?? 0;
-    const totalHours = dailyStats?.reduce((a, b) => a + Number(b.live_hours_dia), 0) ?? 0;
-    const avgLiveDays = dailyStats?.filter(d => d.hizo_live).length / (totalCreators || 1);
+    // Use Math.max per creator to get MTD snapshot
+    const creatorDiamonds = new Map<string, number>();
+    const creatorHours = new Map<string, number>();
+    const creatorDays = new Map<string, number>();
+    
+    dailyStats?.forEach(d => {
+        const currentDiamonds = creatorDiamonds.get(d.creator_id) || 0;
+        creatorDiamonds.set(d.creator_id, Math.max(currentDiamonds, Number(d.diamantes)));
+        
+        const currentHours = creatorHours.get(d.creator_id) || 0;
+        creatorHours.set(d.creator_id, Math.max(currentHours, Number(d.duracion_live_horas)));
+        
+        const currentDays = creatorDays.get(d.creator_id) || 0;
+        creatorDays.set(d.creator_id, Math.max(currentDays, Number(d.dias_validos_live)));
+    });
+    
+    const totalDiamonds = Array.from(creatorDiamonds.values()).reduce((a, b) => a + b, 0);
+    const totalHours = Array.from(creatorHours.values()).reduce((a, b) => a + b, 0);
+    const avgLiveDays = Array.from(creatorDays.values()).reduce((a, b) => a + b, 0) / (totalCreators || 1);
 
     const creatorMap = new Map<string, { diamonds: number; hours: number }>();
-    dailyStats?.forEach(d => {
-        const entry = creatorMap.get(d.creator_id) ?? { diamonds: 0, hours: 0 };
-        entry.diamonds += Number(d.diamonds_dia);
-        entry.hours += Number(d.live_hours_dia);
-        creatorMap.set(d.creator_id, entry);
+    creatorDiamonds.forEach((diamonds, creator_id) => {
+        creatorMap.set(creator_id, {
+            diamonds,
+            hours: creatorHours.get(creator_id) || 0
+        });
     });
     const diamondsByCreator = Array.from(creatorMap.entries()).map(([id, v]) => ({ creator: id, diamonds: v.diamonds }));
     const hoursByCreator = Array.from(creatorMap.entries()).map(([id, v]) => ({ creator: id, hours: v.hours }));
@@ -80,7 +96,7 @@ export default function DashboardGlobal() {
                 <div className="card" style={{ height: 300 }}>
                     <h4>Evolución diaria de diamantes</h4>
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailyStats?.map(d => ({ date: d.fecha, diamonds: Number(d.diamonds_dia) }))}>
+                        <LineChart data={dailyStats?.map(d => ({ date: d.fecha, diamonds: Number(d.diamantes) }))}>
                             <XAxis dataKey="date" />
                             <YAxis />
                             <Tooltip />
@@ -91,7 +107,7 @@ export default function DashboardGlobal() {
                 <div className="card" style={{ height: 300 }}>
                     <h4>Evolución diaria de horas LIVE</h4>
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailyStats?.map(d => ({ date: d.fecha, hours: Number(d.live_hours_dia) }))}>
+                        <LineChart data={dailyStats?.map(d => ({ date: d.fecha, hours: Number(d.duracion_live_horas) }))}>
                             <XAxis dataKey="date" />
                             <YAxis />
                             <Tooltip />

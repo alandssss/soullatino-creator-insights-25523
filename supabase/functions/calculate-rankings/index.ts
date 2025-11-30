@@ -118,15 +118,16 @@ Deno.serve(async (req) => {
 
     if (statsError) throw statsError;
 
-    // Agrupar stats por creator
+    // Agrupar stats por creator y usar Math.max para obtener el snapshot MTD
     const statsByCreator = new Map<string, any>();
     
     for (const creator of creators || []) {
       const creatorStats = (stats || []).filter(s => s.creator_id === creator.id);
       
-      const totalDiamantes = creatorStats.reduce((sum, s) => sum + (s.diamantes || 0), 0);
-      const totalHoras = creatorStats.reduce((sum, s) => sum + (s.duracion_live_horas || 0), 0);
-      const totalDias = new Set(creatorStats.map(s => s.fecha)).size;
+      // Use Math.max to get latest MTD snapshot (not reduce)
+      const totalDiamantes = Math.max(...creatorStats.map(s => Number(s.diamantes) || 0), 0);
+      const totalHoras = Math.max(...creatorStats.map(s => Number(s.duracion_live_horas) || 0), 0);
+      const totalDias = Math.max(...creatorStats.map(s => Number(s.dias_validos_live) || 0), 0);
       
       // Calcular días consecutivos (para badges de racha)
       const fechas = creatorStats.map(s => new Date(s.fecha)).sort((a, b) => a.getTime() - b.getTime());

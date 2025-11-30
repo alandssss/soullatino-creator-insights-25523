@@ -11,8 +11,11 @@ export interface Creator {
 export interface CreatorDailyStat {
     creator_id: string;
     fecha: string; // YYYY-MM-DD
-    diamonds_dia: number | string;
-    live_hours_dia: number | string;
-    hizo_live: boolean;
-    new_followers_dia: number | string;
+    diamantes: number;
+    duracion_live_horas: number;
+    dias_validos_live: number;
+    nuevos_seguidores: number;
+    emisiones_live?: number;
+    partidas?: number;
+    diamantes_partidas?: number;
 }

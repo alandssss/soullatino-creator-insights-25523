@@ -135,10 +135,10 @@ serve(async (req) => {
                 // Upsert daily metric
                 await airtable.upsertDailyMetric(creatorRecordId, {
                     fecha: metric.fecha,
-                    diamonds_dia: metric.diamonds_dia,
-                    live_hours_dia: metric.live_hours_dia,
-                    new_followers_dia: metric.new_followers_dia,
-                    hizo_live: metric.hizo_live,
+                    diamantes: metric.diamantes,
+                    duracion_live_horas: metric.duracion_live_horas,
+                    nuevos_seguidores: metric.nuevos_seguidores,
+                    dias_validos_live: metric.dias_validos_live,
                 });
 
                 result.metricsCreated++; // Note: We don't distinguish create vs update in result

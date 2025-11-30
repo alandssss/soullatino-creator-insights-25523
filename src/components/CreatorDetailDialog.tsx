@@ -411,7 +411,7 @@ export const CreatorDetailDialog = ({ creator, open, onOpenChange }: CreatorDeta
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20">
-                <AvatarImage src={creator.profile_image_url || undefined} alt={creator.nombre} />
+                <AvatarImage src={undefined} alt={creator.nombre} />
                 <AvatarFallback className="text-lg font-bold bg-primary/10">
                   {getInitials(creator.nombre)}
                 </AvatarFallback>
