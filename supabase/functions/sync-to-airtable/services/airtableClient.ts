@@ -159,10 +159,10 @@ export class AirtableClient {
         creatorRecordId: string,
         metric: {
             fecha: string;
-            diamonds_dia: number;
-            live_hours_dia: number;
-            new_followers_dia: number;
-            hizo_live: number;
+            diamantes: number;
+            duracion_live_horas: number;
+            nuevos_seguidores: number;
+            dias_validos_live: number;
         }
     ): Promise<string> {
         console.log(`[AirtableClient] Upserting metric for ${metric.fecha}`);
@@ -216,10 +216,10 @@ export class AirtableClient {
         creatorRecordId: string,
         metric: {
             fecha: string;
-            diamonds_dia: number;
-            live_hours_dia: number;
-            new_followers_dia: number;
-            hizo_live: number;
+            diamantes: number;
+            duracion_live_horas: number;
+            nuevos_seguidores: number;
+            dias_validos_live: number;
         }
     ): Promise<AirtableCreateResponse<any>> {
         const url = `https://api.airtable.com/v0/${this.baseId}/${this.metricsTableId}`;
@@ -228,10 +228,10 @@ export class AirtableClient {
             fields: {
                 creator: [creatorRecordId],
                 fecha: metric.fecha,
-                diamonds_dia: metric.diamonds_dia,
-                live_hours_dia: metric.live_hours_dia,
-                new_followers_dia: metric.new_followers_dia,
-                hizo_live: metric.hizo_live,
+                diamonds_dia: metric.diamantes,
+                live_hours_dia: metric.duracion_live_horas,
+                new_followers_dia: metric.nuevos_seguidores,
+                hizo_live: metric.dias_validos_live > 0 ? 1 : 0,
             },
         };
 
@@ -248,20 +248,20 @@ export class AirtableClient {
     private async updateDailyMetric(
         recordId: string,
         metric: {
-            diamonds_dia: number;
-            live_hours_dia: number;
-            new_followers_dia: number;
-            hizo_live: number;
+            diamantes: number;
+            duracion_live_horas: number;
+            nuevos_seguidores: number;
+            dias_validos_live: number;
         }
     ): Promise<void> {
         const url = `https://api.airtable.com/v0/${this.baseId}/${this.metricsTableId}/${recordId}`;
 
         const payload = {
             fields: {
-                diamonds_dia: metric.diamonds_dia,
-                live_hours_dia: metric.live_hours_dia,
-                new_followers_dia: metric.new_followers_dia,
-                hizo_live: metric.hizo_live,
+                diamonds_dia: metric.diamantes,
+                live_hours_dia: metric.duracion_live_horas,
+                new_followers_dia: metric.nuevos_seguidores,
+                hizo_live: metric.dias_validos_live > 0 ? 1 : 0,
             },
         };
 

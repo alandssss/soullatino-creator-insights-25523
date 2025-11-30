@@ -86,12 +86,11 @@ export class SupabaseDataExtractor {
                     nivel_actual: creator.estado_graduacion || null,
                     meta_dias_mes: creator.meta_dias_mes || 22,
                     meta_horas_mes: creator.meta_horas_mes || 80,
-                    profile_image_url: creator.profile_image_url || null,
                     fecha: record.fecha,
-                    diamonds_dia: Number(record.diamantes) || 0,
-                    live_hours_dia: Number(record.duracion_live_horas) || 0,
-                    new_followers_dia: Number(record.nuevos_seguidores) || 0,
-                    hizo_live: Number(record.emisiones_live) > 0 ? 1 : 0,
+                    diamantes: Number(record.diamantes) || 0,
+                    duracion_live_horas: Number(record.duracion_live_horas) || 0,
+                    nuevos_seguidores: Number(record.nuevos_seguidores) || 0,
+                    dias_validos_live: Number(record.dias_validos_live) || 0,
                 };
             }).filter((m): m is SupabaseCreatorMetric => m !== null);
 

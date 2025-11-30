@@ -13,12 +13,11 @@ export interface SupabaseCreatorMetric {
   nivel_actual: string | null;
   meta_dias_mes: number;
   meta_horas_mes: number;
-  profile_image_url?: string | null;
   fecha: string; // YYYY-MM-DD
-  diamonds_dia: number;
-  live_hours_dia: number;
-  new_followers_dia: number;
-  hizo_live: number; // 0 or 1
+  diamantes: number;
+  duracion_live_horas: number;
+  nuevos_seguidores: number;
+  dias_validos_live: number;
 }
 
 // ============================================
