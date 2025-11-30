@@ -88,8 +88,7 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client with Service Role Key for database operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // supabaseUrl and supabaseKey are already declared above
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('[upload-excel] Auth checks bypassed for emergency fix');
@@ -231,7 +230,7 @@ serve(async (req) => {
       'days live': 'dias_actuales',
       'dias live': 'dias_actuales',
       'dias validos de emisiones live': 'dias_actuales',
-      'valid go live days': 'dias_actuales',
+      'valid go live days': 'dias_actuales', // ✅ Columna exacta del Excel
       'dias validos de emisiones live del mes pasado': 'dias_actuales',
       'valid go live days last month': 'dias_actuales',
 
@@ -504,12 +503,15 @@ serve(async (req) => {
 
       // ✅ CORRECCIÓN CRÍTICA: Usar horas reales del Excel (son valores MTD acumulativos)
       // El Excel contiene valores Month-To-Date, no deltas diarios
+      // ✅ CORRECCIÓN CRÍTICA 2: Usar días válidos reales del Excel (columna "Valid go LIVE days")
+      const diasValidos = r.dias_actuales ?? 0;
+
       return {
         creator_id: creatorId,
         fecha: today,
         diamantes: r.diamantes_actuales, // MTD acumulativo
         duracion_live_horas: r.horas_actuales, // MTD acumulativo (CORREGIDO)
-        dias_validos_live: r.diamantes_actuales > 0 || r.horas_actuales >= 1 ? 1 : 0, // Marcar día activo
+        dias_validos_live: diasValidos, // ✅ Usar valor directo del Excel
         creator_username: r.creator_username,
         phone_e164: r.phone_e164
       };
